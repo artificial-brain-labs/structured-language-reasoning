@@ -1,0 +1,103 @@
+{
+  "a": {
+    "pos": "determiner",
+    "concept": "INDEFINITE_ARTICLE"
+  },
+  "the": {
+    "pos": "determiner",
+    "concept": "DEFINITE_ARTICLE"
+  },
+
+  "cat": {
+    "pos": "noun",
+    "concept": "CAT",
+    "class": "ANIMAL",
+    "animate": true
+  },
+
+  "dog": {
+    "pos": "noun",
+    "concept": "DOG",
+    "class": "ANIMAL",
+    "animate": true
+  },
+
+  "mouse": {
+    "pos": "noun",
+    "concept": "MOUSE",
+    "class": "ANIMAL",
+    "animate": true
+  },
+
+  "milk": {
+    "pos": "noun",
+    "concept": "MILK",
+    "class": "LIQUID",
+    "animate": false
+  },
+
+  "is": {
+    "pos": "auxiliary",
+    "concept": "BE",
+    "tense": "PRESENT"
+  },
+
+  "are": {
+    "pos": "auxiliary",
+    "concept": "BE",
+    "tense": "PRESENT"
+  },
+
+  "sleeping": {
+    "pos": "verb",
+    "concept": "SLEEP",
+    "type": "STATE",
+    "surface_form": "sleeping"
+  },
+
+  "running": {
+    "pos": "verb",
+    "concept": "RUN",
+    "type": "ACTION",
+    "surface_form": "running"
+  },
+
+  "eating": {
+    "pos": "verb",
+    "concept": "EAT",
+    "type": "ACTION",
+    "surface_form": "eating"
+  },
+
+  "likes": {
+    "pos": "verb",
+    "concept": "LIKE",
+    "type": "RELATION",
+    "surface_form": "likes"
+  },
+
+  "awake": {
+    "pos": "adjective",
+    "concept": "AWAKE"
+  },
+
+  "not": {
+    "pos": "adverb",
+    "concept": "NEGATION"
+  },
+
+  "what": {
+    "pos": "question_word",
+    "concept": "WHAT"
+  },
+
+  "who": {
+    "pos": "question_word",
+    "concept": "WHO"
+  },
+
+  "is_the": {
+    "pos": "question_pattern",
+    "concept": "IS_THE"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "rules": [
+    {
+      "name": "simple_present_progressive",
+      "pattern": [
+        "DETERMINER",
+        "NOUN",
+        "AUXILIARY",
+        "VERB"
+      ],
+      "meaning": "SUBJECT_STATE"
+    },
+
+    {
+      "name": "simple_transitive",
+      "pattern": [
+        "DETERMINER",
+        "NOUN",
+        "VERB",
+        "DETERMINER",
+        "NOUN"
+      ],
+      "meaning": "SUBJECT_VERB_OBJECT"
+    },
+
+    {
+      "name": "state_question",
+      "pattern": [
+        "WHAT",
+        "AUXILIARY",
+        "DETERMINER",
+        "NOUN",
+        "VERB"
+      ],
+      "meaning": "QUERY_STATE"
+    },
+
+    {
+      "name": "yes_no_state_question",
+      "pattern": [
+        "AUXILIARY",
+        "DETERMINER",
+        "NOUN",
+        "ADJECTIVE"
+      ],
+      "meaning": "QUERY_PROPERTY"
+    }
+  ]
+}

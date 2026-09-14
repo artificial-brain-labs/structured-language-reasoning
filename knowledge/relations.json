@@ -1,0 +1,5 @@
+{
+  "EATS": {"type": "ACTION", "subject_type": "ANIMAL", "object_type": "THING"},
+  "IS_A": {"type": "TAXONOMIC", "subject_type": "THING", "object_type": "THING"},
+  "NOT_EATS": {"type": "NEGATED_ACTION", "subject_type": "ANIMAL", "object_type": "THING"}
+}

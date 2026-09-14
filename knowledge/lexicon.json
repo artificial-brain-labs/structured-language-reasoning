@@ -1,0 +1,21 @@
+{
+  "cat": {"concept": "CAT", "pos": "NOUN", "synonyms": ["kitty", "feline"]},
+  "kitty": {"concept": "CAT", "pos": "NOUN"},
+  "feline": {"concept": "CAT", "pos": "NOUN"},
+  "mouse": {"concept": "MOUSE", "pos": "NOUN", "synonyms": ["rodent"]},
+  "rodent": {"concept": "MOUSE", "pos": "NOUN"},
+  "dog": {"concept": "DOG", "pos": "NOUN"},
+  "eats": {"concept": "EAT", "pos": "VERB", "base": "eat"},
+  "eat": {"concept": "EAT", "pos": "VERB"},
+  "does": {"concept": "DO", "pos": "AUX"},
+  "not": {"concept": "NOT", "pos": "NEGATION"},
+  "is": {"concept": "IS", "pos": "AUX"},
+  "are": {"concept": "IS", "pos": "AUX"},
+  "the": {"concept": "THE", "pos": "DETERMINER"},
+  "a": {"concept": "A", "pos": "DETERMINER"},
+  "an": {"concept": "A", "pos": "DETERMINER"},
+  "what": {"concept": "WHAT", "pos": "QUESTION"},
+  "who": {"concept": "WHO", "pos": "QUESTION"},
+  "animal": {"concept": "ANIMAL", "pos": "NOUN"},
+  "mammal": {"concept": "MAMMAL", "pos": "NOUN"}
+}

@@ -1,0 +1,23 @@
+{
+  "classes": {
+    "THING": {"parent": null},
+    "LIVING_THING": {
+      "parent": "THING",
+      "properties": {"alive": true, "can_die": true, "grows": true}
+    },
+    "ANIMAL": {
+      "parent": "LIVING_THING",
+      "properties": {"can_move": true, "can_eat": true, "can_sleep": true}
+    },
+    "MAMMAL": {
+      "parent": "ANIMAL",
+      "properties": {"warm_blooded": true, "has_hair": true}
+    },
+    "FELINE": {"parent": "MAMMAL"},
+    "CANINE": {"parent": "MAMMAL"},
+    "CAT": {"parent": "FELINE"},
+    "DOG": {"parent": "CANINE"},
+    "MOUSE": {"parent": "MAMMAL"},
+    "FOOD": {"parent": "THING"}
+  }
+}
