@@ -10,6 +10,7 @@ from .executor import SemanticExecutor
 from .statement_router import StatementRouter, StatementResult
 from .entity_resolver import EntityResolver
 from .clarification_manager import ClarificationManager
+from .operation_engine import OperationEngine
 
 
 class SLR:
@@ -22,81 +23,23 @@ class SLR:
         self.reasoner = Reasoner(self.ontology, self.memory)
         self.executor = SemanticExecutor(self.memory)
         self.resolver = EntityResolver(self.lexicon, self.ontology, self.memory)
-        self.router = StatementRouter()
-        self.router.register_all(self.executor.definitions.operations, self._handle_operation)
         self.clarification = ClarificationManager(self.memory)
+        self.operation_engine = OperationEngine(
+            self.executor.definitions,
+            self.resolver,
+            self.reasoner,
+            self.executor,
+            self.memory,
+            self.lexicon,
+            self.clarification,
+        )
+        self.router = StatementRouter()
+        self.router.register_all(self.executor.definitions.operations, self.operation_engine.execute)
         self.query = QueryEngine(self.memory, self.lexicon)
         self.response = ResponseGenerator(self.memory)
 
     def _canonical(self, entity_id):
         return self.memory.canonical_entity(entity_id)
-
-    def _handle_operation(self, operation, parsed):
-        definition = self.executor.definitions.get(operation.name)
-        if definition is None:
-            return StatementResult(operation=operation)
-
-        kind = definition.get("kind")
-        subject_entity = self.resolver.resolve_canonical(parsed.subject_word)
-        operation.subject = subject_entity
-        subject_concept = self.resolver.concept(operation.subject)
-
-        if kind == "CLASSIFICATION":
-            resolved_type = self.resolver.resolve_type(parsed.object_word)
-            if resolved_type is None:
-                return StatementResult(operation=operation)
-
-            concept, type_entity = resolved_type
-            operation.object = type_entity
-            result = self.executor.execute(operation)
-            if result is not None:
-                self.memory.set_entity_concept(operation.subject, concept)
-            return StatementResult(result=result, operation=operation)
-
-        if kind == "RELATION":
-            relation_schema = self.memory.relations.get(operation.predicate) or {}
-            if relation_schema.get("type") == "IDENTITY":
-                operation.object = self.resolver.resolve_canonical(parsed.object_word)
-                result = self.executor.execute(operation)
-                return StatementResult(result=result, operation=operation)
-
-            if subject_concept == "UNKNOWN":
-                request = self.clarification.request_entity_identity(
-                    operation.subject, operation, parsed
-                )
-                return StatementResult(
-                    clarification=request.question if request else None,
-                    operation=operation,
-                )
-
-            object_concept = self.lexicon.concept(parsed.object_word) if parsed.object_word else None
-            if not object_concept:
-                return StatementResult(operation=operation)
-
-            object_entity = self.resolver.resolve_canonical(parsed.object_word)
-            if not self.reasoner.validate_relation(
-                operation.subject, operation.predicate, object_entity
-            ):
-                return StatementResult(operation=operation)
-
-            operation.object = object_entity
-            result = self.executor.execute(operation)
-            return StatementResult(result=result, operation=operation)
-
-        if kind == "FACT":
-            result = self.executor.execute(operation)
-            if result is not None and subject_concept == "UNKNOWN":
-                request = self.clarification.request_entity_identity(
-                    operation.subject, operation, parsed
-                )
-                return StatementResult(
-                    result=result,
-                    clarification=request.question if request else None,
-                    operation=operation,
-                )
-            return StatementResult(result=result, operation=operation)
-
-        return StatementResult(operation=operation)
 
     def _execute_statement(self, parsed):
         meaning = self.semantic_parser.parse(parsed)
@@ -130,7 +73,7 @@ class SLR:
             return f"Understood. I know that {parsed.subject_word} is a {parsed.object_word}."
 
         original_operation.subject = self._canonical(entity)
-        resumed = self._handle_operation(original_operation, original_context)
+        resumed = self.operation_engine.execute(original_operation, original_context)
         if resumed.result is None:
             return (
                 f"Understood. I know that {parsed.subject_word} is a {parsed.object_word}. "
