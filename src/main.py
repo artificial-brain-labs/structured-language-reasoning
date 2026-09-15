@@ -29,28 +29,29 @@ class SLR:
         return self.memory.canonical_entity(entity_id)
 
     def _store_classification(self, entity_id, concept):
+        entity_id = self._canonical(entity_id)
         self.memory.set_entity_concept(entity_id, concept)
         type_entity = self.memory.find_entity(concept)
-        relation = "IS_A"
-        self.memory.add_memory(entity_id, relation, type_entity)
+        self.memory.add_memory(entity_id, "IS_A", type_entity)
 
     def process(self, text):
-        p = self.parser.parse(text)
+        parsed = self.parser.parse(text)
 
-        if p.meaning == "TYPE_ASSIGNMENT" and p.object_word:
-            concept = self.lexicon.concept(p.object_word)
+        if parsed.meaning == "TYPE_ASSIGNMENT" and parsed.object_word:
+            concept = self.lexicon.concept(parsed.object_word)
             if concept not in self.ontology.classes:
                 return "I don't know that type yet."
 
-            entity = self._canonical(self._entity_for_word(p.subject_word))
-            self._store_classification(entity, concept)
+            subject_entity = self._entity_for_word(parsed.subject_word)
+            self._store_classification(subject_entity, concept)
             self.pending_entity = None
+            entity = self._canonical(subject_entity)
             name = self.memory.entities[entity]["name"]
-            return f"Understood. I know that {name} is a {p.object_word}."
+            return f"Understood. I know that {name} is a {parsed.object_word}."
 
-        if p.question_type:
-            if p.question_type == "TYPE":
-                entity = self.memory.find_named_entity(p.subject_word)
+        if parsed.question_type:
+            if parsed.question_type == "TYPE":
+                entity = self.memory.find_named_entity(parsed.subject_word)
                 if entity is None:
                     return "I don't know."
                 entity = self._canonical(entity)
@@ -58,16 +59,29 @@ class SLR:
                 if concept == "UNKNOWN":
                     return "I don't know yet."
                 return f"{self.memory.entities[entity]['name']} is a {concept.lower()}."
-            return self.response.generate(p, self.query.answer(p))
+            return self.response.generate(parsed, self.query.answer(parsed))
 
-        if not p.subject_word or not p.verb_word:
+        if not parsed.subject_word or not parsed.verb_word:
             return "I could not parse that sentence."
 
-        entity = self._canonical(self._entity_for_word(p.subject_word))
+        subject_entity = self._entity_for_word(parsed.subject_word)
+
+        if parsed.meaning == "SUBJECT_RELATION" and parsed.object_word:
+            object_entity = self._entity_for_word(parsed.object_word)
+            relation = parsed.relation
+            if not relation:
+                return "I don't understand that relationship."
+            self.memory.add_memory(subject_entity, relation, object_entity)
+            if relation == "SAME_AS":
+                self.memory.add_memory(object_entity, relation, subject_entity)
+            self.pending_entity = None
+            return "I have stored that identity in memory."
+
+        entity = self._canonical(subject_entity)
         subject_concept = self.memory.entities[entity]["concept"]
 
-        if p.meaning == "SUBJECT_STATE":
-            state_concept = self.lexicon.concept(p.verb_word)
+        if parsed.meaning == "SUBJECT_STATE":
+            state_concept = self.lexicon.concept(parsed.verb_word)
             if not state_concept:
                 return "I don't understand the state."
             self.memory.add_memory(entity, state_concept, "TRUE")
@@ -77,29 +91,21 @@ class SLR:
                 return f"Who is {name.title()}? I don't know whether {name} is a human, an animal, or something else."
             return "I have stored that state in memory."
 
-        if p.meaning == "SUBJECT_RELATION" and p.object_word:
-            object_entity = self._entity_for_word(p.object_word)
-            if not p.relation:
-                return "I don't understand that relationship."
-            self.memory.add_identity(entity, object_entity)
-            self.pending_entity = None
-            return "I have stored that identity in memory."
-
         if subject_concept == "UNKNOWN":
             self.pending_entity = entity
             name = self.memory.entities[entity]["name"]
             return f"Who is {name.title()}? I don't know enough about this entity yet."
 
-        object_concept = self.lexicon.concept(p.object_word) if p.object_word else None
-        predicate = self.lexicon.concept(p.verb_word)
+        object_concept = self.lexicon.concept(parsed.object_word) if parsed.object_word else None
+        predicate = self.lexicon.concept(parsed.verb_word)
         if not object_concept:
             return "I don't understand the object."
         if not predicate:
             return "I don't understand the verb."
 
         object_entity = self.memory.find_entity(object_concept)
-        if p.negated:
-            predicate = f"NOT_{predicate}"
+        if parsed.negated:
+            predicate = self.memory.negate_relation(predicate)
         if not self.reasoner.validate_relation(entity, predicate, object_entity):
             return "I cannot add that memory because the relationship is inconsistent with my world model."
         memory = self.memory.add_memory(entity, predicate, object_entity)
