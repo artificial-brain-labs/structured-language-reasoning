@@ -29,19 +29,27 @@ class Parser:
         return self.lexicon.concept(word) if self.lexicon else None
 
     def _category(self, word):
-        """Return the lexical category supplied by data.
+        """Resolve a token to the category used by the declarative grammar.
 
-        An unclassified token is an ENTITY candidate. This is not a claim
-        about what the entity is; it only preserves the token for later
-        resolution and clarification.
+        ENTITY is a syntactic placeholder for an unresolved named entity.
+        It does not assert the entity's real-world type.
         """
-        return self._pos(word) or "ENTITY"
+        pos = self._pos(word)
+        if pos:
+            return pos
+        return "ENTITY"
+
+    def _matches_category(self, actual, expected):
+        # ENTITY is an unresolved entity candidate. It is intentionally
+        # distinct from lexical NOUN so grammar rules can require either a
+        # known lexical noun or an unresolved name.
+        return actual == expected
 
     def _matches(self, tokens, pattern):
         if len(tokens) != len(pattern):
             return False
         return all(
-            expected == self._category(token)
+            self._matches_category(self._category(token), expected)
             for token, expected in zip(tokens, pattern)
         )
 
