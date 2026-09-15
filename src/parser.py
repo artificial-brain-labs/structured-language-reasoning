@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from .tokenizer import tokenize
 
@@ -15,8 +16,10 @@ class ParsedSentence:
 
 
 class Parser:
-    def __init__(self, lexicon=None):
+    def __init__(self, lexicon=None, grammar_path="knowledge/grammar.json"):
         self.lexicon = lexicon
+        with open(grammar_path, "r", encoding="utf-8") as f:
+            self.grammar = json.load(f)
 
     def _pos(self, word):
         return self.lexicon.pos(word) if self.lexicon else None
@@ -27,11 +30,19 @@ class Parser:
     def _feature(self, word, name):
         return self.lexicon.feature(word, name) if self.lexicon else None
 
-    def _is_concept(self, word, concept):
-        return self._concept(word) == concept
+    def _category(self, word):
+        return self._pos(word) or "ENTITY"
 
-    def _is_pos(self, word, pos):
-        return self._pos(word) == pos
+    def _matches(self, tokens, pattern):
+        if len(tokens) != len(pattern):
+            return False
+        return all(expected == self._category(token) for token, expected in zip(tokens, pattern))
+
+    def _grammar_rule(self, tokens):
+        for rule in self.grammar.get("rules", []):
+            if self._matches(tokens, rule["pattern"]):
+                return rule
+        return None
 
     def parse(self, text):
         tokens = tokenize(text) if isinstance(text, str) else text
@@ -44,64 +55,79 @@ class Parser:
             return self.parse_who(tokens)
         return self.parse_statement(tokens)
 
+    def _is_concept(self, word, concept):
+        return self._concept(word) == concept
+
+    def _is_pos(self, word, pos):
+        return self._pos(word) == pos
+
     def parse_statement(self, tokens):
-        if len(tokens) >= 3 and self._is_concept(tokens[1], "IS"):
-            subject = tokens[0]
-            object_word = tokens[-1]
+        rule = self._grammar_rule(tokens)
+        if rule:
+            meaning = rule["meaning"]
+            name = rule["name"]
 
-            if len(tokens) >= 4 and self._is_pos(tokens[0], "DETERMINER"):
-                state = tokens[3]
-                if self._is_pos(state, "STATE"):
-                    rule = "state"
-                    if self._feature(state, "aspect"):
-                        rule = f"{self._feature(state, 'aspect').lower()}_state"
-                    return ParsedSentence(
-                        subject_word=tokens[1], verb_word=state,
-                        rule=rule, meaning="SUBJECT_STATE", tokens=tokens
-                    )
-
-            if len(tokens) == 3 and self._is_pos(object_word, "STATE"):
+            if meaning == "SUBJECT_STATE":
+                if self._is_pos(tokens[0], "DETERMINER"):
+                    subject = tokens[1]
+                    state = tokens[3]
+                else:
+                    subject = tokens[0]
+                    state = tokens[2]
                 return ParsedSentence(
-                    subject_word=subject, verb_word=object_word,
+                    subject_word=subject,
+                    verb_word=state,
+                    rule=name,
+                    meaning=meaning,
+                    tokens=tokens,
+                )
+
+            if meaning == "TYPE_ASSIGNMENT":
+                return ParsedSentence(
+                    subject_word=tokens[0],
+                    verb_word="instance_of",
+                    object_word=tokens[-1],
+                    rule=name,
+                    meaning=meaning,
+                    tokens=tokens,
+                )
+
+            if meaning == "SUBJECT_RELATION":
+                return ParsedSentence(
+                    subject_word=tokens[0],
+                    verb_word="is",
+                    object_word=tokens[2],
+                    rule=name,
+                    meaning=meaning,
+                    tokens=tokens,
+                )
+
+            if meaning == "SUBJECT_VERB_OBJECT":
+                if self._is_pos(tokens[0], "DETERMINER"):
+                    subject = tokens[1]
+                    verb_index = 2
+                    object_index = 4 if self._is_pos(tokens[3], "DETERMINER") else 3
+                else:
+                    subject = tokens[0]
+                    verb_index = 1
+                    object_index = 2
+                return ParsedSentence(
+                    subject_word=subject,
+                    verb_word=tokens[verb_index],
+                    object_word=tokens[object_index],
+                    rule=name,
+                    meaning=meaning,
+                    tokens=tokens,
+                )
+
+        if len(tokens) >= 3 and self._is_concept(tokens[1], "IS"):
+            # Preserve the grammar-driven state/type handling for forms whose
+            # subject is not lexically classified yet.
+            if len(tokens) == 3 and self._is_pos(tokens[2], "STATE"):
+                return ParsedSentence(
+                    subject_word=tokens[0], verb_word=tokens[2],
                     rule="state", meaning="SUBJECT_STATE", tokens=tokens
                 )
-
-            if self._is_pos(object_word, "NOUN"):
-                return ParsedSentence(
-                    subject_word=subject, verb_word="instance_of", object_word=object_word,
-                    rule="instance_of", meaning="TYPE_ASSIGNMENT", tokens=tokens
-                )
-
-            if len(tokens) == 3:
-                return ParsedSentence(
-                    subject_word=subject, verb_word="is", object_word=object_word,
-                    rule="entity_relation", meaning="SUBJECT_RELATION", tokens=tokens
-                )
-
-        if len(tokens) >= 3:
-            offset = 1
-            subject = tokens[0]
-            if self._is_pos(tokens[0], "DETERMINER") and len(tokens) > 1:
-                subject = tokens[1]
-                offset = 2
-
-            negated = False
-            if offset < len(tokens) and self._is_concept(tokens[offset], "DO"):
-                offset += 1
-                if offset < len(tokens) and self._is_pos(tokens[offset], "NEGATION"):
-                    negated = True
-                    offset += 1
-
-            if offset < len(tokens):
-                verb = tokens[offset]
-                object_index = offset + 1
-                if object_index < len(tokens) and self._is_pos(tokens[object_index], "DETERMINER"):
-                    object_index += 1
-                if object_index < len(tokens):
-                    return ParsedSentence(
-                        subject_word=subject, verb_word=verb, object_word=tokens[object_index],
-                        negated=negated, rule="simple_present", meaning="SUBJECT_VERB_OBJECT", tokens=tokens
-                    )
 
         return ParsedSentence(tokens=tokens)
 
