@@ -14,7 +14,7 @@ class ResponseGenerator:
     def entity_name(self, entity_id):
         return self.memory.entities[entity_id]["concept"].lower()
 
-    def _system(self, name, context=None):
+    def system(self, name, context=None):
         template = self.system_responses.get(name)
         if template is None:
             return None
@@ -25,16 +25,16 @@ class ResponseGenerator:
 
     def generate(self, parsed, results):
         if not results:
-            return self._system("unknown") or "I don't know."
+            return self.system("unknown")
 
         template = self.query_responses.get(parsed.question_type)
         if template is None:
-            return self._system("unknown") or "I don't know."
+            return self.system("unknown")
 
         entity = results[0]
         concept = self.memory.entities[entity]["concept"]
         if concept == "UNKNOWN":
-            return self._system(template.get("unknown_result", "unknown")) or "I don't know."
+            return self.system(template.get("unknown_result", "unknown"))
 
         context = {
             "subject_name": self.memory.entities[entity]["name"],
