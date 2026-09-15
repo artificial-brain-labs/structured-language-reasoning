@@ -108,16 +108,22 @@ class SemanticParser:
         definition = mapping.get("negation")
         if not definition:
             return predicate
-        return f"{definition.get('prefix', '')}{predicate}"
+        prefix = definition.get("prefix", "")
+        return f"{prefix}{predicate}"
 
-    def _build_operation(self, tree, subject, predicate, object_):
+    def _operation_object(self, mapping, object_):
+        if "object" in mapping:
+            return mapping["object"]
+        return object_.entity_id if object_ else None
+
+    def _build_operation(self, tree, subject, predicate, object_value):
         if not tree.operation:
             return None
         return SemanticOperation(
             name=tree.operation,
             subject=subject.entity_id if subject else None,
             predicate=predicate,
-            object=object_.entity_id if isinstance(object_, Entity) else object_,
+            object=object_value,
             attributes=self._operation_attributes(tree.subject_word, tree.object_word),
         )
 
@@ -135,10 +141,7 @@ class SemanticParser:
             return meaning
 
         predicate = self._apply_negation(predicate, tree, mapping)
-        literal_object = mapping.get("object")
-        fact_object = literal_object if literal_object is not None else (
-            object_.entity_id if object_ else None
-        )
+        fact_object = self._operation_object(mapping, object_)
 
         if subject:
             meaning.entities.append(subject)
@@ -151,5 +154,5 @@ class SemanticParser:
                 object=fact_object,
             )
         )
-        meaning.operation = self._build_operation(tree, subject, predicate, object_)
+        meaning.operation = self._build_operation(tree, subject, predicate, fact_object)
         return meaning
