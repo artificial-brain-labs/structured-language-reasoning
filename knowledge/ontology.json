@@ -1,23 +1,59 @@
 {
+  "version": "0.3",
+  "principles": {
+    "no_guessing": true,
+    "unknown_is_not_false": true,
+    "derived_facts_are_not_stored_as_asserted": true
+  },
   "classes": {
-    "THING": {"parent": null},
+    "THING": {"parent": null, "properties": {}},
     "LIVING_THING": {
       "parent": "THING",
-      "properties": {"alive": true, "can_die": true, "grows": true}
+      "properties": {
+        "alive": true,
+        "can_die": true,
+        "grows_or_develops": true,
+        "uses_energy": true,
+        "self_maintaining": true,
+        "responds_to_environment": true
+      }
     },
     "ANIMAL": {
       "parent": "LIVING_THING",
-      "properties": {"can_move": true, "can_eat": true, "can_sleep": true}
+      "properties": {
+        "multicellular": true,
+        "can_move": true,
+        "can_eat": true,
+        "can_sense": true,
+        "can_respond": true
+      }
     },
     "MAMMAL": {
       "parent": "ANIMAL",
-      "properties": {"warm_blooded": true, "has_hair": true}
+      "properties": {
+        "warm_blooded": true,
+        "has_hair": true,
+        "produces_milk": true
+      }
     },
-    "FELINE": {"parent": "MAMMAL"},
-    "CANINE": {"parent": "MAMMAL"},
-    "CAT": {"parent": "FELINE"},
-    "DOG": {"parent": "CANINE"},
-    "MOUSE": {"parent": "MAMMAL"},
-    "FOOD": {"parent": "THING"}
+    "FELINE": {
+      "parent": "MAMMAL",
+      "properties": {
+        "has_claws": true,
+        "has_whiskers": true
+      }
+    },
+    "CANINE": {
+      "parent": "MAMMAL",
+      "properties": {
+        "has_claws": true,
+        "keen_olfaction": true
+      }
+    },
+    "CAT": {"parent": "FELINE", "properties": {}},
+    "DOG": {"parent": "CANINE", "properties": {}},
+    "MOUSE": {"parent": "MAMMAL", "properties": {}},
+    "FOOD": {"parent": "THING", "properties": {}},
+    "CHAIR": {"parent": "THING", "properties": {"supports_sitting": true}}
   }
 }
