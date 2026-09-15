@@ -46,6 +46,11 @@ class SemanticParser:
             return None
         return self.lexicon.concept(word)
 
+    def _feature(self, word, name):
+        if not self.lexicon:
+            return None
+        return self.lexicon.feature(word, name)
+
     def _new_entity_id(self, concept, word=None):
         self.entity_counter += 1
         base = (concept or word or "unknown").lower()
@@ -86,12 +91,13 @@ class SemanticParser:
         if tree.meaning == "SUBJECT_VERB_OBJECT":
             subject = self._entity(tree.subject_word)
             object_ = self._entity(tree.object_word)
-            predicate = self._concept(tree.verb_word)
+            predicate = self._feature(tree.verb_word, "relation") or self._concept(tree.verb_word)
             if not predicate:
                 return meaning
 
             if tree.negated:
-                predicate = f"NOT_{predicate}"
+                relation = self._feature(tree.verb_word, "relation")
+                predicate = f"NOT_{relation}" if relation else f"NOT_{predicate}"
 
             meaning.entities.extend([subject, object_])
             meaning.facts.append(
