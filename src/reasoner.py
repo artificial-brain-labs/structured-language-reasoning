@@ -1,21 +1,17 @@
-from .relations import RelationSchema
-
-
 class Reasoner:
     def __init__(self, ontology, memory):
         self.ontology = ontology
         self.memory = memory
-        self.schemas = RelationSchema()
 
     def relation_name_for_type(self, relation_type):
-        """Resolve a relation name from its declarative schema type."""
-        for name, schema in self.schemas.schemas.items():
+        """Resolve a relation name from the shared declarative schema."""
+        for name, schema in self.memory.relations.schemas.items():
             if schema.get("type") == relation_type:
                 return name
         return None
 
     def validate_relation(self, subject_entity, predicate, object_entity):
-        schema = self.schemas.get(predicate)
+        schema = self.memory.relations.get(predicate)
         if not schema:
             return False
 
