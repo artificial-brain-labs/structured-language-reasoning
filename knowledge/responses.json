@@ -8,5 +8,19 @@
     "identity_failure": "I could not store that identity.",
     "classification_resumed_failure": "I could not validate the earlier statement with that classification.",
     "classification_resumed_success": "I have also stored the earlier statement."
+  },
+  "queries": {
+    "TYPE": {
+      "unknown_result": "unknown_type",
+      "success": "{subject_name} is a {concept}."
+    },
+    "OBJECT": {
+      "unknown_result": "unknown",
+      "success": "The {subject_word} {verb_word} the {result_name}."
+    },
+    "SUBJECT": {
+      "unknown_result": "unknown",
+      "success": "The {result_name} {verb_word} the {object_word}."
+    }
   }
 }
