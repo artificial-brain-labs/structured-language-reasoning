@@ -32,12 +32,9 @@ class SLR:
         entity_id = self._canonical(entity_id)
         self.memory.set_entity_concept(entity_id, concept)
         type_entity = self.memory.find_entity(concept)
-        relation = self.reasoner.schemas.get("IS_A")
-        relation_name = next(
-            (name for name, schema in self.reasoner.schemas.schemas.items() if schema is relation),
-            "IS_A",
-        )
-        self.memory.add_memory(entity_id, relation_name, type_entity)
+        relation_name = self.reasoner.relation_name_for_type("TAXONOMIC")
+        if relation_name:
+            self.memory.add_memory(entity_id, relation_name, type_entity)
 
     def process(self, text):
         parsed = self.parser.parse(text)
@@ -76,10 +73,7 @@ class SLR:
             relation = parsed.relation
             if not relation:
                 return "I don't understand that relationship."
-            self.memory.add_memory(subject_entity, relation, object_entity)
-            schema = self.reasoner.schemas.get(relation) or {}
-            if schema.get("symmetric"):
-                self.memory.add_memory(object_entity, relation, subject_entity)
+            self.memory.add_identity(subject_entity, object_entity)
             self.pending_entity = None
             return "I have stored that identity in memory."
 
