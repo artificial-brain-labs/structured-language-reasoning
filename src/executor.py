@@ -41,12 +41,12 @@ class SemanticExecutor:
         if operation is None:
             return None
 
-        definition = self.definitions.get(operation.name)
-        if definition is None:
-            return None
-
         handler = self.registry.get(operation.name)
         if handler is None:
             return None
 
+        # Registered handlers are explicit execution mechanisms. Built-in
+        # operations are registered from declarative knowledge; externally
+        # registered operations may therefore be executed without inventing
+        # a knowledge definition here.
         return handler(operation, source, confidence)
