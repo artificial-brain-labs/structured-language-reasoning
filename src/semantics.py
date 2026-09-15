@@ -15,9 +15,25 @@ class Fact:
 
 
 @dataclass
+class SemanticOperation:
+    """A mechanism-level operation produced from structured meaning.
+
+    Operation names describe what the execution layer should do; they do not
+    contain domain knowledge. Domain concepts and relations remain data-driven.
+    """
+
+    name: str
+    subject: str | None = None
+    predicate: str | None = None
+    object: str | None = None
+    attributes: dict = field(default_factory=dict)
+
+
+@dataclass
 class SemanticRepresentation:
     entities: list[Entity] = field(default_factory=list)
     facts: list[Fact] = field(default_factory=list)
+    operation: SemanticOperation | None = None
 
 
 class SemanticParser:
@@ -47,6 +63,13 @@ class SemanticParser:
             entity_id = self._new_entity_id(subject_concept)
             meaning.entities.append(Entity(entity_id=entity_id, concept=subject_concept))
             meaning.facts.append(Fact(subject=entity_id, predicate=state_concept))
+
+            if tree.operation:
+                meaning.operation = SemanticOperation(
+                    name=tree.operation,
+                    subject=entity_id,
+                    predicate=state_concept,
+                )
             return meaning
 
         if tree.meaning == "SUBJECT_VERB_OBJECT":
@@ -65,6 +88,14 @@ class SemanticParser:
             if tree.negated:
                 predicate = f"NOT_{predicate}"
             meaning.facts.append(Fact(subject=subject_id, predicate=predicate, object=object_id))
+
+            if tree.operation:
+                meaning.operation = SemanticOperation(
+                    name=tree.operation,
+                    subject=subject_id,
+                    predicate=predicate,
+                    object=object_id,
+                )
             return meaning
 
         return meaning
