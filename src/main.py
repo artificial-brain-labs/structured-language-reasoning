@@ -7,6 +7,7 @@ from .query import QueryEngine
 from .response import ResponseGenerator
 from .semantics import SemanticParser
 from .executor import SemanticExecutor
+from .statement_router import StatementRouter, StatementResult
 
 
 class SLR:
@@ -18,6 +19,8 @@ class SLR:
         self.memory = DynamicMemory()
         self.reasoner = Reasoner(self.ontology, self.memory)
         self.executor = SemanticExecutor(self.memory)
+        self.router = StatementRouter()
+        self.router.register_all(self.executor.definitions.operations, self._handle_operation)
         self.query = QueryEngine(self.memory, self.lexicon)
         self.response = ResponseGenerator(self.memory)
         self.pending_entity = None
@@ -32,67 +35,81 @@ class SLR:
     def _canonical(self, entity_id):
         return self.memory.canonical_entity(entity_id)
 
-    def _execute_statement(self, parsed):
-        meaning = self.semantic_parser.parse(parsed)
-        operation = meaning.operation
-        if operation is None:
-            return None
+    def _handle_operation(self, operation, parsed):
+        definition = self.executor.definitions.get(operation.name)
+        if definition is None:
+            return StatementResult(operation=operation)
 
+        kind = definition.get("kind")
         subject_entity = self._entity_for_word(parsed.subject_word)
         operation.subject = self._canonical(subject_entity)
         subject_concept = self.memory.entities[operation.subject]["concept"]
 
-        if operation.name == "ASSERT_STATE":
-            result = self.executor.execute(operation)
-            if result is not None and subject_concept == "UNKNOWN":
-                self.pending_entity = operation.subject
-                name = self.memory.entities[operation.subject]["name"]
-                return result, (
-                    f"Who is {name.title()}? I don't know whether {name} is a human, "
-                    "an animal, or something else."
-                )
-            return result, None
-
-        if operation.name == "ASSERT_CLASSIFICATION":
+        if kind == "CLASSIFICATION":
             concept = self.lexicon.concept(parsed.object_word)
             if concept not in self.ontology.classes:
-                return None
+                return StatementResult(operation=operation)
+
             type_entity = self.memory.find_entity(concept)
             operation.object = type_entity
             result = self.executor.execute(operation)
             if result is not None:
                 self.memory.set_entity_concept(operation.subject, concept)
-            return result, None
+            return StatementResult(result=result, operation=operation)
 
-        if operation.name == "ASSERT_RELATION":
-            operation.object = None
-
-            if parsed.meaning == "SUBJECT_RELATION":
+        if kind == "RELATION":
+            relation_schema = self.memory.relations.get(operation.predicate) or {}
+            if relation_schema.get("type") == "IDENTITY":
                 object_entity = self._entity_for_word(parsed.object_word)
                 operation.object = self._canonical(object_entity)
                 result = self.executor.execute(operation)
-                return result, None
+                return StatementResult(result=result, operation=operation)
 
             if subject_concept == "UNKNOWN":
                 self.pending_entity = operation.subject
                 name = self.memory.entities[operation.subject]["name"]
-                return None, (
-                    f"Who is {name.title()}? I don't know enough about this entity yet."
+                return StatementResult(
+                    clarification=f"Who is {name.title()}? I don't know enough about this entity yet.",
+                    operation=operation,
                 )
 
             object_concept = self.lexicon.concept(parsed.object_word) if parsed.object_word else None
             if not object_concept:
-                return None
+                return StatementResult(operation=operation)
 
             object_entity = self.memory.find_entity(object_concept)
-            if not self.reasoner.validate_relation(operation.subject, operation.predicate, object_entity):
-                return None
+            if not self.reasoner.validate_relation(
+                operation.subject, operation.predicate, object_entity
+            ):
+                return StatementResult(operation=operation)
 
             operation.object = object_entity
             result = self.executor.execute(operation)
-            return result, None
+            return StatementResult(result=result, operation=operation)
 
-        return None
+        if kind == "FACT":
+            result = self.executor.execute(operation)
+            if result is not None and subject_concept == "UNKNOWN":
+                self.pending_entity = operation.subject
+                name = self.memory.entities[operation.subject]["name"]
+                return StatementResult(
+                    result=result,
+                    clarification=(
+                        f"Who is {name.title()}? I don't know whether {name} is a human, "
+                        "an animal, or something else."
+                    ),
+                    operation=operation,
+                )
+            return StatementResult(result=result, operation=operation)
+
+        return StatementResult(operation=operation)
+
+    def _execute_statement(self, parsed):
+        meaning = self.semantic_parser.parse(parsed)
+        operation = meaning.operation
+        if operation is None:
+            return StatementResult()
+        return self.router.dispatch(operation, parsed)
 
     def process(self, text):
         parsed = self.parser.parse(text)
@@ -109,40 +126,35 @@ class SLR:
                 return f"{self.memory.entities[entity]['name']} is a {concept.lower()}."
             return self.response.generate(parsed, self.query.answer(parsed))
 
-        if parsed.meaning in {"SUBJECT_STATE", "SUBJECT_VERB_OBJECT", "TYPE_ASSIGNMENT", "SUBJECT_RELATION"}:
-            executed = self._execute_statement(parsed)
-            if executed is None:
-                if parsed.meaning == "TYPE_ASSIGNMENT":
+        if not parsed.meaning:
+            return "I could not parse that sentence."
+
+        execution = self._execute_statement(parsed)
+        if execution.result is None:
+            if execution.operation is not None:
+                kind = self.executor.definitions.get(execution.operation.name) or {}
+                if kind.get("kind") == "CLASSIFICATION":
                     return "I don't know that type yet."
-                if parsed.meaning == "SUBJECT_RELATION":
+                if (self.memory.relations.get(execution.operation.predicate) or {}).get("type") == "IDENTITY":
                     return "I could not store that identity."
-                return "I could not execute that statement."
+            return "I could not execute that statement."
 
-            result, clarification = executed
-            if result is None:
-                if parsed.meaning == "TYPE_ASSIGNMENT":
-                    return "I don't know that type yet."
-                if parsed.meaning == "SUBJECT_RELATION":
-                    return "I could not store that identity."
-                return "I could not execute that statement."
+        if execution.clarification:
+            return execution.clarification
 
-            if clarification:
-                return clarification
-
-            if parsed.meaning == "TYPE_ASSIGNMENT":
-                self.pending_entity = None
-                entity = self._canonical(result.subject)
-                name = self.memory.entities[entity]["name"]
-                return f"Understood. I know that {name} is a {parsed.object_word}."
-
+        definition = self.executor.definitions.get(execution.operation.name) or {}
+        if definition.get("kind") == "CLASSIFICATION":
             self.pending_entity = None
-            return (
-                "Memory created, but it conflicts with an existing memory."
-                if result.status == "CONFLICTED"
-                else "I have stored that in memory."
-            )
+            entity = self._canonical(execution.result.subject)
+            name = self.memory.entities[entity]["name"]
+            return f"Understood. I know that {name} is a {parsed.object_word}."
 
-        return "I could not parse that sentence."
+        self.pending_entity = None
+        return (
+            "Memory created, but it conflicts with an existing memory."
+            if execution.result.status == "CONFLICTED"
+            else "I have stored that in memory."
+        )
 
 
 def main():
