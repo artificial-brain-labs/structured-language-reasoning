@@ -1,0 +1,20 @@
+{
+  "mechanisms": {
+    "FACT": {
+      "resolve_object": "literal",
+      "validate_relation": false,
+      "clarify_unknown_subject": true
+    },
+    "RELATION": {
+      "resolve_object": "entity",
+      "validate_relation": true,
+      "clarify_unknown_subject": true
+    },
+    "CLASSIFICATION": {
+      "resolve_object": "ontology_class",
+      "validate_relation": false,
+      "clarify_unknown_subject": false,
+      "update_subject_concept": true
+    }
+  }
+}
