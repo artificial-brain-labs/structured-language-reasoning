@@ -5,6 +5,8 @@ from .memory import DynamicMemory
 from .reasoner import Reasoner
 from .query import QueryEngine
 from .response import ResponseGenerator
+from .semantics import SemanticParser
+from .executor import SemanticExecutor
 
 
 class SLR:
@@ -12,8 +14,10 @@ class SLR:
         self.lexicon = Lexicon()
         self.ontology = Ontology()
         self.parser = Parser(self.lexicon)
+        self.semantic_parser = SemanticParser(self.lexicon)
         self.memory = DynamicMemory()
         self.reasoner = Reasoner(self.ontology, self.memory)
+        self.executor = SemanticExecutor(self.memory)
         self.query = QueryEngine(self.memory, self.lexicon)
         self.response = ResponseGenerator(self.memory)
         self.pending_entity = None
@@ -36,6 +40,58 @@ class SLR:
         if relation_name:
             self.memory.add_memory(entity_id, relation_name, type_entity)
 
+    def _execute_statement(self, parsed):
+        meaning = self.semantic_parser.parse(parsed)
+        operation = meaning.operation
+        if operation is None:
+            return None
+
+        if operation.name == "ASSERT_STATE":
+            subject_entity = self._entity_for_word(parsed.subject_word)
+            operation.subject = self._canonical(subject_entity)
+            result = self.executor.execute(operation)
+            return result
+
+        if operation.name == "ASSERT_RELATION":
+            subject_entity = self._entity_for_word(parsed.subject_word)
+            operation.subject = self._canonical(subject_entity)
+
+            if parsed.meaning == "SUBJECT_RELATION":
+                object_entity = self._entity_for_word(parsed.object_word)
+                operation.object = self._canonical(object_entity)
+                operation.predicate = parsed.relation
+                return self.executor.execute(operation)
+
+            object_concept = self.lexicon.concept(parsed.object_word) if parsed.object_word else None
+            if not object_concept:
+                return None
+            object_entity = self.memory.find_entity(object_concept)
+            if parsed.negated:
+                schema = self.reasoner.schemas.get(operation.predicate) or {}
+                operation.predicate = schema.get("opposite")
+                if not operation.predicate:
+                    return None
+            if not self.reasoner.validate_relation(operation.subject, operation.predicate, object_entity):
+                return None
+            operation.object = object_entity
+            return self.executor.execute(operation)
+
+        if operation.name == "ASSERT_CLASSIFICATION":
+            concept = self.lexicon.concept(parsed.object_word)
+            if concept not in self.ontology.classes:
+                return None
+            subject_entity = self._entity_for_word(parsed.subject_word)
+            operation.subject = self._canonical(subject_entity)
+            operation.predicate = parsed.relation
+            type_entity = self.memory.find_entity(concept)
+            operation.object = type_entity
+            result = self.executor.execute(operation)
+            if result is not None:
+                self.memory.set_entity_concept(operation.subject, concept)
+            return result
+
+        return None
+
     def process(self, text):
         parsed = self.parser.parse(text)
 
@@ -51,81 +107,30 @@ class SLR:
                 return f"{self.memory.entities[entity]['name']} is a {concept.lower()}."
             return self.response.generate(parsed, self.query.answer(parsed))
 
-        if parsed.meaning == "SUBJECT_RELATION" and parsed.subject_word and parsed.object_word:
-            subject_entity = self._entity_for_word(parsed.subject_word)
-            object_entity = self._entity_for_word(parsed.object_word)
-            if not parsed.relation:
-                return "I don't understand that relationship."
-            if not self.memory.add_identity(subject_entity, object_entity):
-                return "I could not store that identity."
-            self.pending_entity = None
-            return "I have stored that identity in memory."
+        if parsed.meaning in {"SUBJECT_STATE", "SUBJECT_VERB_OBJECT", "TYPE_ASSIGNMENT", "SUBJECT_RELATION"}:
+            result = self._execute_statement(parsed)
+            if result is None:
+                if parsed.meaning == "TYPE_ASSIGNMENT":
+                    return "I don't know that type yet."
+                if parsed.meaning == "SUBJECT_RELATION":
+                    return "I could not store that identity."
+                return "I could not execute that statement."
 
-        # Type assignment is valid even when the entity is currently UNKNOWN.
-        # Classification is explicit knowledge, so it must be processed before
-        # the generic verb-field guard.
-        if parsed.meaning == "TYPE_ASSIGNMENT" and parsed.subject_word and parsed.object_word:
-            concept = self.lexicon.concept(parsed.object_word)
-            if concept not in self.ontology.classes:
-                return "I don't know that type yet."
-
-            subject_entity = self._entity_for_word(parsed.subject_word)
-            self._store_classification(subject_entity, concept)
-            self.pending_entity = None
-            entity = self._canonical(subject_entity)
-            name = self.memory.entities[entity]["name"]
-            return f"Understood. I know that {name} is a {parsed.object_word}."
-
-        if not parsed.subject_word or not parsed.verb_word:
-            return "I could not parse that sentence."
-
-        subject_entity = self._entity_for_word(parsed.subject_word)
-        entity = self._canonical(subject_entity)
-        subject_concept = self.memory.entities[entity]["concept"]
-
-        if parsed.meaning == "SUBJECT_STATE":
-            state_concept = self.lexicon.concept(parsed.verb_word)
-            if not state_concept:
-                return "I don't understand the state."
-            self.memory.add_memory(entity, state_concept, "TRUE")
-            if subject_concept == "UNKNOWN":
-                self.pending_entity = entity
+            if parsed.meaning == "TYPE_ASSIGNMENT":
+                self.pending_entity = None
+                entity = self._canonical(result.subject)
                 name = self.memory.entities[entity]["name"]
-                return f"Who is {name.title()}? I don't know whether {name} is a human, an animal, or something else."
-            return "I have stored that state in memory."
+                return f"Understood. I know that {name} is a {parsed.object_word}."
 
-        if subject_concept == "UNKNOWN":
-            self.pending_entity = entity
-            name = self.memory.entities[entity]["name"]
-            return f"Who is {name.title()}? I don't know enough about this entity yet."
+            self.pending_entity = None
+            return "I have stored that in memory."
 
-        object_concept = self.lexicon.concept(parsed.object_word) if parsed.object_word else None
-        predicate = self.lexicon.concept(parsed.verb_word)
-        if not object_concept:
-            return "I don't understand the object."
-        if not predicate:
-            return "I don't understand the verb."
-
-        if parsed.negated:
-            schema = self.reasoner.schemas.get(predicate) or {}
-            predicate = schema.get("opposite")
-            if not predicate:
-                return "I don't know the negated form of that relationship."
-
-        object_entity = self.memory.find_entity(object_concept)
-        if not self.reasoner.validate_relation(entity, predicate, object_entity):
-            return "I cannot add that memory because the relationship is inconsistent with my world model."
-        memory = self.memory.add_memory(entity, predicate, object_entity)
-        return (
-            "Memory created, but it conflicts with an existing memory."
-            if memory.status == "CONFLICTED"
-            else "I have stored that in memory."
-        )
+        return "I could not parse that sentence."
 
 
 def main():
     slr = SLR()
-    print("Structured Language Reasoning V0.4")
+    print("Structured Language Reasoning V0.5")
     print("Type 'exit' to stop.")
     while True:
         text = input("> ")
