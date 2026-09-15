@@ -40,9 +40,6 @@ class SLR:
         self.response = ResponseGenerator(self.memory)
         self.response_policy = ResponsePolicy(self.executor.definitions)
 
-    def _canonical(self, entity_id):
-        return self.memory.canonical_entity(entity_id)
-
     def _execute_statement(self, parsed):
         meaning = self.semantic_parser.parse(parsed)
         operation = meaning.operation
@@ -71,24 +68,26 @@ class SLR:
         original_context = request.original_context
         self.clarification.clear()
 
+        confirmation_context = {
+            "subject_name": parsed.subject_word,
+            "object_word": parsed.object_word,
+        }
+        confirmation = self.response_policy.render(
+            execution.operation, "success", confirmation_context
+        )
         if original_operation is None or original_context is None:
-            return f"Understood. I know that {parsed.subject_word} is a {parsed.object_word}."
+            return confirmation
 
-        original_operation.subject = self._canonical(entity)
+        original_operation.subject = self.memory.canonical_entity(entity)
         resumed = self.operation_engine.execute(original_operation, original_context)
         if resumed.result is None:
-            return (
-                f"Understood. I know that {parsed.subject_word} is a {parsed.object_word}. "
-                "I could not validate the earlier statement with that classification."
-            )
+            return self.response.system("classification_resumed_failure", confirmation_context)
 
         if resumed.clarification:
             return resumed.clarification
 
-        return (
-            f"Understood. I know that {parsed.subject_word} is a {parsed.object_word}. "
-            "I have also stored the earlier statement."
-        )
+        success = self.response.system("classification_resumed_success")
+        return f"{confirmation} {success}" if confirmation and success else confirmation or success
 
     def process(self, text):
         if self.clarification.has_pending():
@@ -99,19 +98,10 @@ class SLR:
         parsed = self.parser.parse(text)
 
         if parsed.question_type:
-            if parsed.question_type == "TYPE":
-                entity = self.memory.find_named_entity(parsed.subject_word)
-                if entity is None:
-                    return "I don't know."
-                entity = self._canonical(entity)
-                concept = self.memory.entities[entity]["concept"]
-                if concept == "UNKNOWN":
-                    return "I don't know yet."
-                return f"{self.memory.entities[entity]['name']} is a {concept.lower()}."
             return self.response.generate(parsed, self.query.answer(parsed))
 
         if not parsed.meaning:
-            return "I could not parse that sentence."
+            return self.response.system("parse_failure")
 
         execution = self._execute_statement(parsed)
 
@@ -124,13 +114,11 @@ class SLR:
                 failure = self.response_policy.render(operation, "failure")
                 if failure:
                     return failure
-                if (self.memory.relations.get(operation.predicate) or {}).get("type") == "IDENTITY":
-                    return "I could not store that identity."
-            return "I could not execute that statement."
+            return self.response.system("execution_failure")
 
         success_context = {}
         if parsed.subject_word:
-            entity = self._canonical(execution.result.subject)
+            entity = self.memory.canonical_entity(execution.result.subject)
             success_context["subject_name"] = self.memory.entities[entity]["name"]
         if parsed.object_word:
             success_context["object_word"] = parsed.object_word
@@ -139,14 +127,10 @@ class SLR:
         if success:
             return success
 
-        conflict = execution.result.status == "CONFLICTED"
-        if conflict:
-            conflict_response = self.response_policy.render(operation, "conflict")
-            if conflict_response:
-                return conflict_response
-            return "Memory created, but it conflicts with an existing memory."
-
-        return "I have stored that in memory."
+        conflict_response = self.response_policy.render(operation, "conflict")
+        if execution.result.status == "CONFLICTED" and conflict_response:
+            return conflict_response
+        return self.response.system("memory_conflict" if execution.result.status == "CONFLICTED" else "execution_failure")
 
 
 def main():
