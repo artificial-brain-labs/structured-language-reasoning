@@ -7,8 +7,12 @@ class QueryEngine:
         concept = self.lexicon.concept(word)
         if concept:
             entity = self.memory.find_entity(concept)
-            return entity
-        return self.memory.find_named_entity(word)
+        else:
+            entity = self.memory.find_named_entity(word)
+        return self.memory.canonical_entity(entity) if entity else None
+
+    def _canonical_id(self, entity_id):
+        return self.memory.canonical_entity(entity_id)
 
     def answer(self, parsed):
         if parsed.question_type == "OBJECT":
@@ -17,7 +21,7 @@ class QueryEngine:
             if not subject or not predicate:
                 return []
             return [
-                m.object
+                self._canonical_id(m.object)
                 for m in self.memory.query(subject=subject, predicate=predicate)
                 if m.status != "CONFLICTED"
             ]
@@ -28,9 +32,9 @@ class QueryEngine:
             if not object_id or not predicate:
                 return []
             return [
-                m.subject
-                for m in self.memory.query(predicate=predicate, object_=object_id)
-                if m.status != "CONFLICTED"
+                self._canonical_id(m.subject)
+                for m in self.memory.query(predicate=predicate)
+                if self._canonical_id(m.object) == object_id and m.status != "CONFLICTED"
             ]
 
         return []
