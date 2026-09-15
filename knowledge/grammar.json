@@ -6,11 +6,19 @@
         "DETERMINER",
         "NOUN",
         "AUXILIARY",
-        "VERB"
+        "STATE"
       ],
       "meaning": "SUBJECT_STATE"
     },
-
+    {
+      "name": "simple_present_progressive",
+      "pattern": [
+        "NOUN",
+        "AUXILIARY",
+        "STATE"
+      ],
+      "meaning": "SUBJECT_STATE"
+    },
     {
       "name": "simple_transitive",
       "pattern": [
@@ -22,7 +30,6 @@
       ],
       "meaning": "SUBJECT_VERB_OBJECT"
     },
-
     {
       "name": "state_question",
       "pattern": [
@@ -30,11 +37,10 @@
         "AUXILIARY",
         "DETERMINER",
         "NOUN",
-        "VERB"
+        "STATE"
       ],
       "meaning": "QUERY_STATE"
     },
-
     {
       "name": "yes_no_state_question",
       "pattern": [
