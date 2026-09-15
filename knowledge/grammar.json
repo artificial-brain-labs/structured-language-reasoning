@@ -2,12 +2,12 @@
   "rules": [
     {
       "name": "simple_present_progressive",
-      "pattern": ["DETERMINER", "NOUN", "AUXILIARY", "STATE"],
+      "pattern": ["DETERMINER", "NOUN", "AUX", "STATE"],
       "meaning": "SUBJECT_STATE"
     },
     {
       "name": "simple_present_progressive",
-      "pattern": ["ENTITY", "AUXILIARY", "STATE"],
+      "pattern": ["ENTITY", "AUX", "STATE"],
       "meaning": "SUBJECT_STATE"
     },
     {
@@ -22,12 +22,12 @@
     },
     {
       "name": "type_assignment",
-      "pattern": ["ENTITY", "AUXILIARY", "DETERMINER", "NOUN"],
+      "pattern": ["ENTITY", "AUX", "DETERMINER", "NOUN"],
       "meaning": "TYPE_ASSIGNMENT"
     },
     {
       "name": "entity_relation",
-      "pattern": ["ENTITY", "AUXILIARY", "ENTITY"],
+      "pattern": ["ENTITY", "AUX", "ENTITY"],
       "meaning": "SUBJECT_RELATION"
     }
   ]
