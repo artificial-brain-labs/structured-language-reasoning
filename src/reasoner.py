@@ -17,7 +17,7 @@ class Reasoner:
     def validate_relation(self, subject_entity, predicate, object_entity):
         schema = self.schemas.get(predicate)
         if not schema:
-            return True
+            return False
 
         subject_concept = self.memory.entities[subject_entity]["concept"]
         object_concept = self.memory.entities[object_entity]["concept"]
