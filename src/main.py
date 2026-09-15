@@ -39,18 +39,6 @@ class SLR:
     def process(self, text):
         parsed = self.parser.parse(text)
 
-        if parsed.meaning == "TYPE_ASSIGNMENT" and parsed.object_word:
-            concept = self.lexicon.concept(parsed.object_word)
-            if concept not in self.ontology.classes:
-                return "I don't know that type yet."
-
-            subject_entity = self._entity_for_word(parsed.subject_word)
-            self._store_classification(subject_entity, concept)
-            self.pending_entity = None
-            entity = self._canonical(subject_entity)
-            name = self.memory.entities[entity]["name"]
-            return f"Understood. I know that {name} is a {parsed.object_word}."
-
         if parsed.question_type:
             if parsed.question_type == "TYPE":
                 entity = self.memory.find_named_entity(parsed.subject_word)
@@ -66,17 +54,31 @@ class SLR:
         if not parsed.subject_word or not parsed.verb_word:
             return "I could not parse that sentence."
 
-        subject_entity = self._entity_for_word(parsed.subject_word)
-
+        # Explicit entity-to-entity identity is handled before classification.
+        # The parser supplies the relation from declarative grammar data.
         if parsed.meaning == "SUBJECT_RELATION" and parsed.object_word:
+            subject_entity = self._entity_for_word(parsed.subject_word)
             object_entity = self._entity_for_word(parsed.object_word)
-            relation = parsed.relation
-            if not relation:
+            if not parsed.relation:
                 return "I don't understand that relationship."
-            self.memory.add_identity(subject_entity, object_entity)
+            if not self.memory.add_identity(subject_entity, object_entity):
+                return "I could not store that identity."
             self.pending_entity = None
             return "I have stored that identity in memory."
 
+        if parsed.meaning == "TYPE_ASSIGNMENT" and parsed.object_word:
+            concept = self.lexicon.concept(parsed.object_word)
+            if concept not in self.ontology.classes:
+                return "I don't know that type yet."
+
+            subject_entity = self._entity_for_word(parsed.subject_word)
+            self._store_classification(subject_entity, concept)
+            self.pending_entity = None
+            entity = self._canonical(subject_entity)
+            name = self.memory.entities[entity]["name"]
+            return f"Understood. I know that {name} is a {parsed.object_word}."
+
+        subject_entity = self._entity_for_word(parsed.subject_word)
         entity = self._canonical(subject_entity)
         subject_concept = self.memory.entities[entity]["concept"]
 
