@@ -38,6 +38,6 @@ def test_state_after_identity_updates_canonical_memory():
     dom = slr.memory.find_named_entity("Dom")
     canonical = slr.memory.canonical_entity(dom)
     assert any(
-        m.subject == canonical and m.predicate == "HUNGRY" and m.object is None
+        m.subject == canonical and m.predicate == "HUNGRY" and m.object == "TRUE"
         for m in slr.memory.memories
     )
