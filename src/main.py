@@ -32,63 +32,65 @@ class SLR:
     def _canonical(self, entity_id):
         return self.memory.canonical_entity(entity_id)
 
-    def _store_classification(self, entity_id, concept):
-        entity_id = self._canonical(entity_id)
-        self.memory.set_entity_concept(entity_id, concept)
-        type_entity = self.memory.find_entity(concept)
-        relation_name = self.reasoner.relation_name_for_type("TAXONOMIC")
-        if relation_name:
-            self.memory.add_memory(entity_id, relation_name, type_entity)
-
     def _execute_statement(self, parsed):
         meaning = self.semantic_parser.parse(parsed)
         operation = meaning.operation
         if operation is None:
             return None
 
+        subject_entity = self._entity_for_word(parsed.subject_word)
+        operation.subject = self._canonical(subject_entity)
+        subject_concept = self.memory.entities[operation.subject]["concept"]
+
         if operation.name == "ASSERT_STATE":
-            subject_entity = self._entity_for_word(parsed.subject_word)
-            operation.subject = self._canonical(subject_entity)
             result = self.executor.execute(operation)
-            return result
-
-        if operation.name == "ASSERT_RELATION":
-            subject_entity = self._entity_for_word(parsed.subject_word)
-            operation.subject = self._canonical(subject_entity)
-
-            if parsed.meaning == "SUBJECT_RELATION":
-                object_entity = self._entity_for_word(parsed.object_word)
-                operation.object = self._canonical(object_entity)
-                operation.predicate = parsed.relation
-                return self.executor.execute(operation)
-
-            object_concept = self.lexicon.concept(parsed.object_word) if parsed.object_word else None
-            if not object_concept:
-                return None
-            object_entity = self.memory.find_entity(object_concept)
-            if parsed.negated:
-                schema = self.reasoner.schemas.get(operation.predicate) or {}
-                operation.predicate = schema.get("opposite")
-                if not operation.predicate:
-                    return None
-            if not self.reasoner.validate_relation(operation.subject, operation.predicate, object_entity):
-                return None
-            operation.object = object_entity
-            return self.executor.execute(operation)
+            if result is not None and subject_concept == "UNKNOWN":
+                self.pending_entity = operation.subject
+                name = self.memory.entities[operation.subject]["name"]
+                return result, (
+                    f"Who is {name.title()}? I don't know whether {name} is a human, "
+                    "an animal, or something else."
+                )
+            return result, None
 
         if operation.name == "ASSERT_CLASSIFICATION":
             concept = self.lexicon.concept(parsed.object_word)
             if concept not in self.ontology.classes:
                 return None
-            subject_entity = self._entity_for_word(parsed.subject_word)
-            operation.subject = self._canonical(subject_entity)
-            operation.predicate = parsed.relation
             type_entity = self.memory.find_entity(concept)
             operation.object = type_entity
             result = self.executor.execute(operation)
             if result is not None:
                 self.memory.set_entity_concept(operation.subject, concept)
-            return result
+            return result, None
+
+        if operation.name == "ASSERT_RELATION":
+            operation.object = None
+
+            if parsed.meaning == "SUBJECT_RELATION":
+                object_entity = self._entity_for_word(parsed.object_word)
+                operation.object = self._canonical(object_entity)
+                result = self.executor.execute(operation)
+                return result, None
+
+            if subject_concept == "UNKNOWN":
+                self.pending_entity = operation.subject
+                name = self.memory.entities[operation.subject]["name"]
+                return None, (
+                    f"Who is {name.title()}? I don't know enough about this entity yet."
+                )
+
+            object_concept = self.lexicon.concept(parsed.object_word) if parsed.object_word else None
+            if not object_concept:
+                return None
+
+            object_entity = self.memory.find_entity(object_concept)
+            if not self.reasoner.validate_relation(operation.subject, operation.predicate, object_entity):
+                return None
+
+            operation.object = object_entity
+            result = self.executor.execute(operation)
+            return result, None
 
         return None
 
@@ -108,13 +110,24 @@ class SLR:
             return self.response.generate(parsed, self.query.answer(parsed))
 
         if parsed.meaning in {"SUBJECT_STATE", "SUBJECT_VERB_OBJECT", "TYPE_ASSIGNMENT", "SUBJECT_RELATION"}:
-            result = self._execute_statement(parsed)
+            executed = self._execute_statement(parsed)
+            if executed is None:
+                if parsed.meaning == "TYPE_ASSIGNMENT":
+                    return "I don't know that type yet."
+                if parsed.meaning == "SUBJECT_RELATION":
+                    return "I could not store that identity."
+                return "I could not execute that statement."
+
+            result, clarification = executed
             if result is None:
                 if parsed.meaning == "TYPE_ASSIGNMENT":
                     return "I don't know that type yet."
                 if parsed.meaning == "SUBJECT_RELATION":
                     return "I could not store that identity."
                 return "I could not execute that statement."
+
+            if clarification:
+                return clarification
 
             if parsed.meaning == "TYPE_ASSIGNMENT":
                 self.pending_entity = None
@@ -123,7 +136,11 @@ class SLR:
                 return f"Understood. I know that {name} is a {parsed.object_word}."
 
             self.pending_entity = None
-            return "I have stored that in memory."
+            return (
+                "Memory created, but it conflicts with an existing memory."
+                if result.status == "CONFLICTED"
+                else "I have stored that in memory."
+            )
 
         return "I could not parse that sentence."
 
