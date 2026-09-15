@@ -1,0 +1,18 @@
+{
+  "meanings": {
+    "SUBJECT_STATE": {
+      "predicate": {"source": "lexicon", "feature": "concept"},
+      "object": "TRUE"
+    },
+    "SUBJECT_VERB_OBJECT": {
+      "predicate": {"source": "lexicon", "feature": "relation", "fallback": "concept"},
+      "negation": {"prefix": "NOT_", "source": "predicate"}
+    },
+    "TYPE_ASSIGNMENT": {
+      "predicate": {"source": "grammar", "field": "relation"}
+    },
+    "SUBJECT_RELATION": {
+      "predicate": {"source": "grammar", "field": "relation"}
+    }
+  }
+}
