@@ -29,20 +29,27 @@ class Parser:
         return self.lexicon.concept(word) if self.lexicon else None
 
     def _category(self, word):
+        """Return the lexical category supplied by data.
+
+        An unclassified token is an ENTITY candidate. This is not a claim
+        about what the entity is; it only preserves the token for later
+        resolution and clarification.
+        """
         return self._pos(word) or "ENTITY"
 
     def _matches(self, tokens, pattern):
-        return len(tokens) == len(pattern) and all(
+        if len(tokens) != len(pattern):
+            return False
+        return all(
             expected == self._category(token)
             for token, expected in zip(tokens, pattern)
         )
 
     def _grammar_rule(self, tokens):
-        return next(
-            (rule for rule in self.grammar.get("rules", [])
-             if self._matches(tokens, rule["pattern"])),
-            None,
-        )
+        for rule in self.grammar.get("rules", []):
+            if self._matches(tokens, rule.get("pattern", [])):
+                return rule
+        return None
 
     def parse(self, text):
         tokens = tokenize(text) if isinstance(text, str) else text
@@ -65,13 +72,12 @@ class Parser:
         name = rule.get("name")
 
         if meaning == "SUBJECT_STATE":
-            if self._pos(tokens[0]) == "DETERMINER":
-                subject, state = tokens[1], tokens[3]
-            else:
-                subject, state = tokens[0], tokens[2]
+            determiner = self._pos(tokens[0]) == "DETERMINER"
+            subject_index = 1 if determiner else 0
+            state_index = 3 if determiner else 2
             return ParsedSentence(
-                subject_word=subject,
-                verb_word=state,
+                subject_word=tokens[subject_index],
+                verb_word=tokens[state_index],
                 rule=name,
                 meaning=meaning,
                 relation=relation,
@@ -104,7 +110,9 @@ class Parser:
                 verb_index = 2
                 object_index = 4 if self._pos(tokens[3]) == "DETERMINER" else 3
             else:
-                subject, verb_index, object_index = tokens[0], 1, 2
+                subject = tokens[0]
+                verb_index = 1
+                object_index = 2
             return ParsedSentence(
                 subject_word=subject,
                 verb_word=tokens[verb_index],
