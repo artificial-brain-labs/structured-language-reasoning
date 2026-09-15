@@ -25,13 +25,16 @@ class SLR:
         entity = self.memory.find_named_entity(word)
         return entity or self.memory.create_named_entity(word)
 
+    def _canonical(self, entity_id):
+        return self.memory.canonical_entity(entity_id)
+
     def process(self, text):
         p = self.parser.parse(text)
 
         if self.pending_entity and p.verb_word == "instance_of" and p.object_word:
             concept = self.lexicon.concept(p.object_word)
             if concept in self.ontology.classes:
-                eid = self.pending_entity
+                eid = self._canonical(self.pending_entity)
                 self.memory.set_entity_concept(eid, concept)
                 tid = self.memory.find_entity(concept)
                 self.memory.add_memory(eid, "IS_A", tid)
@@ -44,6 +47,7 @@ class SLR:
                 eid = self.memory.find_named_entity(p.subject_word)
                 if eid is None:
                     return "I don't know."
+                eid = self._canonical(eid)
                 concept = self.memory.entities[eid]["concept"]
                 if concept == "UNKNOWN":
                     return "I don't know yet."
@@ -53,15 +57,12 @@ class SLR:
         if not p.subject_word or not p.verb_word:
             return "I could not parse that sentence."
 
-        eid = self._entity_for_word(p.subject_word)
+        eid = self._canonical(self._entity_for_word(p.subject_word))
         subject_concept = self.memory.entities[eid]["concept"]
 
-        # States are valid observations even when the entity type is unknown.
-        # Preserve the observed surface state as the predicate so the graph
-        # records exactly what was observed without guessing entity type.
         state_concept = self.lexicon.concept(p.verb_word)
         if p.meaning == "SUBJECT_STATE" and state_concept:
-            self.memory.add_memory(eid, p.verb_word.upper(), "TRUE")
+            self.memory.add_memory(eid, state_concept, "TRUE")
             if subject_concept == "UNKNOWN":
                 self.pending_entity = eid
                 name = self.memory.entities[eid]["name"]
@@ -78,11 +79,11 @@ class SLR:
             self.pending_entity = None
             return "I have stored that classification in memory."
 
-        # Explicit entity relation. Do not turn it into a type assumption.
         if p.meaning == "SUBJECT_RELATION" and p.object_word:
             oid = self._entity_for_word(p.object_word)
-            self.memory.add_memory(eid, "IS", oid)
-            return "I have stored that relationship in memory."
+            self.memory.add_identity(eid, oid)
+            self.pending_entity = None
+            return "I have stored that identity in memory."
 
         if subject_concept == "UNKNOWN":
             self.pending_entity = eid
