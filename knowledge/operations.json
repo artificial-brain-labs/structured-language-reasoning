@@ -3,17 +3,29 @@
     "ASSERT_STATE": {
       "target": "MEMORY",
       "kind": "FACT",
-      "requires": ["subject", "predicate", "object"]
+      "requires": ["subject", "predicate", "object"],
+      "responses": {
+        "success": "I have stored that in memory.",
+        "conflict": "Memory created, but it conflicts with an existing memory."
+      }
     },
     "ASSERT_RELATION": {
       "target": "MEMORY",
       "kind": "RELATION",
-      "requires": ["subject", "predicate", "object"]
+      "requires": ["subject", "predicate", "object"],
+      "responses": {
+        "success": "I have stored that in memory.",
+        "conflict": "Memory created, but it conflicts with an existing memory."
+      }
     },
     "ASSERT_CLASSIFICATION": {
       "target": "MEMORY",
       "kind": "CLASSIFICATION",
-      "requires": ["subject", "predicate", "object"]
+      "requires": ["subject", "predicate", "object"],
+      "responses": {
+        "success": "Understood. I know that {subject_name} is a {object_word}.",
+        "failure": "I don't know that type yet."
+      }
     }
   }
 }
