@@ -11,11 +11,10 @@ class ClarificationRequest:
 
 
 class ClarificationManager:
-    """Manage clarification state without embedding domain knowledge.
+    """Manage unresolved clarification state without guessing.
 
-    The manager records what remains unresolved. It does not infer an entity
-    type or manufacture an answer. Knowledge enters the system only through
-    an explicit user response that is subsequently validated by the caller.
+    The manager records what remains unresolved and recognizes an explicit
+    classification response for the pending entity. It never invents a type.
     """
 
     def __init__(self, memory):
@@ -40,6 +39,9 @@ class ClarificationManager:
 
     def current(self):
         return self.pending
+
+    def matches_entity(self, entity_id):
+        return self.pending is not None and self.pending.entity_id == entity_id
 
     def clear(self):
         pending = self.pending
