@@ -5,6 +5,7 @@ from .memory import DynamicMemory
 from .reasoner import Reasoner
 from .query import QueryEngine
 from .response import ResponseGenerator
+from .response_policy import ResponsePolicy
 from .semantics import SemanticParser
 from .executor import SemanticExecutor
 from .statement_router import StatementRouter, StatementResult
@@ -37,6 +38,7 @@ class SLR:
         self.router.register_all(self.executor.definitions.operations, self.operation_engine.execute)
         self.query = QueryEngine(self.memory, self.lexicon)
         self.response = ResponseGenerator(self.memory)
+        self.response_policy = ResponsePolicy(self.executor.definitions)
 
     def _canonical(self, entity_id):
         return self.memory.canonical_entity(entity_id)
@@ -113,32 +115,38 @@ class SLR:
 
         execution = self._execute_statement(parsed)
 
-        # Clarification is a valid execution outcome: no memory result is
-        # expected yet because the operation is intentionally waiting for
-        # information. Handle it before treating a missing result as failure.
         if execution.clarification:
             return execution.clarification
 
+        operation = execution.operation
         if execution.result is None:
-            if execution.operation is not None:
-                definition = self.executor.definitions.get(execution.operation.name) or {}
-                if definition.get("kind") == "CLASSIFICATION":
-                    return "I don't know that type yet."
-                if (self.memory.relations.get(execution.operation.predicate) or {}).get("type") == "IDENTITY":
+            if operation is not None:
+                failure = self.response_policy.render(operation, "failure")
+                if failure:
+                    return failure
+                if (self.memory.relations.get(operation.predicate) or {}).get("type") == "IDENTITY":
                     return "I could not store that identity."
             return "I could not execute that statement."
 
-        definition = self.executor.definitions.get(execution.operation.name) or {}
-        if definition.get("kind") == "CLASSIFICATION":
+        success_context = {}
+        if parsed.subject_word:
             entity = self._canonical(execution.result.subject)
-            name = self.memory.entities[entity]["name"]
-            return f"Understood. I know that {name} is a {parsed.object_word}."
+            success_context["subject_name"] = self.memory.entities[entity]["name"]
+        if parsed.object_word:
+            success_context["object_word"] = parsed.object_word
 
-        return (
-            "Memory created, but it conflicts with an existing memory."
-            if execution.result.status == "CONFLICTED"
-            else "I have stored that in memory."
-        )
+        success = self.response_policy.render(operation, "success", success_context)
+        if success:
+            return success
+
+        conflict = execution.result.status == "CONFLICTED"
+        if conflict:
+            conflict_response = self.response_policy.render(operation, "conflict")
+            if conflict_response:
+                return conflict_response
+            return "Memory created, but it conflicts with an existing memory."
+
+        return "I have stored that in memory."
 
 
 def main():
