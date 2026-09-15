@@ -11,7 +11,7 @@ class SLR:
     def __init__(self):
         self.lexicon = Lexicon()
         self.ontology = Ontology()
-        self.parser = Parser()
+        self.parser = Parser(self.lexicon)
         self.memory = DynamicMemory()
         self.reasoner = Reasoner(self.ontology, self.memory)
         self.query = QueryEngine(self.memory, self.lexicon)
@@ -57,9 +57,11 @@ class SLR:
         subject_concept = self.memory.entities[eid]["concept"]
 
         # States are valid observations even when the entity type is unknown.
+        # Preserve the observed surface state as the predicate so the graph
+        # records exactly what was observed without guessing entity type.
         state_concept = self.lexicon.concept(p.verb_word)
         if p.meaning == "SUBJECT_STATE" and state_concept:
-            self.memory.add_memory(eid, state_concept, "TRUE")
+            self.memory.add_memory(eid, p.verb_word.upper(), "TRUE")
             if subject_concept == "UNKNOWN":
                 self.pending_entity = eid
                 name = self.memory.entities[eid]["name"]
