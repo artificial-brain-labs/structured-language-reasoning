@@ -2,7 +2,8 @@
   "SAME_AS": {
     "type": "IDENTITY",
     "symmetric": true,
-    "transitive": true
+    "transitive": true,
+    "allow_unknown_subject": true
   },
   "EATS": {
     "type": "ACTION",
