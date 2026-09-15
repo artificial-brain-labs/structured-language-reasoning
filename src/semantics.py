@@ -73,11 +73,12 @@ class SemanticParser:
                 return meaning
 
             meaning.entities.append(subject)
-            meaning.facts.append(Fact(subject=subject.entity_id, predicate=state_concept))
+            meaning.facts.append(Fact(subject=subject.entity_id, predicate=state_concept, object="TRUE"))
             meaning.operation = SemanticOperation(
                 name=tree.operation,
                 subject=subject.entity_id,
                 predicate=state_concept,
+                object="TRUE",
                 attributes=self._operation_attributes(tree.subject_word),
             ) if tree.operation else None
             return meaning
