@@ -24,20 +24,24 @@ class Parser:
         return self.parse_statement(tokens)
 
     def parse_statement(self, tokens):
-        # Named or generic subject state: Tom is sleeping / a cat is sleeping
+        # Named or generic subject state: Tom is sleeping / A cat is sleeping
         if len(tokens) >= 3 and tokens[-1] == "sleeping" and tokens[-2] == "is":
             subject = tokens[0] if tokens[0] not in ("a", "an", "the") else tokens[1]
-            return ParsedSentence(subject_word=subject, verb_word="sleeping", rule="state", meaning="SUBJECT_STATE", tokens=tokens)
+            return ParsedSentence(subject_word=subject, verb_word="sleeping", rule="simple_present_progressive", meaning="SUBJECT_STATE", tokens=tokens)
+
         # Explicit type assignment: Tom is my cat / Tom is a cat
         if len(tokens) >= 4 and tokens[1] == "is" and tokens[-1] in {"cat", "dog", "mouse", "animal", "mammal"}:
             return ParsedSentence(subject_word=tokens[0], verb_word="instance_of", object_word=tokens[-1], rule="instance_of", meaning="TYPE_ASSIGNMENT", tokens=tokens)
+
         if len(tokens) >= 5:
             subject = tokens[1] if tokens[0] in ("a", "an", "the") else tokens[0]
             index = 2 if tokens[0] in ("a", "an", "the") else 1
             negated = False
             if index < len(tokens) and tokens[index] == "does":
                 index += 1
-                if index < len(tokens) and tokens[index] == "not": negated = True; index += 1
+                if index < len(tokens) and tokens[index] == "not":
+                    negated = True
+                    index += 1
             if index < len(tokens):
                 verb = tokens[index]
                 object_index = index + 2
