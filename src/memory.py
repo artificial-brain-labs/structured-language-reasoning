@@ -50,7 +50,8 @@ class DynamicMemory:
 
     def add_memory(self, subject, predicate, object_, source="USER", confidence=1.0):
         subject = self.canonical_entity(subject)
-        if predicate != "SAME_AS" and object_ in self.entities:
+        identity_predicate = self._identity_predicate()
+        if predicate != identity_predicate and object_ in self.entities:
             object_ = self.canonical_entity(object_)
 
         for memory in self.memories:
