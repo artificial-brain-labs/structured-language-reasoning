@@ -12,7 +12,7 @@ class SemanticExecutor:
             return self.memory.add_memory(
                 operation.subject,
                 operation.predicate,
-                None,
+                operation.object,
                 source,
                 confidence,
             )
