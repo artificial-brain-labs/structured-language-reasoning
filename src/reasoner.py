@@ -4,8 +4,8 @@ class Reasoner:
         self.memory = memory
 
     def relation_name_for_type(self, relation_type):
-        """Resolve a relation name from the shared declarative schema."""
-        for name, schema in self.memory.relations.schemas.items():
+        """Resolve the most recently defined relation for a schema type."""
+        for name, schema in reversed(list(self.memory.relations.schemas.items())):
             if schema.get("type") == relation_type:
                 return name
         return None
