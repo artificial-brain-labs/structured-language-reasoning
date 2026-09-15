@@ -19,12 +19,6 @@ class SLR:
         self.pending_entity = None
 
     def _entity_for_word(self, word):
-        """Resolve a generic lexicon concept or a named entity.
-
-        A known common noun such as 'cat' resolves to the ontology concept.
-        An unknown name such as 'Tom' creates an UNKNOWN named entity.
-        No semantic type is guessed for names.
-        """
         concept = self.lexicon.concept(word)
         if concept in self.ontology.classes:
             return self.memory.find_entity(concept)
@@ -34,7 +28,6 @@ class SLR:
     def process(self, text):
         p = self.parser.parse(text)
 
-        # Answer to a pending clarification: "Tom is a cat" / "Tom is my cat".
         if self.pending_entity and p.verb_word == "instance_of" and p.object_word:
             concept = self.lexicon.concept(p.object_word)
             if concept in self.ontology.classes:
@@ -47,6 +40,14 @@ class SLR:
                 return f"Understood. I know that {name} is a {p.object_word}."
 
         if p.question_type:
+            if p.question_type == "TYPE":
+                eid = self.memory.find_named_entity(p.subject_word)
+                if eid is None:
+                    return "I don't know."
+                concept = self.memory.entities[eid]["concept"]
+                if concept == "UNKNOWN":
+                    return "I don't know yet."
+                return f"{self.memory.entities[eid]['name']} is a {concept.lower()}."
             return self.response.generate(p, self.query.answer(p))
 
         if not p.subject_word or not p.verb_word:
@@ -55,14 +56,15 @@ class SLR:
         eid = self._entity_for_word(p.subject_word)
         subject_concept = self.memory.entities[eid]["concept"]
 
-        # A state is valid knowledge even when the entity's type is unknown.
-        if p.verb_word == "sleeping" and not p.object_word:
-            self.memory.add_memory(eid, "SLEEPING", "TRUE")
+        # States are valid observations even when the entity type is unknown.
+        state_concept = self.lexicon.concept(p.verb_word)
+        if p.meaning == "SUBJECT_STATE" and state_concept:
+            self.memory.add_memory(eid, state_concept, "TRUE")
             if subject_concept == "UNKNOWN":
                 self.pending_entity = eid
                 name = self.memory.entities[eid]["name"]
                 return f"Who is {name.title()}? I don't know whether {name} is a human, an animal, or something else."
-            return "I have stored that in memory."
+            return "I have stored that state in memory."
 
         if p.verb_word == "instance_of" and p.object_word:
             concept = self.lexicon.concept(p.object_word)
@@ -74,7 +76,12 @@ class SLR:
             self.pending_entity = None
             return "I have stored that classification in memory."
 
-        # Never use an action/state to infer the missing type of a named entity.
+        # Explicit entity relation. Do not turn it into a type assumption.
+        if p.meaning == "SUBJECT_RELATION" and p.object_word:
+            oid = self._entity_for_word(p.object_word)
+            self.memory.add_memory(eid, "IS", oid)
+            return "I have stored that relationship in memory."
+
         if subject_concept == "UNKNOWN":
             self.pending_entity = eid
             name = self.memory.entities[eid]["name"]
@@ -86,21 +93,18 @@ class SLR:
             return "I don't understand the object."
         if not pred:
             return "I don't understand the verb."
-
         oid = self.memory.find_entity(oc)
         if p.negated:
             pred = f"NOT_{pred}"
         if not self.reasoner.validate_relation(eid, pred, oid):
             return "I cannot add that memory because the relationship is inconsistent with my world model."
         m = self.memory.add_memory(eid, pred, oid)
-        if m.status == "CONFLICTED":
-            return "Memory created, but it conflicts with an existing memory."
-        return "I have stored that in memory."
+        return "Memory created, but it conflicts with an existing memory." if m.status == "CONFLICTED" else "I have stored that in memory."
 
 
 def main():
     slr = SLR()
-    print("Structured Language Reasoning V0.3")
+    print("Structured Language Reasoning V0.4")
     print("Type 'exit' to stop.")
     while True:
         text = input("> ")
