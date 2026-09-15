@@ -1,0 +1,16 @@
+{
+  "question_types": {
+    "TYPE": {
+      "result_kind": "entity_type",
+      "unknown_result": "unknown_type"
+    },
+    "OBJECT": {
+      "result_kind": "object",
+      "unknown_result": "unknown"
+    },
+    "SUBJECT": {
+      "result_kind": "subject",
+      "unknown_result": "unknown"
+    }
+  }
+}
