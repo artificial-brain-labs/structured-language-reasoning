@@ -64,6 +64,30 @@ class DynamicMemory:
         if predicate == "NOT_EATS": return "EATS"
         return f"NOT_{predicate}"
 
+    def canonical_entity(self, entity_id):
+        """Resolve identity through explicit SAME_AS links only."""
+        visited = set()
+        current = entity_id
+        while current not in visited:
+            visited.add(current)
+            links = [m for m in self.memories
+                     if m.subject == current and m.predicate == "SAME_AS"
+                     and m.status != "CONFLICTED"]
+            if not links:
+                return current
+            current = links[0].object
+        return current
+
+    def add_identity(self, subject, object_, source="USER", confidence=1.0):
+        """Store an explicit identity assertion and make it bidirectional."""
+        subject = self.canonical_entity(subject)
+        object_ = self.canonical_entity(object_)
+        if subject == object_:
+            return None
+        memory = self.add_memory(subject, "SAME_AS", object_, source, confidence)
+        self.add_memory(object_, "SAME_AS", subject, source, confidence)
+        return memory
+
     def query(self, subject=None, predicate=None, object_=None):
         return [m for m in self.memories if
                 (subject is None or m.subject == subject) and
