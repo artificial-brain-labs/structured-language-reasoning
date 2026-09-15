@@ -18,63 +18,85 @@ class Parser:
     def __init__(self, lexicon=None):
         self.lexicon = lexicon
 
+    def _pos(self, word):
+        return self.lexicon.pos(word) if self.lexicon else None
+
+    def _concept(self, word):
+        return self.lexicon.concept(word) if self.lexicon else None
+
+    def _is_concept(self, word, concept):
+        return self._concept(word) == concept
+
+    def _is_pos(self, word, pos):
+        return self._pos(word) == pos
+
     def parse(self, text):
         tokens = tokenize(text) if isinstance(text, str) else text
         tokens = [t.lower() for t in tokens]
         if not tokens:
             return ParsedSentence(tokens=tokens)
-        if tokens[0] == "what":
+        if self._is_concept(tokens[0], "WHAT"):
             return self.parse_what(tokens)
-        if tokens[0] == "who":
+        if self._is_concept(tokens[0], "WHO"):
             return self.parse_who(tokens)
         return self.parse_statement(tokens)
 
     def parse_statement(self, tokens):
-        # Copular state: Dom is hungry / Dom is sleeping.
-        if len(tokens) == 3 and tokens[1] == "is":
-            return ParsedSentence(
-                subject_word=tokens[0], verb_word=tokens[2],
-                rule="state", meaning="SUBJECT_STATE", tokens=tokens
-            )
+        if len(tokens) >= 3 and self._is_concept(tokens[1], "IS"):
+            subject = tokens[0]
+            object_word = tokens[-1]
 
-        # Determiner + noun + copula + state: A cat is sleeping.
-        if len(tokens) >= 4 and tokens[0] in ("a", "an", "the") and tokens[2] == "is":
-            if tokens[3] in ("sleeping", "hungry", "tired", "running"):
+            # A/an/the + noun + copula + STATE.
+            if len(tokens) >= 4 and self._is_pos(tokens[0], "DETERMINER"):
+                state = tokens[3]
+                if self._is_pos(state, "STATE"):
+                    return ParsedSentence(
+                        subject_word=tokens[1], verb_word=state,
+                        rule="simple_present_progressive" if self._concept(state) else "state",
+                        meaning="SUBJECT_STATE", tokens=tokens
+                    )
+
+            # Copular STATE: Dom is hungry / Dom is sleeping.
+            if len(tokens) == 3 and self._is_pos(object_word, "STATE"):
                 return ParsedSentence(
-                    subject_word=tokens[1], verb_word=tokens[3],
-                    rule="simple_present_progressive" if tokens[3] == "sleeping" else "state",
-                    meaning="SUBJECT_STATE", tokens=tokens
+                    subject_word=subject, verb_word=object_word,
+                    rule="state", meaning="SUBJECT_STATE", tokens=tokens
                 )
 
-        # Explicit classification: Tom is my cat / Tom is a cat.
-        if len(tokens) >= 3 and tokens[1] == "is":
-            object_word = tokens[-1]
-            if object_word in ("cat", "dog", "mouse", "animal", "mammal"):
+            # Explicit classification when the predicate is a known lexical noun.
+            if self._is_pos(object_word, "NOUN"):
                 return ParsedSentence(
-                    subject_word=tokens[0], verb_word="instance_of", object_word=object_word,
+                    subject_word=subject, verb_word="instance_of", object_word=object_word,
                     rule="instance_of", meaning="TYPE_ASSIGNMENT", tokens=tokens
                 )
 
-        # Entity-to-entity relation: Tom is Dom.
-        if len(tokens) == 3 and tokens[1] == "is":
-            return ParsedSentence(
-                subject_word=tokens[0], verb_word="is", object_word=tokens[2],
-                rule="entity_relation", meaning="SUBJECT_RELATION", tokens=tokens
-            )
+            # Explicit entity-to-entity relation when the RHS is not a lexical state/type.
+            if len(tokens) == 3:
+                return ParsedSentence(
+                    subject_word=subject, verb_word="is", object_word=object_word,
+                    rule="entity_relation", meaning="SUBJECT_RELATION", tokens=tokens
+                )
 
-        # The cat eats the mouse / Tom eats mouse.
+        # Subject + verb + object. Determiners and negation are identified from lexicon data.
         if len(tokens) >= 3:
-            subject = tokens[1] if tokens[0] in ("a", "an", "the") else tokens[0]
-            index = 2 if tokens[0] in ("a", "an", "the") else 1
+            offset = 1
+            subject = tokens[0]
+            if self._is_pos(tokens[0], "DETERMINER") and len(tokens) > 1:
+                subject = tokens[1]
+                offset = 2
+
             negated = False
-            if index < len(tokens) and tokens[index] == "does":
-                index += 1
-                if index < len(tokens) and tokens[index] == "not":
+            if offset < len(tokens) and self._is_concept(tokens[offset], "DO"):
+                offset += 1
+                if offset < len(tokens) and self._is_pos(tokens[offset], "NEGATION"):
                     negated = True
-                    index += 1
-            if index < len(tokens):
-                verb = tokens[index]
-                object_index = index + 2 if index + 1 < len(tokens) and tokens[index + 1] in ("a", "an", "the") else index + 1
+                    offset += 1
+
+            if offset < len(tokens):
+                verb = tokens[offset]
+                object_index = offset + 1
+                if object_index < len(tokens) and self._is_pos(tokens[object_index], "DETERMINER"):
+                    object_index += 1
                 if object_index < len(tokens):
                     return ParsedSentence(
                         subject_word=subject, verb_word=verb, object_word=tokens[object_index],
@@ -84,13 +106,12 @@ class Parser:
         return ParsedSentence(tokens=tokens)
 
     def parse_what(self, tokens):
-        # What is Dom? / What is Dom's type?
-        if len(tokens) >= 3 and tokens[1] == "is":
+        if len(tokens) >= 3 and self._is_concept(tokens[1], "IS"):
             return ParsedSentence(
                 subject_word=tokens[2], question_type="TYPE",
                 rule="question_what_type", meaning="QUERY_TYPE", tokens=tokens
             )
-        if len(tokens) >= 5 and tokens[1] == "does":
+        if len(tokens) >= 5 and self._is_concept(tokens[1], "DO"):
             return ParsedSentence(
                 subject_word=tokens[3], verb_word=tokens[4], question_type="OBJECT",
                 rule="question_what_object", meaning="QUERY_OBJECT", tokens=tokens
