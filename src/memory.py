@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from datetime import datetime, UTC
 
+from .relations import RelationSchema
+
 
 @dataclass
 class Memory:
@@ -16,9 +18,10 @@ class Memory:
 
 
 class DynamicMemory:
-    def __init__(self):
+    def __init__(self, relation_schema=None):
         self.entities = {}
         self.memories = []
+        self.relations = relation_schema or RelationSchema()
 
     def create_entity(self, concept, name=None):
         base = (name or concept).lower().replace(" ", "_")
@@ -49,32 +52,34 @@ class DynamicMemory:
         subject = self.canonical_entity(subject)
         if predicate != "SAME_AS" and object_ in self.entities:
             object_ = self.canonical_entity(object_)
+
         for memory in self.memories:
             if memory.subject == subject and memory.predicate == predicate and memory.object == object_:
                 return memory
+
         opposite = self.opposite(predicate)
-        for memory in self.memories:
-            if memory.subject == subject and memory.predicate == opposite and memory.object == object_:
-                memory.status = "CONFLICTED"
-                new_memory = Memory(subject, predicate, object_, "CONFLICTED", confidence, source)
-                memory.contradictions.append(len(self.memories))
-                self.memories.append(new_memory)
-                return new_memory
+        if opposite:
+            for memory in self.memories:
+                if memory.subject == subject and memory.predicate == opposite and memory.object == object_:
+                    memory.status = "CONFLICTED"
+                    new_memory = Memory(subject, predicate, object_, "CONFLICTED", confidence, source)
+                    memory.contradictions.append(len(self.memories))
+                    self.memories.append(new_memory)
+                    return new_memory
+
         new_memory = Memory(subject, predicate, object_, "ASSERTED", confidence, source)
         self.memories.append(new_memory)
         return new_memory
 
     def opposite(self, predicate):
-        if predicate == "EATS":
-            return "NOT_EATS"
-        if predicate == "NOT_EATS":
-            return "EATS"
-        return f"NOT_{predicate}"
+        schema = self.relations.get(predicate) or {}
+        return schema.get("opposite")
 
     def _identity_neighbors(self, entity_id):
         neighbors = set()
+        identity_predicate = self._identity_predicate()
         for memory in self.memories:
-            if memory.status == "CONFLICTED" or memory.predicate != "SAME_AS":
+            if memory.status == "CONFLICTED" or memory.predicate != identity_predicate:
                 continue
             if memory.subject == entity_id:
                 neighbors.add(memory.object)
@@ -82,13 +87,14 @@ class DynamicMemory:
                 neighbors.add(memory.subject)
         return neighbors
 
-    def canonical_entity(self, entity_id):
-        """Resolve an explicit SAME_AS connected component deterministically.
+    def _identity_predicate(self):
+        for predicate, schema in self.relations.schemas.items():
+            if schema.get("type") == "IDENTITY":
+                return predicate
+        return None
 
-        Identity remains represented as graph data. This method only derives a
-        stable representative from that graph; it does not contain entity
-        knowledge or special cases.
-        """
+    def canonical_entity(self, entity_id):
+        """Derive a stable identity representative from explicit identity data."""
         if entity_id not in self.entities:
             return entity_id
 
@@ -104,13 +110,15 @@ class DynamicMemory:
         return min(component)
 
     def add_identity(self, subject, object_, source="USER", confidence=1.0):
-        """Store an explicit identity assertion and make it bidirectional."""
-        if subject not in self.entities or object_ not in self.entities:
+        identity_predicate = self._identity_predicate()
+        if not identity_predicate or subject not in self.entities or object_ not in self.entities:
             return None
         if subject == object_:
             return None
-        memory = self.add_memory(subject, "SAME_AS", object_, source, confidence)
-        self.add_memory(object_, "SAME_AS", subject, source, confidence)
+        memory = self.add_memory(subject, identity_predicate, object_, source, confidence)
+        schema = self.relations.get(identity_predicate) or {}
+        if schema.get("symmetric"):
+            self.add_memory(object_, identity_predicate, subject, source, confidence)
         return memory
 
     def query(self, subject=None, predicate=None, object_=None):
