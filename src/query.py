@@ -19,6 +19,16 @@ class QueryEngine:
         return self.lexicon.feature(word, "relation") or self.lexicon.concept(word)
 
     def answer(self, parsed):
+        if parsed.question_type == "TYPE":
+            entity = self.memory.find_named_entity(parsed.subject_word)
+            if entity is None:
+                return []
+            entity = self._canonical_id(entity)
+            concept = self.memory.entities[entity]["concept"]
+            if concept == "UNKNOWN":
+                return []
+            return [entity]
+
         if parsed.question_type == "OBJECT":
             subject = self._resolve(parsed.subject_word)
             predicate = self._relation(parsed.verb_word)
