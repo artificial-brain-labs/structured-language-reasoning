@@ -1,48 +1,76 @@
 {
   "rules": [
     {
+      "name": "question_what_type",
+      "pattern": ["QUESTION", "AUX", "ENTITY"],
+      "meaning": "QUERY_TYPE",
+      "question_type": "TYPE",
+      "slots": {"subject": 2}
+    },
+    {
+      "name": "question_what_object",
+      "pattern": ["QUESTION", "AUX", "DETERMINER", "NOUN", "VERB"],
+      "meaning": "QUERY_OBJECT",
+      "question_type": "OBJECT",
+      "slots": {"subject": 3, "verb": 4}
+    },
+    {
+      "name": "question_who_subject",
+      "pattern": ["QUESTION", "VERB", "DETERMINER", "NOUN"],
+      "meaning": "QUERY_SUBJECT",
+      "question_type": "SUBJECT",
+      "slots": {"verb": 1, "object": 3}
+    },
+    {
       "name": "simple_present_progressive",
       "pattern": ["DETERMINER", "NOUN", "AUX", "STATE"],
       "meaning": "SUBJECT_STATE",
-      "operation": "ASSERT_STATE"
+      "operation": "ASSERT_STATE",
+      "slots": {"subject": 1, "verb": 3}
     },
     {
       "name": "simple_present_progressive",
       "pattern": ["ENTITY", "AUX", "STATE"],
       "meaning": "SUBJECT_STATE",
-      "operation": "ASSERT_STATE"
+      "operation": "ASSERT_STATE",
+      "slots": {"subject": 0, "verb": 2}
     },
     {
       "name": "simple_transitive",
       "pattern": ["DETERMINER", "NOUN", "VERB", "DETERMINER", "NOUN"],
       "meaning": "SUBJECT_VERB_OBJECT",
-      "operation": "ASSERT_RELATION"
+      "operation": "ASSERT_RELATION",
+      "slots": {"subject": 1, "verb": 2, "object": 4}
     },
     {
       "name": "simple_transitive",
       "pattern": ["ENTITY", "VERB", "ENTITY"],
       "meaning": "SUBJECT_VERB_OBJECT",
-      "operation": "ASSERT_RELATION"
+      "operation": "ASSERT_RELATION",
+      "slots": {"subject": 0, "verb": 1, "object": 2}
     },
     {
       "name": "simple_transitive_entity_subject_known_object",
       "pattern": ["ENTITY", "VERB", "NOUN"],
       "meaning": "SUBJECT_VERB_OBJECT",
-      "operation": "ASSERT_RELATION"
+      "operation": "ASSERT_RELATION",
+      "slots": {"subject": 0, "verb": 1, "object": 2}
     },
     {
       "name": "type_assignment",
       "pattern": ["ENTITY", "AUX", "DETERMINER", "NOUN"],
       "meaning": "TYPE_ASSIGNMENT",
       "operation": "ASSERT_CLASSIFICATION",
-      "relation": "IS_A"
+      "relation": "IS_A",
+      "slots": {"subject": 0, "object": 3}
     },
     {
       "name": "entity_relation",
       "pattern": ["ENTITY", "AUX", "ENTITY"],
       "meaning": "SUBJECT_RELATION",
       "operation": "ASSERT_RELATION",
-      "relation": "SAME_AS"
+      "relation": "SAME_AS",
+      "slots": {"subject": 0, "object": 2}
     }
   ]
 }
