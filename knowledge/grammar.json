@@ -2,54 +2,33 @@
   "rules": [
     {
       "name": "simple_present_progressive",
-      "pattern": [
-        "DETERMINER",
-        "NOUN",
-        "AUXILIARY",
-        "STATE"
-      ],
+      "pattern": ["DETERMINER", "NOUN", "AUXILIARY", "STATE"],
       "meaning": "SUBJECT_STATE"
     },
     {
       "name": "simple_present_progressive",
-      "pattern": [
-        "NOUN",
-        "AUXILIARY",
-        "STATE"
-      ],
+      "pattern": ["ENTITY", "AUXILIARY", "STATE"],
       "meaning": "SUBJECT_STATE"
     },
     {
       "name": "simple_transitive",
-      "pattern": [
-        "DETERMINER",
-        "NOUN",
-        "VERB",
-        "DETERMINER",
-        "NOUN"
-      ],
+      "pattern": ["DETERMINER", "NOUN", "VERB", "DETERMINER", "NOUN"],
       "meaning": "SUBJECT_VERB_OBJECT"
     },
     {
-      "name": "state_question",
-      "pattern": [
-        "WHAT",
-        "AUXILIARY",
-        "DETERMINER",
-        "NOUN",
-        "STATE"
-      ],
-      "meaning": "QUERY_STATE"
+      "name": "simple_transitive",
+      "pattern": ["ENTITY", "VERB", "ENTITY"],
+      "meaning": "SUBJECT_VERB_OBJECT"
     },
     {
-      "name": "yes_no_state_question",
-      "pattern": [
-        "AUXILIARY",
-        "DETERMINER",
-        "NOUN",
-        "ADJECTIVE"
-      ],
-      "meaning": "QUERY_PROPERTY"
+      "name": "type_assignment",
+      "pattern": ["ENTITY", "AUXILIARY", "DETERMINER", "NOUN"],
+      "meaning": "TYPE_ASSIGNMENT"
+    },
+    {
+      "name": "entity_relation",
+      "pattern": ["ENTITY", "AUXILIARY", "ENTITY"],
+      "meaning": "SUBJECT_RELATION"
     }
   ]
 }
