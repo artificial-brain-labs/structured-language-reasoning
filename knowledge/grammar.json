@@ -23,12 +23,14 @@
     {
       "name": "type_assignment",
       "pattern": ["ENTITY", "AUX", "DETERMINER", "NOUN"],
-      "meaning": "TYPE_ASSIGNMENT"
+      "meaning": "TYPE_ASSIGNMENT",
+      "relation": "IS_A"
     },
     {
       "name": "entity_relation",
       "pattern": ["ENTITY", "AUX", "ENTITY"],
-      "meaning": "SUBJECT_RELATION"
+      "meaning": "SUBJECT_RELATION",
+      "relation": "SAME_AS"
     }
   ]
 }
