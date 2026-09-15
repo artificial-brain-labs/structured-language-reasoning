@@ -18,7 +18,7 @@ def test_clarification_resumes_only_after_relation_validation():
     tom = slr.memory.find_named_entity("Tom")
     assert slr.memory.entities[tom]["concept"] == "CHAIR"
     assert not any(
-        m.subject == tom and m.predicate == "EAT" and m.object == mouse
+        m.subject == tom and m.predicate == "EATS" and m.object == mouse
         for m in slr.memory.memories
     )
 
@@ -40,6 +40,6 @@ def test_clarification_resumes_valid_relation_after_classification():
     tom = slr.memory.find_named_entity("Tom")
     assert slr.memory.entities[tom]["concept"] == "CAT"
     assert any(
-        m.subject == tom and m.predicate == "EAT" and m.object == mouse
+        m.subject == tom and m.predicate == "EATS" and m.object == mouse
         for m in slr.memory.memories
     )
