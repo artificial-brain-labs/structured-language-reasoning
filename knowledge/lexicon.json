@@ -5,6 +5,7 @@
   "mouse": {"concept": "MOUSE", "pos": "NOUN", "synonyms": ["rodent"]},
   "rodent": {"concept": "MOUSE", "pos": "NOUN"},
   "dog": {"concept": "DOG", "pos": "NOUN"},
+  "chair": {"concept": "CHAIR", "pos": "NOUN"},
   "eats": {"concept": "EAT", "pos": "VERB", "base": "eat"},
   "eat": {"concept": "EAT", "pos": "VERB"},
   "sleeping": {"concept": "SLEEP", "pos": "STATE", "base": "sleep", "aspect": "PROGRESSIVE"},
