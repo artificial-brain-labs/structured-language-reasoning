@@ -9,6 +9,7 @@ from .semantics import SemanticParser
 from .executor import SemanticExecutor
 from .statement_router import StatementRouter, StatementResult
 from .entity_resolver import EntityResolver
+from .clarification_manager import ClarificationManager
 
 
 class SLR:
@@ -23,9 +24,9 @@ class SLR:
         self.resolver = EntityResolver(self.lexicon, self.ontology, self.memory)
         self.router = StatementRouter()
         self.router.register_all(self.executor.definitions.operations, self._handle_operation)
+        self.clarification = ClarificationManager(self.memory)
         self.query = QueryEngine(self.memory, self.lexicon)
         self.response = ResponseGenerator(self.memory)
-        self.pending_entity = None
 
     def _canonical(self, entity_id):
         return self.memory.canonical_entity(entity_id)
@@ -60,10 +61,11 @@ class SLR:
                 return StatementResult(result=result, operation=operation)
 
             if subject_concept == "UNKNOWN":
-                self.pending_entity = operation.subject
-                name = self.memory.entities[operation.subject]["name"]
+                request = self.clarification.request_entity_identity(
+                    operation.subject, operation
+                )
                 return StatementResult(
-                    clarification=f"Who is {name.title()}? I don't know enough about this entity yet.",
+                    clarification=request.question if request else None,
                     operation=operation,
                 )
 
@@ -84,14 +86,12 @@ class SLR:
         if kind == "FACT":
             result = self.executor.execute(operation)
             if result is not None and subject_concept == "UNKNOWN":
-                self.pending_entity = operation.subject
-                name = self.memory.entities[operation.subject]["name"]
+                request = self.clarification.request_entity_identity(
+                    operation.subject, operation
+                )
                 return StatementResult(
                     result=result,
-                    clarification=(
-                        f"Who is {name.title()}? I don't know whether {name} is a human, "
-                        "an animal, or something else."
-                    ),
+                    clarification=request.question if request else None,
                     operation=operation,
                 )
             return StatementResult(result=result, operation=operation)
@@ -105,7 +105,45 @@ class SLR:
             return StatementResult()
         return self.router.dispatch(operation, parsed)
 
+    def _handle_pending_clarification(self, text):
+        request = self.clarification.current()
+        if request is None:
+            return None
+
+        parsed = self.parser.parse(text)
+        if parsed.meaning != "TYPE_ASSIGNMENT":
+            return None
+
+        entity = self.resolver.resolve_canonical(parsed.subject_word)
+        if not self.clarification.matches_entity(entity):
+            return None
+
+        execution = self._execute_statement(parsed)
+        if execution.result is None:
+            return None
+
+        original_operation = request.original_operation
+        self.clarification.clear()
+
+        if original_operation is None:
+            return f"Understood. I know that {parsed.subject_word} is a {parsed.object_word}."
+
+        original_operation.subject = self._canonical(entity)
+        resumed = self.executor.execute(original_operation)
+        if resumed is None:
+            return f"Understood. I know that {parsed.subject_word} is a {parsed.object_word}."
+
+        return (
+            f"Understood. I know that {parsed.subject_word} is a {parsed.object_word}. "
+            "I have also stored the earlier statement."
+        )
+
     def process(self, text):
+        if self.clarification.has_pending():
+            clarification_result = self._handle_pending_clarification(text)
+            if clarification_result is not None:
+                return clarification_result
+
         parsed = self.parser.parse(text)
 
         if parsed.question_type:
@@ -138,12 +176,10 @@ class SLR:
 
         definition = self.executor.definitions.get(execution.operation.name) or {}
         if definition.get("kind") == "CLASSIFICATION":
-            self.pending_entity = None
             entity = self._canonical(execution.result.subject)
             name = self.memory.entities[entity]["name"]
             return f"Understood. I know that {name} is a {parsed.object_word}."
 
-        self.pending_entity = None
         return (
             "Memory created, but it conflicts with an existing memory."
             if execution.result.status == "CONFLICTED"
