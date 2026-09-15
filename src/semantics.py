@@ -59,7 +59,6 @@ class SemanticParser:
             if not subject_concept or not state_concept:
                 return meaning
 
-            # A state is a predicate/concept, not an entity node.
             entity_id = self._new_entity_id(subject_concept)
             meaning.entities.append(Entity(entity_id=entity_id, concept=subject_concept))
             meaning.facts.append(Fact(subject=entity_id, predicate=state_concept))
@@ -94,6 +93,34 @@ class SemanticParser:
                     name=tree.operation,
                     subject=subject_id,
                     predicate=predicate,
+                    object=object_id,
+                )
+            return meaning
+
+        if tree.meaning in {"TYPE_ASSIGNMENT", "SUBJECT_RELATION"}:
+            subject_concept = self._concept(tree.subject_word)
+            object_concept = self._concept(tree.object_word)
+            if not subject_concept or not object_concept:
+                return meaning
+
+            subject_id = self._new_entity_id(subject_concept)
+            object_id = self._new_entity_id(object_concept)
+            meaning.entities.extend([
+                Entity(entity_id=subject_id, concept=subject_concept),
+                Entity(entity_id=object_id, concept=object_concept),
+            ])
+
+            relation = tree.relation
+            if relation:
+                meaning.facts.append(
+                    Fact(subject=subject_id, predicate=relation, object=object_id)
+                )
+
+            if tree.operation:
+                meaning.operation = SemanticOperation(
+                    name=tree.operation,
+                    subject=subject_id,
+                    predicate=relation,
                     object=object_id,
                 )
             return meaning
