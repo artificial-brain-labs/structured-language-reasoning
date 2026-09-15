@@ -1,0 +1,19 @@
+{
+  "operations": {
+    "ASSERT_STATE": {
+      "target": "MEMORY",
+      "kind": "FACT",
+      "requires": ["subject", "predicate", "object"]
+    },
+    "ASSERT_RELATION": {
+      "target": "MEMORY",
+      "kind": "RELATION",
+      "requires": ["subject", "predicate", "object"]
+    },
+    "ASSERT_CLASSIFICATION": {
+      "target": "MEMORY",
+      "kind": "CLASSIFICATION",
+      "requires": ["subject", "predicate", "object"]
+    }
+  }
+}
