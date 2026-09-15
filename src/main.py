@@ -8,6 +8,7 @@ from .response import ResponseGenerator
 from .semantics import SemanticParser
 from .executor import SemanticExecutor
 from .statement_router import StatementRouter, StatementResult
+from .entity_resolver import EntityResolver
 
 
 class SLR:
@@ -19,18 +20,12 @@ class SLR:
         self.memory = DynamicMemory()
         self.reasoner = Reasoner(self.ontology, self.memory)
         self.executor = SemanticExecutor(self.memory)
+        self.resolver = EntityResolver(self.lexicon, self.ontology, self.memory)
         self.router = StatementRouter()
         self.router.register_all(self.executor.definitions.operations, self._handle_operation)
         self.query = QueryEngine(self.memory, self.lexicon)
         self.response = ResponseGenerator(self.memory)
         self.pending_entity = None
-
-    def _entity_for_word(self, word):
-        concept = self.lexicon.concept(word)
-        if concept in self.ontology.classes:
-            return self.memory.find_entity(concept)
-        entity = self.memory.find_named_entity(word)
-        return entity or self.memory.create_named_entity(word)
 
     def _canonical(self, entity_id):
         return self.memory.canonical_entity(entity_id)
@@ -41,16 +36,16 @@ class SLR:
             return StatementResult(operation=operation)
 
         kind = definition.get("kind")
-        subject_entity = self._entity_for_word(parsed.subject_word)
-        operation.subject = self._canonical(subject_entity)
-        subject_concept = self.memory.entities[operation.subject]["concept"]
+        subject_entity = self.resolver.resolve_canonical(parsed.subject_word)
+        operation.subject = subject_entity
+        subject_concept = self.resolver.concept(operation.subject)
 
         if kind == "CLASSIFICATION":
-            concept = self.lexicon.concept(parsed.object_word)
-            if concept not in self.ontology.classes:
+            resolved_type = self.resolver.resolve_type(parsed.object_word)
+            if resolved_type is None:
                 return StatementResult(operation=operation)
 
-            type_entity = self.memory.find_entity(concept)
+            concept, type_entity = resolved_type
             operation.object = type_entity
             result = self.executor.execute(operation)
             if result is not None:
@@ -60,8 +55,7 @@ class SLR:
         if kind == "RELATION":
             relation_schema = self.memory.relations.get(operation.predicate) or {}
             if relation_schema.get("type") == "IDENTITY":
-                object_entity = self._entity_for_word(parsed.object_word)
-                operation.object = self._canonical(object_entity)
+                operation.object = self.resolver.resolve_canonical(parsed.object_word)
                 result = self.executor.execute(operation)
                 return StatementResult(result=result, operation=operation)
 
@@ -132,8 +126,8 @@ class SLR:
         execution = self._execute_statement(parsed)
         if execution.result is None:
             if execution.operation is not None:
-                kind = self.executor.definitions.get(execution.operation.name) or {}
-                if kind.get("kind") == "CLASSIFICATION":
+                definition = self.executor.definitions.get(execution.operation.name) or {}
+                if definition.get("kind") == "CLASSIFICATION":
                     return "I don't know that type yet."
                 if (self.memory.relations.get(execution.operation.predicate) or {}).get("type") == "IDENTITY":
                     return "I could not store that identity."
