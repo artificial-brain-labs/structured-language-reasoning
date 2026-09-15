@@ -51,12 +51,9 @@ class SLR:
                 return f"{self.memory.entities[entity]['name']} is a {concept.lower()}."
             return self.response.generate(parsed, self.query.answer(parsed))
 
-        if not parsed.subject_word or not parsed.verb_word:
-            return "I could not parse that sentence."
-
-        # Explicit entity-to-entity identity is handled before classification.
-        # The parser supplies the relation from declarative grammar data.
-        if parsed.meaning == "SUBJECT_RELATION" and parsed.object_word:
+        # Explicit entity-to-entity identity is a sentence relation and does
+        # not require a lexical verb field in ParsedSentence.
+        if parsed.meaning == "SUBJECT_RELATION" and parsed.subject_word and parsed.object_word:
             subject_entity = self._entity_for_word(parsed.subject_word)
             object_entity = self._entity_for_word(parsed.object_word)
             if not parsed.relation:
@@ -65,6 +62,9 @@ class SLR:
                 return "I could not store that identity."
             self.pending_entity = None
             return "I have stored that identity in memory."
+
+        if not parsed.subject_word or not parsed.verb_word:
+            return "I could not parse that sentence."
 
         if parsed.meaning == "TYPE_ASSIGNMENT" and parsed.object_word:
             concept = self.lexicon.concept(parsed.object_word)
