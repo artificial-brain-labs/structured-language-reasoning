@@ -26,9 +26,6 @@ class Parser:
     def _pos(self, word):
         return self.lexicon.pos(word) if self.lexicon else None
 
-    def _concept(self, word):
-        return self.lexicon.concept(word) if self.lexicon else None
-
     def _category(self, word):
         """Resolve a token to the category used by the declarative grammar.
 
@@ -60,15 +57,18 @@ class Parser:
                 return rule
         return None
 
+    def _slot_word(self, tokens, rule, slot):
+        """Read a semantic slot from declarative grammar data."""
+        index = rule.get("slots", {}).get(slot)
+        if not isinstance(index, int) or not 0 <= index < len(tokens):
+            return None
+        return tokens[index]
+
     def parse(self, text):
         tokens = tokenize(text) if isinstance(text, str) else text
         tokens = [token.lower() for token in tokens]
         if not tokens:
             return ParsedSentence(tokens=tokens)
-        if self._concept(tokens[0]) == "WHAT":
-            return self.parse_what(tokens)
-        if self._concept(tokens[0]) == "WHO":
-            return self.parse_who(tokens)
         return self.parse_statement(tokens)
 
     def parse_statement(self, tokens):
@@ -76,86 +76,14 @@ class Parser:
         if not rule:
             return ParsedSentence(tokens=tokens)
 
-        meaning = rule.get("meaning")
-        operation = rule.get("operation")
-        relation = rule.get("relation")
-        name = rule.get("name")
-
-        if meaning == "SUBJECT_STATE":
-            determiner = self._pos(tokens[0]) == "DETERMINER"
-            subject_index = 1 if determiner else 0
-            state_index = 3 if determiner else 2
-            return ParsedSentence(
-                subject_word=tokens[subject_index],
-                verb_word=tokens[state_index],
-                rule=name,
-                meaning=meaning,
-                operation=operation,
-                relation=relation,
-                tokens=tokens,
-            )
-
-        if meaning == "TYPE_ASSIGNMENT":
-            return ParsedSentence(
-                subject_word=tokens[0],
-                object_word=tokens[-1],
-                rule=name,
-                meaning=meaning,
-                operation=operation,
-                relation=relation,
-                tokens=tokens,
-            )
-
-        if meaning == "SUBJECT_RELATION":
-            return ParsedSentence(
-                subject_word=tokens[0],
-                object_word=tokens[2],
-                rule=name,
-                meaning=meaning,
-                operation=operation,
-                relation=relation,
-                tokens=tokens,
-            )
-
-        if meaning == "SUBJECT_VERB_OBJECT":
-            if self._pos(tokens[0]) == "DETERMINER":
-                subject = tokens[1]
-                verb_index = 2
-                object_index = 4 if self._pos(tokens[3]) == "DETERMINER" else 3
-            else:
-                subject = tokens[0]
-                verb_index = 1
-                object_index = 2
-            return ParsedSentence(
-                subject_word=subject,
-                verb_word=tokens[verb_index],
-                object_word=tokens[object_index],
-                rule=name,
-                meaning=meaning,
-                operation=operation,
-                relation=relation,
-                tokens=tokens,
-            )
-
-        return ParsedSentence(tokens=tokens)
-
-    def parse_what(self, tokens):
-        if len(tokens) >= 3 and self._concept(tokens[1]) == "IS":
-            return ParsedSentence(
-                subject_word=tokens[2], question_type="TYPE",
-                rule="question_what_type", meaning="QUERY_TYPE", tokens=tokens
-            )
-        if len(tokens) >= 5 and self._concept(tokens[1]) == "DO":
-            return ParsedSentence(
-                subject_word=tokens[3], verb_word=tokens[4], question_type="OBJECT",
-                rule="question_what_object", meaning="QUERY_OBJECT", tokens=tokens
-            )
-        return ParsedSentence(tokens=tokens)
-
-    def parse_who(self, tokens):
-        if len(tokens) >= 4:
-            return ParsedSentence(
-                verb_word=tokens[1], object_word=tokens[3], question_type="SUBJECT",
-                rule="question_who_subject", meaning="QUERY_SUBJECT", tokens=tokens
-            )
-        return ParsedSentence(tokens=tokens)
+        return ParsedSentence(
+            subject_word=self._slot_word(tokens, rule, "subject"),
+            verb_word=self._slot_word(tokens, rule, "verb"),
+            object_word=self._slot_word(tokens, rule, "object"),
+            question_type=rule.get("question_type"),
+            rule=rule.get("name"),
+            meaning=rule.get("meaning"),
+            operation=rule.get("operation"),
+            relation=rule.get("relation"),
+            tokens=tokens,
+        )
