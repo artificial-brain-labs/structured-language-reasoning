@@ -18,8 +18,8 @@ class Fact:
 class SemanticOperation:
     """A mechanism-level operation produced from structured meaning.
 
-    Operation names describe what the execution layer should do; they do not
-    contain domain knowledge. Domain concepts and relations remain data-driven.
+    Operation names describe execution mechanics. Domain concepts and
+    relations remain data-driven and are carried as operation data.
     """
 
     name: str
@@ -46,83 +46,101 @@ class SemanticParser:
             return None
         return self.lexicon.concept(word)
 
-    def _new_entity_id(self, concept):
+    def _new_entity_id(self, concept, word=None):
         self.entity_counter += 1
-        return f"{concept.lower()}_{self.entity_counter:03d}"
+        base = (concept or word or "unknown").lower()
+        return f"{base}_{self.entity_counter:03d}"
+
+    def _entity(self, word):
+        concept = self._concept(word) or "UNKNOWN"
+        return Entity(self._new_entity_id(concept, word), concept)
+
+    def _operation_attributes(self, subject_word=None, object_word=None):
+        attributes = {}
+        if subject_word is not None:
+            attributes["subject_word"] = subject_word
+        if object_word is not None:
+            attributes["object_word"] = object_word
+        return attributes
 
     def parse(self, tree):
         meaning = SemanticRepresentation()
 
         if tree.meaning == "SUBJECT_STATE":
-            subject_concept = self._concept(tree.subject_word)
+            subject = self._entity(tree.subject_word)
             state_concept = self._concept(tree.verb_word)
-            if not subject_concept or not state_concept:
+            if not state_concept:
                 return meaning
 
-            entity_id = self._new_entity_id(subject_concept)
-            meaning.entities.append(Entity(entity_id=entity_id, concept=subject_concept))
-            meaning.facts.append(Fact(subject=entity_id, predicate=state_concept))
-
-            if tree.operation:
-                meaning.operation = SemanticOperation(
-                    name=tree.operation,
-                    subject=entity_id,
-                    predicate=state_concept,
-                )
+            meaning.entities.append(subject)
+            meaning.facts.append(Fact(subject=subject.entity_id, predicate=state_concept))
+            meaning.operation = SemanticOperation(
+                name=tree.operation,
+                subject=subject.entity_id,
+                predicate=state_concept,
+                attributes=self._operation_attributes(tree.subject_word),
+            ) if tree.operation else None
             return meaning
 
         if tree.meaning == "SUBJECT_VERB_OBJECT":
-            subject_concept = self._concept(tree.subject_word)
-            object_concept = self._concept(tree.object_word)
+            subject = self._entity(tree.subject_word)
+            object_ = self._entity(tree.object_word)
             predicate = self._concept(tree.verb_word)
-            if not subject_concept or not object_concept or not predicate:
+            if not predicate:
                 return meaning
 
-            subject_id = self._new_entity_id(subject_concept)
-            object_id = self._new_entity_id(object_concept)
-            meaning.entities.extend([
-                Entity(entity_id=subject_id, concept=subject_concept),
-                Entity(entity_id=object_id, concept=object_concept),
-            ])
             if tree.negated:
                 predicate = f"NOT_{predicate}"
-            meaning.facts.append(Fact(subject=subject_id, predicate=predicate, object=object_id))
 
-            if tree.operation:
-                meaning.operation = SemanticOperation(
-                    name=tree.operation,
-                    subject=subject_id,
-                    predicate=predicate,
-                    object=object_id,
-                )
+            meaning.entities.extend([subject, object_])
+            meaning.facts.append(
+                Fact(subject=subject.entity_id, predicate=predicate, object=object_.entity_id)
+            )
+            meaning.operation = SemanticOperation(
+                name=tree.operation,
+                subject=subject.entity_id,
+                predicate=predicate,
+                object=object_.entity_id,
+                attributes=self._operation_attributes(tree.subject_word, tree.object_word),
+            ) if tree.operation else None
             return meaning
 
-        if tree.meaning in {"TYPE_ASSIGNMENT", "SUBJECT_RELATION"}:
-            subject_concept = self._concept(tree.subject_word)
-            object_concept = self._concept(tree.object_word)
-            if not subject_concept or not object_concept:
+        if tree.meaning == "TYPE_ASSIGNMENT":
+            subject = self._entity(tree.subject_word)
+            object_ = self._entity(tree.object_word)
+            if not tree.relation:
                 return meaning
 
-            subject_id = self._new_entity_id(subject_concept)
-            object_id = self._new_entity_id(object_concept)
-            meaning.entities.extend([
-                Entity(entity_id=subject_id, concept=subject_concept),
-                Entity(entity_id=object_id, concept=object_concept),
-            ])
+            meaning.entities.extend([subject, object_])
+            meaning.facts.append(
+                Fact(subject=subject.entity_id, predicate=tree.relation, object=object_.entity_id)
+            )
+            meaning.operation = SemanticOperation(
+                name=tree.operation,
+                subject=subject.entity_id,
+                predicate=tree.relation,
+                object=object_.entity_id,
+                attributes=self._operation_attributes(tree.subject_word, tree.object_word),
+            ) if tree.operation else None
+            return meaning
 
-            relation = tree.relation
-            if relation:
-                meaning.facts.append(
-                    Fact(subject=subject_id, predicate=relation, object=object_id)
-                )
+        if tree.meaning == "SUBJECT_RELATION":
+            subject = self._entity(tree.subject_word)
+            object_ = self._entity(tree.object_word)
+            if not tree.relation:
+                return meaning
 
-            if tree.operation:
-                meaning.operation = SemanticOperation(
-                    name=tree.operation,
-                    subject=subject_id,
-                    predicate=relation,
-                    object=object_id,
-                )
+            meaning.entities.extend([subject, object_])
+            meaning.facts.append(
+                Fact(subject=subject.entity_id, predicate=tree.relation, object=object_.entity_id)
+            )
+            meaning.operation = SemanticOperation(
+                name=tree.operation,
+                subject=subject.entity_id,
+                predicate=tree.relation,
+                object=object_.entity_id,
+                attributes=self._operation_attributes(tree.subject_word, tree.object_word),
+            ) if tree.operation else None
             return meaning
 
         return meaning
