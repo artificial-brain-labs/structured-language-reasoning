@@ -1,9 +1,5 @@
 class SemanticExecutor:
-    """Execute declarative semantic operations without domain-specific rules.
-
-    The executor understands operation mechanics only. Concepts, predicates,
-    ontology rules, and relation behavior remain data-driven.
-    """
+    """Execute declarative semantic operations without domain-specific rules."""
 
     def __init__(self, memory):
         self.memory = memory
@@ -21,16 +17,15 @@ class SemanticExecutor:
                 confidence,
             )
 
-        if operation.name == "ASSERT_RELATION":
-            return self.memory.add_memory(
-                operation.subject,
-                operation.predicate,
-                operation.object,
-                source,
-                confidence,
-            )
-
-        if operation.name == "ASSERT_CLASSIFICATION":
+        if operation.name in {"ASSERT_RELATION", "ASSERT_CLASSIFICATION"}:
+            schema = self.memory.relations.get(operation.predicate) or {}
+            if schema.get("type") == "IDENTITY":
+                return self.memory.add_identity(
+                    operation.subject,
+                    operation.object,
+                    source,
+                    confidence,
+                )
             return self.memory.add_memory(
                 operation.subject,
                 operation.predicate,
