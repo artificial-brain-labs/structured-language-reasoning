@@ -51,8 +51,6 @@ class SLR:
                 return f"{self.memory.entities[entity]['name']} is a {concept.lower()}."
             return self.response.generate(parsed, self.query.answer(parsed))
 
-        # Explicit entity-to-entity identity is a sentence relation and does
-        # not require a lexical verb field in ParsedSentence.
         if parsed.meaning == "SUBJECT_RELATION" and parsed.subject_word and parsed.object_word:
             subject_entity = self._entity_for_word(parsed.subject_word)
             object_entity = self._entity_for_word(parsed.object_word)
@@ -63,10 +61,10 @@ class SLR:
             self.pending_entity = None
             return "I have stored that identity in memory."
 
-        if not parsed.subject_word or not parsed.verb_word:
-            return "I could not parse that sentence."
-
-        if parsed.meaning == "TYPE_ASSIGNMENT" and parsed.object_word:
+        # Type assignment is valid even when the entity is currently UNKNOWN.
+        # Classification is explicit knowledge, so it must be processed before
+        # the generic verb-field guard.
+        if parsed.meaning == "TYPE_ASSIGNMENT" and parsed.subject_word and parsed.object_word:
             concept = self.lexicon.concept(parsed.object_word)
             if concept not in self.ontology.classes:
                 return "I don't know that type yet."
@@ -77,6 +75,9 @@ class SLR:
             entity = self._canonical(subject_entity)
             name = self.memory.entities[entity]["name"]
             return f"Understood. I know that {name} is a {parsed.object_word}."
+
+        if not parsed.subject_word or not parsed.verb_word:
+            return "I could not parse that sentence."
 
         subject_entity = self._entity_for_word(parsed.subject_word)
         entity = self._canonical(subject_entity)
