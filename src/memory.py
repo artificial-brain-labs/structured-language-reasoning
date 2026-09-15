@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime, UTC
 
-
 @dataclass
 class Memory:
     subject: str
@@ -10,141 +9,63 @@ class Memory:
     status: str = "ASSERTED"
     confidence: float = 1.0
     source: str = "USER"
-    created_at: str = field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     support: list = field(default_factory=list)
     contradictions: list = field(default_factory=list)
-
 
 class DynamicMemory:
     def __init__(self):
         self.entities = {}
         self.memories = []
 
-    def create_entity(self, concept):
-        """Create a new entity for a concept."""
-        base = concept.lower()
-
-        count = sum(
-            1
-            for entity in self.entities.values()
-            if entity["concept"] == concept
-        ) + 1
-
-        entity_id = f"{base}_{count:03d}"
-
-        self.entities[entity_id] = {
-            "concept": concept
-        }
-
+    def create_entity(self, concept, name=None):
+        base = (name or concept).lower().replace(" ", "_")
+        entity_id = f"{base}_{len(self.entities) + 1:03d}"
+        self.entities[entity_id] = {"concept": concept, "name": name or concept}
         return entity_id
 
     def find_entity(self, concept):
-        """Find an existing entity for a concept or create one."""
         for entity_id, data in self.entities.items():
-            if data["concept"] == concept:
+            if data["concept"] == concept and data.get("name") == concept:
                 return entity_id
-
         return self.create_entity(concept)
 
-    def add_memory(
-        self,
-        subject,
-        predicate,
-        object_,
-        source="USER",
-        confidence=1.0,
-    ):
-        """
-        Add a memory to the world model.
+    def find_named_entity(self, name):
+        name = name.strip().lower()
+        for entity_id, data in self.entities.items():
+            if data.get("name", "").lower() == name:
+                return entity_id
+        return None
 
-        If the exact memory already exists, return the existing memory.
+    def create_named_entity(self, name):
+        return self.find_named_entity(name) or self.create_entity("UNKNOWN", name=name)
 
-        If an opposite memory exists, mark both memories as conflicted.
-        """
+    def set_entity_concept(self, entity_id, concept):
+        self.entities[entity_id]["concept"] = concept
 
-        # Check whether this exact memory already exists.
+    def add_memory(self, subject, predicate, object_, source="USER", confidence=1.0):
         for memory in self.memories:
-            if (
-                memory.subject == subject
-                and memory.predicate == predicate
-                and memory.object == object_
-            ):
+            if memory.subject == subject and memory.predicate == predicate and memory.object == object_:
                 return memory
-
-        # Check for contradiction.
         opposite = self.opposite(predicate)
-
-        for index, memory in enumerate(self.memories):
-            if (
-                memory.subject == subject
-                and memory.predicate == opposite
-                and memory.object == object_
-            ):
-                # Mark the existing memory as conflicted.
+        for memory in self.memories:
+            if memory.subject == subject and memory.predicate == opposite and memory.object == object_:
                 memory.status = "CONFLICTED"
-
-                # Create the new conflicting memory.
-                new_memory = Memory(
-                    subject=subject,
-                    predicate=predicate,
-                    object=object_,
-                    status="CONFLICTED",
-                    confidence=confidence,
-                    source=source,
-                )
-
-                # Record the relationship between contradictory memories.
+                new_memory = Memory(subject, predicate, object_, "CONFLICTED", confidence, source)
                 memory.contradictions.append(len(self.memories))
-
                 self.memories.append(new_memory)
-
                 return new_memory
-
-        # No contradiction: create a normal asserted memory.
-        new_memory = Memory(
-            subject=subject,
-            predicate=predicate,
-            object=object_,
-            status="ASSERTED",
-            confidence=confidence,
-            source=source,
-        )
-
+        new_memory = Memory(subject, predicate, object_, "ASSERTED", confidence, source)
         self.memories.append(new_memory)
-
         return new_memory
 
     def opposite(self, predicate):
-        """Return the opposite predicate."""
-        if predicate == "EATS":
-            return "NOT_EATS"
-
-        if predicate == "NOT_EATS":
-            return "EATS"
-
+        if predicate == "EATS": return "NOT_EATS"
+        if predicate == "NOT_EATS": return "EATS"
         return f"NOT_{predicate}"
 
-    def query(
-        self,
-        subject=None,
-        predicate=None,
-        object_=None,
-    ):
-        """Return memories matching the supplied criteria."""
-        results = []
-
-        for memory in self.memories:
-            if subject is not None and memory.subject != subject:
-                continue
-
-            if predicate is not None and memory.predicate != predicate:
-                continue
-
-            if object_ is not None and memory.object != object_:
-                continue
-
-            results.append(memory)
-
-        return results
+    def query(self, subject=None, predicate=None, object_=None):
+        return [m for m in self.memories if
+                (subject is None or m.subject == subject) and
+                (predicate is None or m.predicate == predicate) and
+                (object_ is None or m.object == object_)]
