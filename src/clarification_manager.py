@@ -8,6 +8,7 @@ class ClarificationRequest:
     entity_id: str
     question: str
     original_operation: object = None
+    original_context: object = None
 
 
 class ClarificationManager:
@@ -21,7 +22,7 @@ class ClarificationManager:
         self.memory = memory
         self.pending = None
 
-    def request_entity_identity(self, entity_id, operation=None):
+    def request_entity_identity(self, entity_id, operation=None, context=None):
         if entity_id not in self.memory.entities:
             return None
 
@@ -31,6 +32,7 @@ class ClarificationManager:
             entity_id=entity_id,
             question=question,
             original_operation=operation,
+            original_context=context,
         )
         return self.pending
 
