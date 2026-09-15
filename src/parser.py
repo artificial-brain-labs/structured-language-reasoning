@@ -12,6 +12,7 @@ class ParsedSentence:
     question_type: str | None = None
     rule: str | None = None
     meaning: str | None = None
+    operation: str | None = None
     relation: str | None = None
     tokens: list[str] | None = None
 
@@ -76,6 +77,7 @@ class Parser:
             return ParsedSentence(tokens=tokens)
 
         meaning = rule.get("meaning")
+        operation = rule.get("operation")
         relation = rule.get("relation")
         name = rule.get("name")
 
@@ -88,6 +90,7 @@ class Parser:
                 verb_word=tokens[state_index],
                 rule=name,
                 meaning=meaning,
+                operation=operation,
                 relation=relation,
                 tokens=tokens,
             )
@@ -98,6 +101,7 @@ class Parser:
                 object_word=tokens[-1],
                 rule=name,
                 meaning=meaning,
+                operation=operation,
                 relation=relation,
                 tokens=tokens,
             )
@@ -108,6 +112,7 @@ class Parser:
                 object_word=tokens[2],
                 rule=name,
                 meaning=meaning,
+                operation=operation,
                 relation=relation,
                 tokens=tokens,
             )
@@ -127,6 +132,7 @@ class Parser:
                 object_word=tokens[object_index],
                 rule=name,
                 meaning=meaning,
+                operation=operation,
                 relation=relation,
                 tokens=tokens,
             )
