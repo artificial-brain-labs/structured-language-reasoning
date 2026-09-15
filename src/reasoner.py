@@ -1,10 +1,18 @@
 from .relations import RelationSchema
 
+
 class Reasoner:
     def __init__(self, ontology, memory):
         self.ontology = ontology
         self.memory = memory
         self.schemas = RelationSchema()
+
+    def relation_name_for_type(self, relation_type):
+        """Resolve a relation name from its declarative schema type."""
+        for name, schema in self.schemas.schemas.items():
+            if schema.get("type") == relation_type:
+                return name
+        return None
 
     def validate_relation(self, subject_entity, predicate, object_entity):
         schema = self.schemas.get(predicate)
@@ -25,5 +33,6 @@ class Reasoner:
 
     def infer_is_a(self, entity_id):
         concept = self.memory.entities[entity_id]["concept"]
-        return [{"entity": entity_id, "predicate": "IS_A", "object": ancestor}
+        relation_name = self.relation_name_for_type("TAXONOMIC")
+        return [{"entity": entity_id, "predicate": relation_name, "object": ancestor}
                 for ancestor in self.ontology.ancestors(concept)]
