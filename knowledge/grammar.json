@@ -25,6 +25,12 @@
       "operation": "ASSERT_RELATION"
     },
     {
+      "name": "simple_transitive_entity_subject_known_object",
+      "pattern": ["ENTITY", "VERB", "NOUN"],
+      "meaning": "SUBJECT_VERB_OBJECT",
+      "operation": "ASSERT_RELATION"
+    },
+    {
       "name": "type_assignment",
       "pattern": ["ENTITY", "AUX", "DETERMINER", "NOUN"],
       "meaning": "TYPE_ASSIGNMENT",
