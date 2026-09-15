@@ -73,7 +73,7 @@ class SLR:
             if not object_concept:
                 return StatementResult(operation=operation)
 
-            object_entity = self.memory.find_entity(object_concept)
+            object_entity = self.resolver.resolve_canonical(parsed.object_word)
             if not self.reasoner.validate_relation(
                 operation.subject, operation.predicate, object_entity
             ):
@@ -169,6 +169,13 @@ class SLR:
             return "I could not parse that sentence."
 
         execution = self._execute_statement(parsed)
+
+        # Clarification is a valid execution outcome: no memory result is
+        # expected yet because the operation is intentionally waiting for
+        # information. Handle it before treating a missing result as failure.
+        if execution.clarification:
+            return execution.clarification
+
         if execution.result is None:
             if execution.operation is not None:
                 definition = self.executor.definitions.get(execution.operation.name) or {}
@@ -177,9 +184,6 @@ class SLR:
                 if (self.memory.relations.get(execution.operation.predicate) or {}).get("type") == "IDENTITY":
                     return "I could not store that identity."
             return "I could not execute that statement."
-
-        if execution.clarification:
-            return execution.clarification
 
         definition = self.executor.definitions.get(execution.operation.name) or {}
         if definition.get("kind") == "CLASSIFICATION":
