@@ -1,0 +1,12 @@
+{
+  "system": {
+    "unknown": "I don't know.",
+    "unknown_type": "I don't know yet.",
+    "parse_failure": "I could not parse that sentence.",
+    "execution_failure": "I could not execute that statement.",
+    "memory_conflict": "Memory created, but it conflicts with an existing memory.",
+    "identity_failure": "I could not store that identity.",
+    "classification_resumed_failure": "I could not validate the earlier statement with that classification.",
+    "classification_resumed_success": "I have also stored the earlier statement."
+  }
+}
