@@ -62,7 +62,7 @@ class SLR:
 
             if subject_concept == "UNKNOWN":
                 request = self.clarification.request_entity_identity(
-                    operation.subject, operation
+                    operation.subject, operation, parsed
                 )
                 return StatementResult(
                     clarification=request.question if request else None,
@@ -87,7 +87,7 @@ class SLR:
             result = self.executor.execute(operation)
             if result is not None and subject_concept == "UNKNOWN":
                 request = self.clarification.request_entity_identity(
-                    operation.subject, operation
+                    operation.subject, operation, parsed
                 )
                 return StatementResult(
                     result=result,
@@ -123,15 +123,22 @@ class SLR:
             return None
 
         original_operation = request.original_operation
+        original_context = request.original_context
         self.clarification.clear()
 
-        if original_operation is None:
+        if original_operation is None or original_context is None:
             return f"Understood. I know that {parsed.subject_word} is a {parsed.object_word}."
 
         original_operation.subject = self._canonical(entity)
-        resumed = self.executor.execute(original_operation)
-        if resumed is None:
-            return f"Understood. I know that {parsed.subject_word} is a {parsed.object_word}."
+        resumed = self._handle_operation(original_operation, original_context)
+        if resumed.result is None:
+            return (
+                f"Understood. I know that {parsed.subject_word} is a {parsed.object_word}. "
+                "I could not validate the earlier statement with that classification."
+            )
+
+        if resumed.clarification:
+            return resumed.clarification
 
         return (
             f"Understood. I know that {parsed.subject_word} is a {parsed.object_word}. "
