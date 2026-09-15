@@ -1,5 +1,24 @@
 {
-  "EATS": {"type": "ACTION", "subject_type": "ANIMAL", "object_type": "THING"},
-  "IS_A": {"type": "TAXONOMIC", "subject_type": "THING", "object_type": "THING"},
-  "NOT_EATS": {"type": "NEGATED_ACTION", "subject_type": "ANIMAL", "object_type": "THING"}
+  "SAME_AS": {
+    "type": "IDENTITY",
+    "symmetric": true,
+    "transitive": true
+  },
+  "EATS": {
+    "type": "ACTION",
+    "subject_type": "ANIMAL",
+    "object_type": "THING",
+    "opposite": "NOT_EATS"
+  },
+  "NOT_EATS": {
+    "type": "NEGATED_ACTION",
+    "subject_type": "ANIMAL",
+    "object_type": "THING",
+    "opposite": "EATS"
+  },
+  "IS_A": {
+    "type": "TAXONOMIC",
+    "subject_type": "THING",
+    "object_type": "THING"
+  }
 }
