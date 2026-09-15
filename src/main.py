@@ -32,7 +32,12 @@ class SLR:
         entity_id = self._canonical(entity_id)
         self.memory.set_entity_concept(entity_id, concept)
         type_entity = self.memory.find_entity(concept)
-        self.memory.add_memory(entity_id, "IS_A", type_entity)
+        relation = self.reasoner.schemas.get("IS_A")
+        relation_name = next(
+            (name for name, schema in self.reasoner.schemas.schemas.items() if schema is relation),
+            "IS_A",
+        )
+        self.memory.add_memory(entity_id, relation_name, type_entity)
 
     def process(self, text):
         parsed = self.parser.parse(text)
@@ -72,7 +77,8 @@ class SLR:
             if not relation:
                 return "I don't understand that relationship."
             self.memory.add_memory(subject_entity, relation, object_entity)
-            if relation == "SAME_AS":
+            schema = self.reasoner.schemas.get(relation) or {}
+            if schema.get("symmetric"):
                 self.memory.add_memory(object_entity, relation, subject_entity)
             self.pending_entity = None
             return "I have stored that identity in memory."
@@ -103,9 +109,13 @@ class SLR:
         if not predicate:
             return "I don't understand the verb."
 
-        object_entity = self.memory.find_entity(object_concept)
         if parsed.negated:
-            predicate = self.memory.negate_relation(predicate)
+            schema = self.reasoner.schemas.get(predicate) or {}
+            predicate = schema.get("opposite")
+            if not predicate:
+                return "I don't know the negated form of that relationship."
+
+        object_entity = self.memory.find_entity(object_concept)
         if not self.reasoner.validate_relation(entity, predicate, object_entity):
             return "I cannot add that memory because the relationship is inconsistent with my world model."
         memory = self.memory.add_memory(entity, predicate, object_entity)
