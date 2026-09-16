@@ -28,12 +28,11 @@ class QueryEngine:
 
     def _classification(self, parsed):
         """Return asserted or derived type evidence without mutating memory."""
-        subject = self.memory.find_named_entity(parsed.subject_word)
+        subject = self._resolve(parsed.subject_word)
         target_concept = self.lexicon.concept(parsed.object_word)
         if subject is None or target_concept is None:
             return []
 
-        subject = self._canonical_id(subject)
         subject_concept = self.memory.entities[subject]["concept"]
 
         if subject_concept == target_concept:
@@ -70,6 +69,18 @@ class QueryEngine:
                     and self._canonical_id(derived["object"]) == target_entity
                 ):
                     return [derived]
+
+            # Ontology classification is a declarative derivation. Keep the
+            # evidence transient and never write it into asserted memory.
+            if subject_concept != "UNKNOWN" and self.reasoner.ontology.is_a(subject_concept, target_concept):
+                return [{
+                    "entity": subject,
+                    "predicate": "IS_A",
+                    "object": target_concept,
+                    "status": "DERIVED",
+                    "source": "ONTOLOGY",
+                    "support": [subject_concept],
+                }]
 
         return []
 
