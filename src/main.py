@@ -65,15 +65,20 @@ class SLR:
         if parsed.meaning not in accepted_meanings:
             return None
 
-        # Resolve the entity before executing the clarification. For a
-        # classification response like "Tom is a cat", resolving the same
-        # named entity must reuse the existing USER MEMORY node created by
-        # the pending clarification rather than creating a second node.
-        entity = self.resolver.resolve_canonical(parsed.subject_word)
-        if not self.clarification.matches_entity(entity):
+        pending_entity = request.entity_id
+        pending_name = self.user_memory.entities[pending_entity]["name"]
+        if parsed.subject_word.lower() != pending_name.lower():
             return None
 
-        execution = self._execute_statement(parsed)
+        # Execute the explicit clarification directly against the existing
+        # pending entity. Do not re-resolve it through a fresh semantic entity
+        # path: clarification is binding information for that exact node.
+        meaning = self.semantic_parser.parse(parsed)
+        classification_operation = meaning.operation
+        if classification_operation is None:
+            return None
+        classification_operation.subject = pending_entity
+        execution = self.operation_engine.execute(classification_operation, parsed)
         if execution.result is None:
             return None
 
@@ -82,7 +87,7 @@ class SLR:
         self.clarification.clear()
 
         confirmation_context = {
-            "subject_name": parsed.subject_word,
+            "subject_name": pending_name,
             "object_word": parsed.object_word,
         }
         confirmation = self.response_policy.render(
@@ -91,10 +96,9 @@ class SLR:
         if original_operation is None or original_context is None:
             return confirmation
 
-        # The original operation was created before the clarification. Its
-        # subject must be bound to the same canonical USER MEMORY entity that
-        # was just explicitly classified.
-        original_operation.subject = self.user_memory.canonical_entity(entity)
+        # Rebind the deferred operation to the same user-memory entity after
+        # its explicit classification has been recorded.
+        original_operation.subject = self.user_memory.canonical_entity(pending_entity)
         resumed = self.operation_engine.execute(original_operation, original_context)
         if resumed.result is None:
             return self.response.system("classification_resumed_failure", confirmation_context)
