@@ -1,4 +1,36 @@
 {
+  "principles": {
+    "no_guessing": true,
+    "unknown_is_not_false": true,
+    "derived_knowledge_is_not_asserted": true,
+    "explicit_user_knowledge_only_enters_user_memory": true,
+    "system_knowledge_is_immutable_at_runtime": true,
+    "knowledge_must_be_data_driven": true,
+    "knowledge_provenance_required": true
+  },
+  "memory_boundaries": {
+    "system_knowledge": [
+      "lexicon",
+      "grammar",
+      "ontology",
+      "relations",
+      "semantic_mappings",
+      "execution_policies",
+      "operations",
+      "response_policies"
+    ],
+    "user_memory": [
+      "explicit_user_facts",
+      "explicit_user_classifications",
+      "explicit_user_relationships",
+      "explicit_user_identity_statements"
+    ],
+    "derived_knowledge": {
+      "storage": "TRANSIENT",
+      "may_be_asserted": false,
+      "promotion_requires_explicit_confirmation": true
+    }
+  },
   "mechanisms": {
     "FACT": {
       "handler": "fact",
