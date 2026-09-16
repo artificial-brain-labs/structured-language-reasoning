@@ -52,13 +52,36 @@ class ResponseGenerator:
             return self.system("unknown")
 
         first = results[0]
+        if isinstance(first, dict) and first.get("relation"):
+            # Relationship knowledge is not an ontology classification. It is
+            # returned separately so the response does not turn FRIEND/KNOWS
+            # into guessed semantic types.
+            context = {
+                "subject_name": first.get("person_name") or parsed.subject_surface_word or parsed.subject_word,
+                "relation": first["relation"].lower(),
+                "status": first.get("status", "UNKNOWN"),
+            }
+            try:
+                return template.get("relationship_success", "{subject_name} is your {relation}.").format(**context)
+            except (KeyError, ValueError):
+                return self.system("unknown")
+
         if isinstance(first, dict):
             entity = first.get("entity")
             concept = first.get("object")
             if not entity or entity not in self.memory.entities or not concept:
                 return self.system(template.get("unknown_result", "unknown"))
+            # Use the name the user actually queried when it resolves to the
+            # same canonical entity. This preserves aliases such as Tom -> Dom
+            # without changing the underlying canonical identity.
+            queried_name = getattr(parsed, "subject_surface_word", None)
+            subject_name = self.memory.entities[entity]["name"]
+            if queried_name:
+                queried_entity = self.memory.find_named_entity(queried_name)
+                if queried_entity is not None and self.memory.canonical_entity(queried_entity) == entity:
+                    subject_name = queried_name
             context = {
-                "subject_name": self.memory.entities[entity]["name"],
+                "subject_name": subject_name,
                 "concept": concept.lower(),
                 "status": first.get("status", "UNKNOWN"),
                 "source": first.get("source", "UNKNOWN"),
@@ -81,9 +104,6 @@ class ResponseGenerator:
         if entity not in self.memory.entities:
             return self.system(template.get("unknown_result", "unknown"))
 
-        # Relation queries identify entities through explicit graph edges.
-        # An entity may intentionally have UNKNOWN as its cached type under
-        # NO GUESSING; that must not prevent returning its known name.
         context = {
             "subject_name": self.memory.entities[entity]["name"],
             "concept": self.memory.entities[entity]["concept"].lower(),
