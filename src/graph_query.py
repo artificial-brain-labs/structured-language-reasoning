@@ -5,8 +5,9 @@ class SemanticGraphQuery:
     derived edges, but traversal never promotes a derived edge to USER MEMORY.
     """
 
-    def __init__(self, graph):
+    def __init__(self, graph, ontology=None):
         self.graph = graph
+        self.ontology = ontology
 
     def _node_concept(self, node_id):
         node = self.graph.nodes.get(node_id)
@@ -33,31 +34,77 @@ class SemanticGraphQuery:
         return None
 
     def explain_classification(self, subject_id, target_concept):
-        """Return structured evidence for a classification query.
+        """Return a complete structured proof for a classification query.
 
-        The returned proof contains only graph edges actually traversed. If no
-        path exists, ``None`` is returned; absence of evidence is never treated
-        as a negative classification.
+        The first step must be an asserted classification. Subsequent steps
+        are ontology-backed parent relationships. The ontology is used as
+        relationship data for explanation; no derived step is persisted.
         """
-        path = self.classification(subject_id, target_concept)
-        if path is None:
+        if subject_id not in self.graph.nodes:
             return None
+
+        asserted = [
+            edge for edge in self.graph.edges_from(subject_id, "IS_A")
+            if edge.status == "ASSERTED" and edge.status != "CONFLICTED"
+        ]
+
+        for first in asserted:
+            source_concept = self._node_concept(first.object)
+            if source_concept is None:
+                continue
+            if source_concept == target_concept:
+                path = [self._proof_edge(first)]
+                return self._proof(subject_id, target_concept, path)
+
+            if self.ontology is None or not self.ontology.is_a(source_concept, target_concept):
+                continue
+
+            concepts = [source_concept]
+            current = source_concept
+            seen = {current}
+            while current != target_concept:
+                parent = self.ontology.parent(current)
+                if parent is None or parent in seen:
+                    break
+                concepts.append(parent)
+                seen.add(parent)
+                current = parent
+
+            if concepts[-1] != target_concept:
+                continue
+
+            path = [self._proof_edge(first)]
+            for child, parent in zip(concepts, concepts[1:]):
+                path.append({
+                    "subject": child,
+                    "predicate": "IS_A",
+                    "object": parent,
+                    "status": "DERIVED",
+                    "source": "ONTOLOGY",
+                    "support": [child],
+                    "rule": "ONTOLOGY_PARENT",
+                })
+            return self._proof(subject_id, target_concept, path)
+
+        return None
+
+    def _proof_edge(self, edge):
+        return {
+            "subject": edge.subject,
+            "predicate": edge.predicate,
+            "object": self._node_concept(edge.object) or edge.object,
+            "status": edge.status,
+            "source": edge.source,
+            "support": list(edge.support),
+            "rule": edge.attributes.get("rule"),
+        }
+
+    def _proof(self, subject_id, target_concept, path):
         return {
             "subject": subject_id,
             "target": target_concept,
             "status": "PROVEN",
-            "path": [
-                {
-                    "subject": edge.subject,
-                    "predicate": edge.predicate,
-                    "object": edge.object,
-                    "status": edge.status,
-                    "source": edge.source,
-                    "support": list(edge.support),
-                    "rule": edge.attributes.get("rule"),
-                }
-                for edge in path
-            ],
+            "path": path,
         }
 
     def objects(self, subject_id, predicate):
