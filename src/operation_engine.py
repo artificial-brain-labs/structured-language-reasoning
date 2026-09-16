@@ -50,8 +50,13 @@ class OperationEngine:
         definition = self.definitions.get(operation.name) or {}
         return self.policies.get(definition.get("kind"))
 
+    def _surface(self, parsed, slot):
+        return getattr(parsed, f"{slot}_surface_word", None) or getattr(parsed, f"{slot}_word", None)
+
     def _resolve_subject(self, operation, parsed):
-        operation.subject = self.resolver.resolve_canonical(parsed.subject_word)
+        operation.subject = self.resolver.resolve_canonical(
+            self._surface(parsed, "subject")
+        )
         return self.resolver.concept(operation.subject)
 
     def _should_clarify_unknown_subject(self, policy, relation_schema, subject_concept):
@@ -75,8 +80,9 @@ class OperationEngine:
         mode = policy.get("resolve_object")
         if mode == "literal":
             return operation.object
-        if mode == "entity" and parsed.object_word:
-            return self.resolver.resolve_canonical(parsed.object_word)
+        if mode == "entity":n            return self.resolver.resolve_canonical(
+                self._surface(parsed, "object")
+            ) if self._surface(parsed, "object") else None
         if mode == "ontology_class" and parsed.object_word:
             resolved_type = self.resolver.resolve_type(parsed.object_word)
             return resolved_type
