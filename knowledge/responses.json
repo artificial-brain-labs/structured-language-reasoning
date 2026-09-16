@@ -6,6 +6,7 @@
     "execution_failure": "I could not execute that statement.",
     "memory_conflict": "Memory created, but it conflicts with an existing memory.",
     "identity_failure": "I could not store that identity.",
+    "clarification_entity_identity": "Who is {entity_name}?",
     "classification_resumed_failure": "I could not validate the earlier statement with that classification.",
     "classification_resumed_success": "I have also stored the earlier statement."
   },
