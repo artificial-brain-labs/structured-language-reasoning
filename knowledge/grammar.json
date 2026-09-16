@@ -43,6 +43,20 @@
       "slots": {"subject": 1, "verb": 2, "object": 4}
     },
     {
+      "name": "simple_transitive_unknown_subject",
+      "pattern": ["DETERMINER", "ENTITY", "VERB", "DETERMINER", "NOUN"],
+      "meaning": "SUBJECT_VERB_OBJECT",
+      "operation": "ASSERT_RELATION",
+      "slots": {"subject": 1, "verb": 2, "object": 4}
+    },
+    {
+      "name": "simple_transitive_unknown_object",
+      "pattern": ["DETERMINER", "NOUN", "VERB", "DETERMINER", "ENTITY"],
+      "meaning": "SUBJECT_VERB_OBJECT",
+      "operation": "ASSERT_RELATION",
+      "slots": {"subject": 1, "verb": 2, "object": 4}
+    },
+    {
       "name": "simple_transitive",
       "pattern": ["ENTITY", "VERB", "ENTITY"],
       "meaning": "SUBJECT_VERB_OBJECT",
