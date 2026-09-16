@@ -142,6 +142,10 @@ class SLR:
         execution = self._execute_statement(parsed)
 
         if execution.clarification:
+            # Preserve the explicit observation in the graph even when the
+            # system still needs identity/type clarification. This does not
+            # turn UNKNOWN into a guessed type.
+            self._refresh_graph()
             return execution.clarification
 
         operation = execution.operation
