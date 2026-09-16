@@ -65,6 +65,10 @@ class SLR:
         if parsed.meaning not in accepted_meanings:
             return None
 
+        # Resolve the entity before executing the clarification. For a
+        # classification response like "Tom is a cat", resolving the same
+        # named entity must reuse the existing USER MEMORY node created by
+        # the pending clarification rather than creating a second node.
         entity = self.resolver.resolve_canonical(parsed.subject_word)
         if not self.clarification.matches_entity(entity):
             return None
@@ -87,6 +91,9 @@ class SLR:
         if original_operation is None or original_context is None:
             return confirmation
 
+        # The original operation was created before the clarification. Its
+        # subject must be bound to the same canonical USER MEMORY entity that
+        # was just explicitly classified.
         original_operation.subject = self.user_memory.canonical_entity(entity)
         resumed = self.operation_engine.execute(original_operation, original_context)
         if resumed.result is None:
