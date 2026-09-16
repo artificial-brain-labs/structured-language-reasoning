@@ -10,8 +10,17 @@ class QueryEngine:
         self.lexicon = lexicon
         self.reasoner = reasoner
         self.graph = graph
-        self.graph_query = SemanticGraphQuery(graph) if graph is not None else None
         self.relationship_memory = relationship_memory
+        self.identity_predicates = {
+            predicate
+            for predicate, schema in getattr(self.memory.relations, "schemas", {}).items()
+            if schema.get("role") == "identity"
+        }
+        self.graph_query = (
+            SemanticGraphQuery(graph, identity_predicates=self.identity_predicates)
+            if graph is not None
+            else None
+        )
         path = policy_path or Path(__file__).resolve().parent.parent / "knowledge" / "query_policy.json"
         with open(path, "r", encoding="utf-8") as file:
             data = json.load(file)
