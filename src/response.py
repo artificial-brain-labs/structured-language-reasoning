@@ -80,13 +80,13 @@ class ResponseGenerator:
         entity = first
         if entity not in self.memory.entities:
             return self.system(template.get("unknown_result", "unknown"))
-        concept = self.memory.entities[entity]["concept"]
-        if concept == "UNKNOWN":
-            return self.system(template.get("unknown_result", "unknown"))
 
+        # Relation queries identify entities through explicit graph edges.
+        # An entity may intentionally have UNKNOWN as its cached type under
+        # NO GUESSING; that must not prevent returning its known name.
         context = {
             "subject_name": self.memory.entities[entity]["name"],
-            "concept": concept.lower(),
+            "concept": self.memory.entities[entity]["concept"].lower(),
             "result_name": self.entity_name(entity),
             "subject_word": parsed.subject_word or "",
             "verb_word": parsed.verb_word or "",
