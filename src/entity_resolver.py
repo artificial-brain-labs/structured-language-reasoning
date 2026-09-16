@@ -1,9 +1,8 @@
 class EntityResolver:
-    """Resolve words to memory entities without inferring unknown types.
+    """Resolve words without inferring unknown types.
 
-    Lexicon and ontology provide knowledge; this component only performs
-    resolution mechanics. An unknown named entity is created explicitly as
-    UNKNOWN and remains unclassified until confirmed.
+    The resolver receives the active USER MEMORY store. Lexicon and ontology
+    remain system knowledge and are used only as data for resolution.
     """
 
     def __init__(self, lexicon, ontology, memory):
@@ -14,6 +13,9 @@ class EntityResolver:
     def resolve(self, word):
         concept = self.lexicon.concept(word)
         if concept in self.ontology.classes:
+            # Class nodes are references to system ontology concepts. Creating
+            # a local node is not user knowledge; it is only a graph handle
+            # needed to represent an explicit user assertion such as IS_A.
             return self.memory.find_entity(concept)
 
         entity = self.memory.find_named_entity(word)
