@@ -6,8 +6,8 @@ class OperationEngine:
     """Execute declarative operations through reusable execution mechanisms.
 
     Domain knowledge lives in operation, relation, ontology, and execution
-    policy data. This class provides mechanisms for resolving, validating,
-    clarifying, and executing those data-driven instructions.
+    policy data. Python supplies reusable mechanisms; policy data selects
+    which mechanism handles each operation kind.
     """
 
     def __init__(self, definitions, resolver, reasoner, executor, memory, lexicon, clarification, policies=None):
@@ -19,7 +19,16 @@ class OperationEngine:
         self.lexicon = lexicon
         self.clarification = clarification
         self.policies = policies or ExecutionPolicies()
-        self._handlers = {"CLASSIFICATION": self._classification, "RELATION": self._relation, "FACT": self._fact}
+        self._handlers = self._build_handlers()
+
+    def _build_handlers(self):
+        handlers = {}
+        for mechanism, policy in self.policies.mechanisms.items():
+            handler_name = policy.get("handler")
+            handler = getattr(self, f"_{handler_name}", None) if handler_name else None
+            if handler is not None:
+                handlers[mechanism] = handler
+        return handlers
 
     def execute(self, operation, parsed):
         definition = self.definitions.get(operation.name)
