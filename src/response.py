@@ -28,15 +28,23 @@ class ResponseGenerator:
             return None
         names = []
         for edge in proof["path"]:
-            subject = self.memory.entities.get(edge["subject"], {}).get("name")
+            if hasattr(edge, "subject") and hasattr(edge, "object"):
+                subject_id = edge.subject
+                object_id = edge.object
+            else:
+                subject_id = edge["subject"]
+                object_id = edge["object"]
+
+            subject = self.memory.entities.get(subject_id, {}).get("name")
             if subject is None:
-                subject = edge["subject"]
-            object_id = edge["object"]
+                subject = subject_id
+
             object_name = self.memory.entities.get(object_id, {}).get("name")
             if object_name is None:
                 object_name = object_id
                 if isinstance(object_id, str) and object_id.startswith("concept:"):
                     object_name = object_id.split(":", 1)[1]
+
             if not names:
                 names.append(subject)
             names.append(object_name)
