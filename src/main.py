@@ -17,6 +17,7 @@ from .operation_engine import OperationEngine
 from .semantic_graph import SemanticGraph
 from .graph_builder import SemanticGraphBuilder
 from .graph_query import SemanticGraphQuery
+from .tcm import TransientCommunicationMemory
 
 
 class SLR:
@@ -30,6 +31,10 @@ class SLR:
         # are isolated in a per-instance USER MEMORY store.
         self.memory = DynamicMemory()
         self.user_memory = UserMemory()
+
+        # V1.0: TCM stores raw communication temporarily. It is deliberately
+        # separate from USER MEMORY and has no assertion or identity semantics.
+        self.tcm = TransientCommunicationMemory()
 
         self.reasoner = Reasoner(self.ontology, self.user_memory)
         self.executor = SemanticExecutor(self.user_memory)
@@ -159,6 +164,11 @@ class SLR:
         return f"{confirmation} {success}" if confirmation and success else confirmation or success
 
     def process(self, text):
+        # V1.0: preserve the original communication in TCM before any parsing
+        # or interpretation. TCM records communication only; downstream
+        # evidence rules determine what, if anything, becomes knowledge.
+        self.tcm.add(text)
+
         if self.clarification.has_pending():
             clarification_result = self._handle_pending_clarification(text)
             if clarification_result is not None:
@@ -209,7 +219,7 @@ class SLR:
 
 def main():
     slr = SLR()
-    print("Structured Language Reasoning V0.9")
+    print("Structured Language Reasoning V1.0")
     print("Type 'exit' to stop.")
     while True:
         text = input("> ")
