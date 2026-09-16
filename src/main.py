@@ -11,6 +11,7 @@ from .executor import SemanticExecutor
 from .statement_router import StatementRouter, StatementResult
 from .entity_resolver import EntityResolver
 from .clarification_manager import ClarificationManager
+from .clarification_policy import ClarificationPolicy
 from .operation_engine import OperationEngine
 
 
@@ -25,6 +26,7 @@ class SLR:
         self.executor = SemanticExecutor(self.memory)
         self.resolver = EntityResolver(self.lexicon, self.ontology, self.memory)
         self.clarification = ClarificationManager(self.memory)
+        self.clarification_policy = ClarificationPolicy()
         self.operation_engine = OperationEngine(
             self.executor.definitions,
             self.resolver,
@@ -53,7 +55,8 @@ class SLR:
             return None
 
         parsed = self.parser.parse(text)
-        if parsed.meaning != "TYPE_ASSIGNMENT":
+        accepted_meanings = self.clarification_policy.accepted_meanings("entity_identity")
+        if parsed.meaning not in accepted_meanings:
             return None
 
         entity = self.resolver.resolve_canonical(parsed.subject_word)
