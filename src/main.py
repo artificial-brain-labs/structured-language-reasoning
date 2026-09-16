@@ -3,6 +3,7 @@ from .ontology import Ontology
 from .parser import Parser
 from .memory import DynamicMemory
 from .user_memory import UserMemory
+from .user_profile import UserProfile
 from .reasoner import Reasoner
 from .query import QueryEngine
 from .response import ResponseGenerator
@@ -21,7 +22,8 @@ from .tcm import TransientCommunicationMemory
 
 
 class SLR:
-    def __init__(self):
+    def __init__(self, user_id, username=None):
+        self.user_profile = UserProfile(user_id=user_id, username=username)
         self.lexicon = Lexicon()
         self.ontology = Ontology()
         self.parser = Parser(self.lexicon)
@@ -218,7 +220,7 @@ class SLR:
 
 
 def main():
-    slr = SLR()
+    slr = SLR(user_id="USER-001")
     print("Structured Language Reasoning V1.0")
     print("Type 'exit' to stop.")
     while True:
