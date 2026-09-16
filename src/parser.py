@@ -30,20 +30,29 @@ class Parser:
     def _pos(self, word):
         return self.lexicon.pos(word) if self.lexicon else None
 
+    def _concept(self, word):
+        if self.lexicon is None:
+            return None
+        return self.lexicon.concept(word)
+
     def _category(self, word):
         pos = self._pos(word)
         if pos:
             return pos
         return "ENTITY"
 
-    def _matches_category(self, actual, expected):
-        return actual == expected
+    def _matches_category(self, word, actual, expected):
+        if actual == expected:
+            return True
+        # Grammar may name a lexical concept as a category (for example MY)
+        # while the lexicon still exposes its grammatical POS (DETERMINER).
+        return self._concept(word) == expected
 
     def _matches(self, tokens, pattern):
         if len(tokens) != len(pattern):
             return False
         return all(
-            self._matches_category(self._category(token), expected)
+            self._matches_category(token, self._category(token), expected)
             for token, expected in zip(tokens, pattern)
         )
 
