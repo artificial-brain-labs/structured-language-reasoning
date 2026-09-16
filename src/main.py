@@ -71,7 +71,13 @@ class SLR:
         self.graph = SemanticGraph()
         self._refresh_graph()
 
-        self.query = QueryEngine(self.user_memory, self.lexicon, self.reasoner, graph=self.graph)
+        self.query = QueryEngine(
+            self.user_memory,
+            self.lexicon,
+            self.reasoner,
+            graph=self.graph,
+            relationship_memory=self.relationships,
+        )
         self.query.graph_query = SemanticGraphQuery(self.graph, self.ontology)
         self.response = ResponseGenerator(self.user_memory)
         self.response_policy = ResponsePolicy(self.executor.definitions)
