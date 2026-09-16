@@ -33,7 +33,7 @@ class ResponseGenerator:
             return self.system("unknown")
 
         first = results[0]
-        if parsed.question_type == "CLASSIFICATION" and isinstance(first, dict):
+        if isinstance(first, dict):
             entity = first.get("entity")
             concept = first.get("object")
             if not entity or entity not in self.memory.entities or not concept:
@@ -50,6 +50,8 @@ class ResponseGenerator:
                 return self.system("unknown")
 
         entity = first
+        if entity not in self.memory.entities:
+            return self.system(template.get("unknown_result", "unknown"))
         concept = self.memory.entities[entity]["concept"]
         if concept == "UNKNOWN":
             return self.system(template.get("unknown_result", "unknown"))
