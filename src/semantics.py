@@ -18,12 +18,6 @@ class Fact:
 
 @dataclass
 class SemanticOperation:
-    """A mechanism-level operation produced from structured meaning.
-
-    Operation names describe execution mechanics. Domain concepts and
-    relations remain data-driven and are carried as operation data.
-    """
-
     name: str
     subject: str | None = None
     predicate: str | None = None
@@ -39,8 +33,6 @@ class SemanticRepresentation:
 
 
 class SemanticMappings:
-    """Load semantic interpretation rules from declarative knowledge data."""
-
     def __init__(self, path=None):
         path = path or Path(__file__).resolve().parent.parent / "knowledge" / "semantics.json"
         with open(path, "r", encoding="utf-8") as file:
@@ -58,14 +50,10 @@ class SemanticParser:
         self.entity_counter = 0
 
     def _concept(self, word):
-        if not self.lexicon:
-            return None
-        return self.lexicon.concept(word)
+        return self.lexicon.concept(word) if self.lexicon else None
 
     def _feature(self, word, name):
-        if not self.lexicon:
-            return None
-        return self.lexicon.feature(word, name)
+        return self.lexicon.feature(word, name) if self.lexicon else None
 
     def _new_entity_id(self, concept, word=None):
         self.entity_counter += 1
@@ -76,30 +64,29 @@ class SemanticParser:
         concept = self._concept(word) or "UNKNOWN"
         return Entity(self._new_entity_id(concept, word), concept)
 
-    def _operation_attributes(self, subject_word=None, object_word=None):
+    def _operation_attributes(self, subject_word=None, object_word=None, tree=None):
         attributes = {}
         if subject_word is not None:
             attributes["subject_word"] = subject_word
         if object_word is not None:
             attributes["object_word"] = object_word
+        if tree is not None and tree.relationship_target:
+            attributes["relationship_target"] = tree.relationship_target
         return attributes
 
     def _predicate(self, tree, mapping):
         definition = mapping.get("predicate")
         if not definition:
             return None
-
         source = definition.get("source")
         if source == "grammar":
             return getattr(tree, definition.get("field"), None)
-
         if source == "lexicon":
             feature = definition.get("feature")
             predicate = self._feature(tree.verb_word, feature)
             if predicate is None and definition.get("fallback"):
                 predicate = self._feature(tree.verb_word, definition["fallback"])
             return predicate
-
         return None
 
     def _apply_negation(self, predicate, tree, mapping):
@@ -108,8 +95,7 @@ class SemanticParser:
         definition = mapping.get("negation")
         if not definition:
             return predicate
-        prefix = definition.get("prefix", "")
-        return f"{prefix}{predicate}"
+        return f"{definition.get('prefix', '')}{predicate}"
 
     def _operation_object(self, mapping, object_):
         if "object" in mapping:
@@ -124,7 +110,7 @@ class SemanticParser:
             subject=subject.entity_id if subject else None,
             predicate=predicate,
             object=object_value,
-            attributes=self._operation_attributes(tree.subject_word, tree.object_word),
+            attributes=self._operation_attributes(tree.subject_word, tree.object_word, tree),
         )
 
     def parse(self, tree):
@@ -132,27 +118,17 @@ class SemanticParser:
         mapping = self.mappings.get(tree.meaning)
         if mapping is None:
             return meaning
-
         subject = self._entity(tree.subject_word) if tree.subject_word else None
         object_ = self._entity(tree.object_word) if tree.object_word else None
         predicate = self._predicate(tree, mapping)
-
         if predicate is None:
             return meaning
-
         predicate = self._apply_negation(predicate, tree, mapping)
         fact_object = self._operation_object(mapping, object_)
-
         if subject:
             meaning.entities.append(subject)
         if object_:
             meaning.entities.append(object_)
-        meaning.facts.append(
-            Fact(
-                subject=subject.entity_id if subject else "",
-                predicate=predicate,
-                object=fact_object,
-            )
-        )
+        meaning.facts.append(Fact(subject=subject.entity_id if subject else "", predicate=predicate, object=fact_object))
         meaning.operation = self._build_operation(tree, subject, predicate, fact_object)
         return meaning
