@@ -4,6 +4,10 @@
       "result_kind": "entity_type",
       "unknown_result": "unknown_type"
     },
+    "CLASSIFICATION": {
+      "result_kind": "classification",
+      "unknown_result": "unknown"
+    },
     "OBJECT": {
       "result_kind": "object",
       "unknown_result": "unknown"
