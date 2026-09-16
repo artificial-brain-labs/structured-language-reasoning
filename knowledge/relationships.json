@@ -1,0 +1,23 @@
+{
+  "version": "1.0",
+  "principles": {
+    "same_name_is_not_same_identity": true,
+    "identity_link_requires_explicit_confirmation": true,
+    "mutual_permission_required_for_instance_connection": true,
+    "private_memory_is_never_shared_by_default": true
+  },
+  "relationship_types": {
+    "FRIEND": {"description": "A person explicitly described by the user as a friend."},
+    "KNOWS": {"description": "A person the user explicitly says they know."}
+  },
+  "verification_states": ["UNRESOLVED", "PENDING_VERIFICATION", "VERIFIED", "REJECTED"],
+  "connection_states": ["DISCOVERED", "REQUESTED", "PENDING_MUTUAL_PERMISSION", "ACTIVE", "REJECTED", "REVOKED"],
+  "default_communication_scope": {
+    "personal_messages": true,
+    "relationship_context": true,
+    "user_profile": false,
+    "private_memory": false,
+    "private_reasoning": false,
+    "files": false
+  }
+}
