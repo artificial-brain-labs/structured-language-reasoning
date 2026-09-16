@@ -1,24 +1,28 @@
 {
   "SAME_AS": {
     "type": "IDENTITY",
+    "role": "identity",
     "symmetric": true,
     "transitive": true,
     "allow_unknown_subject": true
   },
   "EATS": {
     "type": "ACTION",
+    "role": "relation",
     "subject_type": "ANIMAL",
     "object_type": "THING",
     "opposite": "NOT_EATS"
   },
   "NOT_EATS": {
     "type": "NEGATED_ACTION",
+    "role": "relation",
     "subject_type": "ANIMAL",
     "object_type": "THING",
     "opposite": "EATS"
   },
   "IS_A": {
     "type": "TAXONOMIC",
+    "role": "canonical_taxonomic",
     "subject_type": "THING",
     "object_type": "THING"
   }
