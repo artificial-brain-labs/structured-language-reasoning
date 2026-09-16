@@ -1,5 +1,5 @@
 from .memory import DynamicMemory
-from .evidence import EvidenceStore, EvidenceKind
+from .evidence import EvidenceStore
 
 
 class UserMemory(DynamicMemory):
@@ -30,8 +30,8 @@ class UserMemory(DynamicMemory):
             )
         return memory
 
-    def record_observation(self, subject=None, predicate=None, object=None, source="USER"):
-        return self.evidence.observe(subject, predicate, object, source)
+    def record_observation(self, subject=None, predicate=None, object=None, source="USER", content=None):
+        return self.evidence.observe(subject, predicate, object, source, content=content)
 
     def record_interpretation(self, subject=None, predicate=None, object=None, support=(), source="SYSTEM"):
         return self.evidence.interpret(subject, predicate, object, support, source)
