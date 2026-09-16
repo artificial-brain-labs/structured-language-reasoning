@@ -1,13 +1,10 @@
-import json
-from pathlib import Path
-
 from .lexicon import Lexicon
 from .ontology import Ontology
 from .parser import Parser
 from .memory import DynamicMemory
 from .user_memory import UserMemory
 from .user_profile import UserProfile
-from .user_relationships import InterSLRMCommunication, UserRelationshipMemory
+from .user_relationships import UserRelationshipMemory, InterSLRMCommunication
 from .reasoner import Reasoner
 from .query import QueryEngine
 from .response import ResponseGenerator
@@ -33,21 +30,22 @@ class SLR:
         self.parser = Parser(self.lexicon)
         self.semantic_parser = SemanticParser(self.lexicon)
 
+        # System memory is reserved for system/runtime knowledge. User facts
+        # are isolated in a per-instance USER MEMORY store.
         self.memory = DynamicMemory()
         self.user_memory = UserMemory()
+
+        # V1.0: raw communication is transient and deliberately separate from
+        # persistent user memory and evidence.
         self.tcm = TransientCommunicationMemory()
 
-        relationship_path = Path(__file__).resolve().parent.parent / "knowledge" / "relationships.json"
-        with relationship_path.open("r", encoding="utf-8") as handle:
-            self.relationship_schema = json.load(handle)
+        # V1.0: relationships and inter-SLRM connections belong to this user's
+        # memory. Instance identity is distinct from user identity.
         self.relationships = UserRelationshipMemory(
             owner_user_id=self.user_profile.user_id,
             slrm_instance_id=self.user_profile.slrm_instance_id,
-            relationship_schema=self.relationship_schema,
         )
-        # Relationship state is explicitly owned by this user's memory.
-        self.user_memory.relationships = self.relationships
-        self.communication = InterSLRMCommunication(self.relationships)
+        self.inter_slrm = InterSLRMCommunication(self.relationships)
 
         self.reasoner = Reasoner(self.ontology, self.user_memory)
         self.executor = SemanticExecutor(self.user_memory)
@@ -66,6 +64,8 @@ class SLR:
         self.router = StatementRouter()
         self.router.register_all(self.executor.definitions.operations, self.operation_engine.execute)
 
+        # V0.5: the semantic graph is a representation/projection layer. It is
+        # rebuilt from USER MEMORY and never becomes a second source of truth.
         self.graph_builder = SemanticGraphBuilder()
         self.graph = SemanticGraph()
         self._refresh_graph()
@@ -122,14 +122,17 @@ class SLR:
         request = self.clarification.current()
         if request is None:
             return None
+
         parsed = self.parser.parse(text)
         accepted_meanings = self.clarification_policy.accepted_meanings("entity_identity")
         if parsed.meaning not in accepted_meanings:
             return None
+
         pending_entity = request.entity_id
         pending_name = self.user_memory.entities[pending_entity]["name"]
         if parsed.subject_word.lower() != pending_name.lower():
             return None
+
         meaning = self.semantic_parser.parse(parsed)
         classification_operation = meaning.operation
         if classification_operation is None:
@@ -139,41 +142,58 @@ class SLR:
         execution = self.operation_engine.execute(classification_operation, parsed)
         if execution.result is None:
             return None
+
         original_operation = request.original_operation
         original_context = request.original_context
         self.clarification.clear()
-        confirmation_context = {"subject_name": pending_name, "object_word": parsed.object_word}
-        confirmation = self.response_policy.render(execution.operation, "success", confirmation_context)
+
+        confirmation_context = {
+            "subject_name": pending_name,
+            "object_word": parsed.object_word,
+        }
+        confirmation = self.response_policy.render(
+            execution.operation, "success", confirmation_context
+        )
         if original_operation is None or original_context is None:
             self._refresh_graph()
             return confirmation
+
         original_operation.subject = self.user_memory.canonical_entity(pending_entity)
         resumed = self.operation_engine.execute(original_operation, original_context)
         self._refresh_graph()
         if resumed.result is None:
             return self.response.system("classification_resumed_failure", confirmation_context)
+
         if resumed.clarification:
             return resumed.clarification
+
         success = self.response.system("classification_resumed_success")
         return f"{confirmation} {success}" if confirmation and success else confirmation or success
 
     def process(self, text):
         self.tcm.add(text)
+
         if self.clarification.has_pending():
             clarification_result = self._handle_pending_clarification(text)
             if clarification_result is not None:
                 return clarification_result
+
         parsed = self.parser.parse(text)
         if not parsed.question_type:
             self._record_observation(text, parsed)
+
         if parsed.question_type:
             return self.response.generate(parsed, self.query.answer(parsed))
+
         if not parsed.meaning:
             return self.response.system("parse_failure")
+
         execution = self._execute_statement(parsed)
+
         if execution.clarification:
             self._refresh_graph()
             return execution.clarification
+
         operation = execution.operation
         if execution.result is None:
             if operation is not None:
@@ -181,16 +201,20 @@ class SLR:
                 if failure:
                     return failure
             return self.response.system("execution_failure")
+
         self._refresh_graph()
+
         success_context = {}
         if parsed.subject_word:
             entity = self.user_memory.canonical_entity(execution.result.subject)
             success_context["subject_name"] = self.user_memory.entities[entity]["name"]
         if parsed.object_word:
             success_context["object_word"] = parsed.object_word
+
         success = self.response_policy.render(operation, "success", success_context)
         if success:
             return success
+
         conflict_response = self.response_policy.render(operation, "conflict")
         if execution.result.status == "CONFLICTED" and conflict_response:
             return conflict_response
