@@ -4,10 +4,22 @@ class Reasoner:
         self.memory = memory
 
     def relation_name_for_role(self, role):
-        for name, schema in self.memory.relations.schemas.items():
-            if schema.get("role") == role:
-                return name
-        return None
+        """Resolve a relation role using explicit declarative priority.
+
+        A unique highest-priority declaration wins. Ties remain unresolved
+        rather than being decided by dictionary insertion order.
+        """
+        candidates = [
+            (schema.get("priority", 0), name)
+            for name, schema in self.memory.relations.schemas.items()
+            if schema.get("role") == role
+        ]
+        if not candidates:
+            return None
+
+        highest = max(priority for priority, _ in candidates)
+        matches = [name for priority, name in candidates if priority == highest]
+        return matches[0] if len(matches) == 1 else None
 
     def validate_relation(self, subject_entity, predicate, object_entity):
         schema = self.memory.relations.get(predicate)
