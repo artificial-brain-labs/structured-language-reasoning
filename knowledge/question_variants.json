@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "normalizations": [
+    {
+      "name": "classification_duplicate_aux",
+      "tokens": ["AUX", "ENTITY", "AUX", "ENTITY"],
+      "target_question_type": "CLASSIFICATION",
+      "slots": {"subject": 1, "object": 3}
+    }
+  ]
+}
