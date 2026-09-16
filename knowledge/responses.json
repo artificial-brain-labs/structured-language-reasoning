@@ -13,7 +13,8 @@
   "queries": {
     "TYPE": {
       "unknown_result": "unknown_type",
-      "success": "{subject_name} is a {concept}."
+      "success": "{subject_name} is a {concept}.",
+      "relationship_success": "{subject_name} is your {relation}."
     },
     "CLASSIFICATION": {
       "unknown_result": "unknown",
