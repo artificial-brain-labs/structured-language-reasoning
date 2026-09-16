@@ -14,10 +14,13 @@ def test_is_a_inference():
     assert "LIVING_THING" in objects
 
 
-def test_reasoner_uses_memory_relation_schema():
+def test_reasoner_uses_declarative_relation_role():
     ontology = Ontology()
     memory = DynamicMemory()
-    memory.relations.schemas["CUSTOM_TAXONOMIC"] = {"type": "TAXONOMIC"}
+    memory.relations.schemas["CUSTOM_TAXONOMIC"] = {
+        "type": "TAXONOMIC",
+        "role": "canonical_taxonomic",
+    }
     reasoner = Reasoner(ontology, memory)
 
-    assert reasoner.relation_name_for_type("TAXONOMIC") == "CUSTOM_TAXONOMIC"
+    assert reasoner.relation_name_for_role("canonical_taxonomic") == "CUSTOM_TAXONOMIC"
