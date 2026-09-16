@@ -2,18 +2,22 @@
   "question_types": {
     "TYPE": {
       "result_kind": "entity_type",
+      "handler": "_entity_type",
       "unknown_result": "unknown_type"
     },
     "CLASSIFICATION": {
       "result_kind": "classification",
+      "handler": "_classification",
       "unknown_result": "unknown"
     },
     "OBJECT": {
       "result_kind": "object",
+      "handler": "_objects",
       "unknown_result": "unknown"
     },
     "SUBJECT": {
       "result_kind": "subject",
+      "handler": "_subjects",
       "unknown_result": "unknown"
     }
   }
