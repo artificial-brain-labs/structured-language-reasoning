@@ -23,6 +23,25 @@ class ResponseGenerator:
         except (KeyError, ValueError):
             return None
 
+    def _proof_text(self, proof):
+        if not proof or not proof.get("path"):
+            return None
+        names = []
+        for edge in proof["path"]:
+            subject = self.memory.entities.get(edge["subject"], {}).get("name")
+            if subject is None:
+                subject = edge["subject"]
+            object_id = edge["object"]
+            object_name = self.memory.entities.get(object_id, {}).get("name")
+            if object_name is None:
+                object_name = object_id
+                if isinstance(object_id, str) and object_id.startswith("concept:"):
+                    object_name = object_id.split(":", 1)[1]
+            if not names:
+                names.append(subject)
+            names.append(object_name)
+        return " -> ".join(names)
+
     def generate(self, parsed, results):
         if not results:
             template = self.query_responses.get(parsed.question_type, {})
@@ -45,9 +64,18 @@ class ResponseGenerator:
                 "source": first.get("source", "UNKNOWN"),
             }
             try:
-                return template.get("success", "").format(**context)
+                answer = template.get("success", "").format(**context)
             except (KeyError, ValueError):
                 return self.system("unknown")
+
+            proof_template = template.get("explanation")
+            reasoning = self._proof_text(first.get("proof"))
+            if proof_template and reasoning:
+                try:
+                    answer = f"{answer} {proof_template.format(reasoning=reasoning)}"
+                except (KeyError, ValueError):
+                    pass
+            return answer
 
         entity = first
         if entity not in self.memory.entities:
