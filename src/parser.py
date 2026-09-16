@@ -65,21 +65,22 @@ class Parser:
         return tokens[index]
 
     def parse(self, text):
-        tokens = tokenize(text) if isinstance(text, str) else text
-        tokens = [token.lower() for token in tokens]
+        surface_tokens = tokenize(text) if isinstance(text, str) else list(text)
+        tokens = [token.lower() for token in surface_tokens]
         if not tokens:
             return ParsedSentence(tokens=tokens)
-        return self.parse_statement(tokens)
+        return self.parse_statement(tokens, surface_tokens=surface_tokens)
 
-    def parse_statement(self, tokens):
+    def parse_statement(self, tokens, surface_tokens=None):
         rule = self._grammar_rule(tokens)
         if not rule:
             return ParsedSentence(tokens=tokens)
 
+        surface_tokens = surface_tokens if surface_tokens is not None else tokens
         return ParsedSentence(
-            subject_word=self._slot_word(tokens, rule, "subject"),
-            verb_word=self._slot_word(tokens, rule, "verb"),
-            object_word=self._slot_word(tokens, rule, "object"),
+            subject_word=self._slot_word(surface_tokens, rule, "subject"),
+            verb_word=self._slot_word(surface_tokens, rule, "verb"),
+            object_word=self._slot_word(surface_tokens, rule, "object"),
             question_type=rule.get("question_type"),
             rule=rule.get("name"),
             meaning=rule.get("meaning"),
