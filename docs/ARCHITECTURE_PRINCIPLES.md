@@ -83,19 +83,41 @@ Where a conclusion is derived, the system should be able to identify the support
 
 When clarification is requested, the pending entity and original operation/context must be preserved. A clarification response must bind information to the existing entity rather than creating a replacement entity through a fresh resolution path.
 
-## 11. Observation, Assertion, and Derivation Must Remain Distinct
+## 11. Epistemic State Must Remain Explicit
 
-The architecture should preserve the distinction between:
+SLRM distinguishes the lifecycle of information:
 
-- what was observed or communicated,
-- what was explicitly asserted/confirmed,
-- what was derived by reasoning.
+`OBSERVATION -> INTERPRETATION -> ASSERTION -> DERIVATION / HYPOTHESIS`
 
-A future hypothesis representation may be introduced, but a hypothesis must never silently become an assertion.
+These states are not interchangeable.
 
-## 12. Transient Communication Memory (TCM)
+- `OBSERVATION` records what was encountered or communicated.
+- `INTERPRETATION` records a structured interpretation without asserting truth.
+- `ASSERTION` represents explicitly supplied or explicitly confirmed user knowledge.
+- `DERIVATION` represents a conclusion produced by reasoning and is never automatically asserted.
+- `HYPOTHESIS` represents a candidate explanation or possibility and is never a fact merely because it is plausible.
 
-TCM is a planned architectural component, not yet a fully implemented V0.8 subsystem.
+The epistemic evidence ledger must preserve provenance and support without treating evidence itself as truth.
+
+## 12. Explicit Confirmation Is Required for Assertion
+
+An `ASSERTION` evidence record requires explicit confirmation. SLRM must not promote an observation, interpretation, derivation, or hypothesis to assertion implicitly.
+
+In particular:
+
+`UNKNOWN != FALSE`
+
+`UNKNOWN != TRUE`
+
+`UNKNOWN != GUESSED`
+
+`DERIVED != ASSERTED`
+
+`HYPOTHESIS != FACT`
+
+## 13. Transient Communication Memory (TCM)
+
+TCM is a planned architectural component, not yet a fully implemented V0.9 subsystem.
 
 Its intended responsibility is bounded temporary storage of raw interaction/conversation material. Persistent Cognitive Graph/Memory structures should contain enduring cognitive transformations rather than raw conversational history.
 
@@ -103,6 +125,6 @@ TCM must therefore not be treated as implemented merely because current user mem
 
 ## Compliance Gate
 
-Before a release is frozen, the implementation must pass the architecture-principle regression tests in `tests/test_architecture_principles.py` together with the complete existing test suite.
+Before a release is frozen, the implementation must pass the architecture-principle regression tests in `tests/test_architecture_principles.py` together with the complete existing test suite and the V0.9 epistemic-state tests.
 
 A passing feature test alone is insufficient when a change can violate an architectural invariant.
