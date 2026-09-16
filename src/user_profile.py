@@ -1,16 +1,14 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from uuid import uuid4
 
 
 @dataclass
 class UserProfile:
-    """Application-level identity context for a user.
-
-    user_id is mandatory and must be supplied by the application/session
-    layer. username is optional and is never inferred by SLRM.
-    """
+    """Application-level identity context for a user and SLRM instance."""
 
     user_id: str
     username: str | None = None
+    slrm_instance_id: str = field(default_factory=lambda: f"SLRM-{uuid4().hex}")
 
     @property
     def identity_state(self):
