@@ -4,6 +4,12 @@ from uuid import uuid4
 
 
 @dataclass
+class RelationshipExecutionResult:
+    subject: str
+    status: str = "STORED"
+
+
+@dataclass
 class PersonRecord:
     person_id: str
     name: str
@@ -84,6 +90,10 @@ class UserRelationshipMemory:
     def find_people_by_name(self, name):
         normalized = name.strip().lower()
         return [p for p in self.people.values() if p.name.lower() == normalized]
+
+    def record_user_relationship(self, person_name, relation, source_interaction_id=None):
+        person = self.add_person(person_name, relation=relation, source_interaction_id=source_interaction_id)
+        return RelationshipExecutionResult(subject=person.person_id)
 
     def link_person_to_slrm(self, person_id, slrm_instance_id, confirmed=False):
         if not confirmed:
