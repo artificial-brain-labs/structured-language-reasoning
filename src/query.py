@@ -34,15 +34,14 @@ class QueryEngine:
         if subject is None or target_concept is None:
             return []
 
-        # V0.6: the semantic graph is the query representation. It exposes
-        # both asserted and derived evidence without mutating USER MEMORY.
+        # The graph provides the proof path. It is read-only and never writes
+        # derived knowledge back into USER MEMORY.
         if self.graph_query is not None:
             path = self.graph_query.classification(subject, target_concept)
             if path:
                 last = path[-1]
-                status = "ASSERTED" if any(edge.status == "ASSERTED" for edge in path) and len(path) == 1 else "DERIVED"
-                if len(path) == 1 and last.status == "ASSERTED":
-                    status = "ASSERTED"
+                status = "ASSERTED" if len(path) == 1 and last.status == "ASSERTED" else "DERIVED"
+                proof = self.graph_query.explain_classification(subject, target_concept)
                 return [{
                     "entity": subject,
                     "predicate": "IS_A",
@@ -51,6 +50,7 @@ class QueryEngine:
                     "source": last.source,
                     "support": list(last.support) or path,
                     "path": path,
+                    "proof": proof,
                 }]
 
         # Compatibility fallback for callers that construct QueryEngine
@@ -130,8 +130,6 @@ class QueryEngine:
             return []
 
         if self.graph_query is not None:
-            # TYPE asks for explicit user knowledge. Derived ontology edges are
-            # deliberately excluded from this result.
             asserted = [
                 edge for edge in self.graph.edges_from(entity, "IS_A")
                 if edge.status == "ASSERTED"
