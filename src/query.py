@@ -130,40 +130,31 @@ class QueryEngine:
         return []
 
     def _entity_type(self, parsed):
-        """Return explicit type evidence, or an explicit user relationship."""
+        """Return explicit type evidence, including identity-connected types."""
         entity = self._resolve(parsed.subject_word)
+        if entity is not None and self.graph_query is not None:
+            result = self.graph_query.entity_type(entity)
+            if result is not None:
+                # Preserve the queried entity while retaining the identity path
+                # as support. A traversed identity makes the classification derived.
+                result["entity"] = entity
+                return [result]
+
         if entity is not None:
-            if self.graph_query is not None:
-                asserted = [
-                    edge for edge in self.graph.edges_from(entity, "IS_A")
-                    if edge.status == "ASSERTED"
-                ]
-                for edge in asserted:
-                    concept = self._node_concept(edge.object)
-                    if concept and concept != "UNKNOWN":
-                        return [{
-                            "entity": entity,
-                            "predicate": "IS_A",
-                            "object": concept,
-                            "status": "ASSERTED",
-                            "source": edge.source,
-                            "support": list(edge.support),
-                        }]
-            else:
-                for memory in self.memory.query(subject=entity, predicate="IS_A"):
-                    if memory.status != "ASSERTED":
-                        continue
-                    object_entity = self._canonical_id(memory.object)
-                    concept = self.memory.entities.get(object_entity, {}).get("concept")
-                    if concept and concept != "UNKNOWN":
-                        return [{
-                            "entity": entity,
-                            "predicate": "IS_A",
-                            "object": concept,
-                            "status": "ASSERTED",
-                            "source": memory.source,
-                            "support": [memory],
-                        }]
+            for memory in self.memory.query(subject=entity, predicate="IS_A"):
+                if memory.status != "ASSERTED":
+                    continue
+                object_entity = self._canonical_id(memory.object)
+                concept = self.memory.entities.get(object_entity, {}).get("concept")
+                if concept and concept != "UNKNOWN":
+                    return [{
+                        "entity": entity,
+                        "predicate": "IS_A",
+                        "object": concept,
+                        "status": "ASSERTED",
+                        "source": memory.source,
+                        "support": [memory],
+                    }]
 
         # A person relationship is not an ontology type. It is a separate,
         # explicit piece of USER MEMORY and therefore can answer WHO/WHAT
