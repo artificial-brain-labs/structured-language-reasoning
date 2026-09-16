@@ -1,4 +1,32 @@
 {
-  "content": "{\n  \"system\": {\n    \"unknown\": \"I don't know.\",\n    \"unknown_type\": \"I don't know yet.\",\n    \"parse_failure\": \"I could not parse that sentence.\",\n    \"execution_failure\": \"I could not execute that statement.\",\n    \"memory_conflict\": \"Memory created, but it conflicts with an existing memory.\",\n    \"identity_failure\": \"I could not store that identity.\",\n    \"clarification_entity_identity\": \"Who is {entity_name}?\",\n    \"classification_resumed_failure\": \"I could not validate the earlier statement with that classification.\",\n    \"classification_resumed_success\": \"I have also stored the earlier statement.\"\n  },\n  \"queries\": {\n    \"TYPE\": {\n      \"unknown_result\": \"unknown_type\",\n      \"success\": \"{subject_name} is a {concept}.\"\n    },\n    \"CLASSIFICATION\": {\n      \"unknown_result\": \"unknown\",\n      \"success\": \"Yes.\",\n      \"explanation\": \"Reasoning: {reasoning}\"\n    },\n    \"OBJECT\": {\n      \"unknown_result\": \"unknown\",\n      \"success\": \"The {subject_word} {verb_word} the {result_name}.\"\n    },\n    \"SUBJECT\": {\n      \"unknown_result\": \"unknown\",\n      \"success\": \"The {result_name} {verb_word} the {object_word}.\"\n    }\n  }\n}\n",
-  "encoding": "utf-8"
+  "system": {
+    "unknown": "I don't know.",
+    "unknown_type": "I don't know yet.",
+    "parse_failure": "I could not parse that sentence.",
+    "execution_failure": "I could not execute that statement.",
+    "memory_conflict": "Memory created, but it conflicts with an existing memory.",
+    "identity_failure": "I could not store that identity.",
+    "clarification_entity_identity": "Who is {entity_name}?",
+    "classification_resumed_failure": "I could not validate the earlier statement with that classification.",
+    "classification_resumed_success": "I have also stored the earlier statement."
+  },
+  "queries": {
+    "TYPE": {
+      "unknown_result": "unknown_type",
+      "success": "{subject_name} is a {concept}."
+    },
+    "CLASSIFICATION": {
+      "unknown_result": "unknown",
+      "success": "Yes.",
+      "explanation": "Reasoning: {reasoning}"
+    },
+    "OBJECT": {
+      "unknown_result": "unknown",
+      "success": "The {subject_word} {verb_word} the {result_name}."
+    },
+    "SUBJECT": {
+      "unknown_result": "unknown",
+      "success": "The {result_name} {verb_word} the {object_word}."
+    }
+  }
 }
