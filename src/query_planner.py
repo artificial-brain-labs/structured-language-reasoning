@@ -17,6 +17,7 @@ class QueryPlanner:
         return {
             "question_type": parsed.question_type,
             "result_kind": policy.get("result_kind"),
+            "handler": policy.get("handler"),
             "unknown_result": policy.get("unknown_result"),
             "subject_slot": policy.get("subject_slot", "subject"),
             "object_slot": policy.get("object_slot", "object"),
