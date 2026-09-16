@@ -5,12 +5,13 @@ from .graph_query import SemanticGraphQuery
 
 
 class QueryEngine:
-    def __init__(self, memory, lexicon, reasoner=None, policy_path=None, graph=None):
+    def __init__(self, memory, lexicon, reasoner=None, policy_path=None, graph=None, relationship_memory=None):
         self.memory = memory
         self.lexicon = lexicon
         self.reasoner = reasoner
         self.graph = graph
         self.graph_query = SemanticGraphQuery(graph) if graph is not None else None
+        self.relationship_memory = relationship_memory
         path = policy_path or Path(__file__).resolve().parent.parent / "knowledge" / "query_policy.json"
         with open(path, "r", encoding="utf-8") as file:
             data = json.load(file)
@@ -34,8 +35,6 @@ class QueryEngine:
         if subject is None or target_concept is None:
             return []
 
-        # The graph provides the proof path. It is read-only and never writes
-        # derived knowledge back into USER MEMORY.
         if self.graph_query is not None:
             path = self.graph_query.classification(subject, target_concept)
             if path:
@@ -53,8 +52,6 @@ class QueryEngine:
                     "proof": proof,
                 }]
 
-        # Compatibility fallback for callers that construct QueryEngine
-        # without a graph.
         target_entity = self.memory.find_entity(target_concept)
         asserted_classifications = [
             memory
@@ -124,43 +121,59 @@ class QueryEngine:
         return []
 
     def _entity_type(self, parsed):
-        """Return the entity's explicit user classification without mutation."""
+        """Return explicit type evidence, or an explicit user relationship."""
         entity = self._resolve(parsed.subject_word)
-        if entity is None:
-            return []
+        if entity is not None:
+            if self.graph_query is not None:
+                asserted = [
+                    edge for edge in self.graph.edges_from(entity, "IS_A")
+                    if edge.status == "ASSERTED"
+                ]
+                for edge in asserted:
+                    concept = self._node_concept(edge.object)
+                    if concept and concept != "UNKNOWN":
+                        return [{
+                            "entity": entity,
+                            "predicate": "IS_A",
+                            "object": concept,
+                            "status": "ASSERTED",
+                            "source": edge.source,
+                            "support": list(edge.support),
+                        }]
+            else:
+                for memory in self.memory.query(subject=entity, predicate="IS_A"):
+                    if memory.status != "ASSERTED":
+                        continue
+                    object_entity = self._canonical_id(memory.object)
+                    concept = self.memory.entities.get(object_entity, {}).get("concept")
+                    if concept and concept != "UNKNOWN":
+                        return [{
+                            "entity": entity,
+                            "predicate": "IS_A",
+                            "object": concept,
+                            "status": "ASSERTED",
+                            "source": memory.source,
+                            "support": [memory],
+                        }]
 
-        if self.graph_query is not None:
-            asserted = [
-                edge for edge in self.graph.edges_from(entity, "IS_A")
-                if edge.status == "ASSERTED"
-            ]
-            for edge in asserted:
-                concept = self._node_concept(edge.object)
-                if concept and concept != "UNKNOWN":
+        # A person relationship is not an ontology type. It is a separate,
+        # explicit piece of USER MEMORY and therefore can answer WHO/WHAT
+        # without guessing that the person belongs to an ontology class.
+        if self.relationship_memory is not None:
+            people = self.relationship_memory.find_people_by_name(parsed.subject_word)
+            if people:
+                person = people[0]
+                relationships = [
+                    record for record in self.relationship_memory.relationships.values()
+                    if record.person_id == person.person_id
+                ]
+                if relationships:
                     return [{
-                        "entity": entity,
-                        "predicate": "IS_A",
-                        "object": concept,
-                        "status": "ASSERTED",
-                        "source": edge.source,
-                        "support": list(edge.support),
+                        "person_id": person.person_id,
+                        "person_name": person.name,
+                        "relation": relationships[0].relation,
+                        "status": relationships[0].verification_state,
                     }]
-            return []
-
-        for memory in self.memory.query(subject=entity, predicate="IS_A"):
-            if memory.status != "ASSERTED":
-                continue
-            object_entity = self._canonical_id(memory.object)
-            concept = self.memory.entities.get(object_entity, {}).get("concept")
-            if concept and concept != "UNKNOWN":
-                return [{
-                    "entity": entity,
-                    "predicate": "IS_A",
-                    "object": concept,
-                    "status": "ASSERTED",
-                    "source": memory.source,
-                    "support": [memory],
-                }]
 
         return []
 
