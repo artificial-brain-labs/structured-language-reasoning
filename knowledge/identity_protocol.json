@@ -1,0 +1,16 @@
+{
+  "version": "1.0",
+  "principles": {
+    "no_guessing": true,
+    "same_name_is_not_same_identity": true,
+    "candidate_is_not_verified_identity": true,
+    "explicit_confirmation_required": true,
+    "private_remote_identity_data_is_not_disclosed": true
+  },
+  "verification_states": ["UNRESOLVED", "PENDING_VERIFICATION", "VERIFIED", "REJECTED"],
+  "thread_states": ["OPEN", "VERIFIED", "REJECTED"],
+  "general_questions": [
+    "What context do you know this person from?",
+    "What relationship do you have with this person?"
+  ]
+}
