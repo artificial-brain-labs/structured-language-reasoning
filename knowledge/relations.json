@@ -25,5 +25,9 @@
     "role": "canonical_taxonomic",
     "subject_type": "THING",
     "object_type": "THING"
+  },
+  "SEES": {
+    "type": "ACTION",
+    "role": "relation"
   }
 }
