@@ -25,6 +25,7 @@ class Evidence:
     source: str = "USER"
     confirmed: bool = False
     support: tuple = ()
+    content: str | None = None
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
@@ -64,7 +65,7 @@ class EvidenceStore:
         self.records.append(evidence)
         return evidence
 
-    def observe(self, subject=None, predicate=None, object=None, source="USER"):
+    def observe(self, subject=None, predicate=None, object=None, source="USER", content=None):
         return self.record(
             Evidence(
                 EvidenceKind.OBSERVATION,
@@ -72,6 +73,7 @@ class EvidenceStore:
                 predicate,
                 object,
                 source=source,
+                content=content,
             )
         )
 
@@ -101,16 +103,25 @@ class EvidenceStore:
         )
 
     def derive(self, subject=None, predicate=None, object=None, support=(), source="REASONER"):
-        return self.record(
-            Evidence(
-                EvidenceKind.DERIVATION,
-                subject,
-                predicate,
-                object,
-                source=source,
-                support=tuple(support),
-            )
+        candidate = Evidence(
+            EvidenceKind.DERIVATION,
+            subject,
+            predicate,
+            object,
+            source=source,
+            support=tuple(support),
         )
+        for record in self.records:
+            if (
+                record.kind == candidate.kind
+                and record.subject == candidate.subject
+                and record.predicate == candidate.predicate
+                and record.object == candidate.object
+                and record.source == candidate.source
+                and record.support == candidate.support
+            ):
+                return record
+        return self.record(candidate)
 
     def hypothesize(self, subject=None, predicate=None, object=None, support=(), source="REASONER"):
         return self.record(
