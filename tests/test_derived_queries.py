@@ -8,12 +8,13 @@ def test_classification_query_uses_ontology_derived_knowledge():
     parsed = slr.parser.parse("Is Tom an animal?")
     result = slr.query.answer(parsed)
 
-    assert result is not None
-    assert result["entity"] == slr.memory.find_named_entity("Tom")
-    assert result["predicate"] == "IS_A"
-    assert result["object"] == "ANIMAL"
-    assert result["status"] == "DERIVED"
-    assert result["source"] == "ONTOLOGY"
+    assert result
+    evidence = result[0]
+    assert evidence["entity"] == slr.memory.find_named_entity("Tom")
+    assert evidence["predicate"] == "IS_A"
+    assert evidence["object"] == "ANIMAL"
+    assert evidence["status"] == "DERIVED"
+    assert evidence["source"] == "ONTOLOGY"
 
 
 def test_classification_query_does_not_store_derived_fact():
@@ -40,7 +41,7 @@ def test_unknown_classification_is_not_false():
     parsed = slr.parser.parse("Is Tom a bird?")
     result = slr.query.answer(parsed)
 
-    assert result is None
+    assert result == []
 
 
 def test_classification_query_returns_asserted_knowledge_when_available():
@@ -50,5 +51,7 @@ def test_classification_query_returns_asserted_knowledge_when_available():
     parsed = slr.parser.parse("Is Tom a cat?")
     result = slr.query.answer(parsed)
 
-    assert result["object"] == "CAT"
-    assert result["status"] == "ASSERTED"
+    assert result
+    evidence = result[0]
+    assert evidence["object"] == "CAT"
+    assert evidence["status"] == "ASSERTED"
