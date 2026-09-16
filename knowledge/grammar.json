@@ -2,7 +2,7 @@
   "rules": [
     {
       "name": "user_friend_statement",
-      "pattern": ["ENTITY", "AUX", "MY", "NOUN"],
+      "pattern": ["ENTITY", "AUX", "MY", "FRIEND"],
       "meaning": "USER_RELATIONSHIP",
       "operation": "ASSERT_USER_RELATIONSHIP",
       "relation": "FRIEND",
