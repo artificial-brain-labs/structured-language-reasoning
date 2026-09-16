@@ -8,6 +8,13 @@
       "slots": {"subject": 2}
     },
     {
+      "name": "question_is_classification",
+      "pattern": ["QUESTION", "ENTITY", "AUX", "DETERMINER", "NOUN"],
+      "meaning": "QUERY_CLASSIFICATION",
+      "question_type": "CLASSIFICATION",
+      "slots": {"subject": 1, "object": 4}
+    },
+    {
       "name": "question_what_object",
       "pattern": ["QUESTION", "AUX", "DETERMINER", "NOUN", "VERB"],
       "meaning": "QUERY_OBJECT",
