@@ -30,6 +30,7 @@
   "an": {"concept": "A", "pos": "DETERMINER"},
   "what": {"concept": "WHAT", "pos": "QUESTION"},
   "who": {"concept": "WHO", "pos": "QUESTION"},
+  "i": {"concept": "SELF", "pos": "PRONOUN"},
   "friend": {"concept": "FRIEND", "pos": "NOUN"},
   "friends": {"concept": "FRIEND", "pos": "NOUN"},
   "animal": {"concept": "ANIMAL", "pos": "NOUN"},
