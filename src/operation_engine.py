@@ -56,8 +56,18 @@ class OperationEngine:
         # that case preserve the binding instead of resolving the surface
         # word again and potentially creating a different semantic path.
         if operation.subject in self.memory.entities:
+            explicit_types = self.reasoner.explicit_types(operation.subject)
+            if explicit_types:
+                # Explicit user-memory classification is sufficient to treat
+                # the entity as known for this operation. Do not change the
+                # entity's cached concept: UNKNOWN remains UNKNOWN unless the
+                # system lexicon originally assigned its concept.
+                return explicit_types[0]
             return self.resolver.concept(operation.subject)
         operation.subject = self.resolver.resolve_canonical(self._surface(parsed, "subject"))
+        explicit_types = self.reasoner.explicit_types(operation.subject)
+        if explicit_types:
+            return explicit_types[0]
         return self.resolver.concept(operation.subject)
 
     def _should_clarify_unknown_subject(self, policy, relation_schema, subject_concept):
