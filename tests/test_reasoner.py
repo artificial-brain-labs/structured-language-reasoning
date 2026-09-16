@@ -20,7 +20,20 @@ def test_reasoner_uses_declarative_relation_role():
     memory.relations.schemas["CUSTOM_TAXONOMIC"] = {
         "type": "TAXONOMIC",
         "role": "canonical_taxonomic",
+        "priority": 10,
     }
     reasoner = Reasoner(ontology, memory)
 
     assert reasoner.relation_name_for_role("canonical_taxonomic") == "CUSTOM_TAXONOMIC"
+
+
+def test_reasoner_does_not_guess_between_equal_role_declarations():
+    ontology = Ontology()
+    memory = DynamicMemory()
+    memory.relations.schemas["OTHER_TAXONOMIC"] = {
+        "type": "TAXONOMIC",
+        "role": "canonical_taxonomic",
+    }
+    reasoner = Reasoner(ontology, memory)
+
+    assert reasoner.relation_name_for_role("canonical_taxonomic") is None
