@@ -39,15 +39,11 @@ class ConnectionRecord:
 
 
 class UserRelationshipMemory:
-    """Per-user relationship and inter-SLRM connection state.
+    """Per-user relationship and inter-SLRM connection state."""
 
-    This is user memory, not system/global knowledge. No identity is inferred
-    from names; instance connections become ACTIVE only after both sides grant
-    permission.
-    """
-
-    def __init__(self, owner_user_id, relationship_schema=None):
+    def __init__(self, owner_user_id, slrm_instance_id, relationship_schema=None):
         self.owner_user_id = owner_user_id
+        self.local_slrm_instance_id = slrm_instance_id
         self.relationship_schema = relationship_schema or {}
         self.people = {}
         self.relationships = {}
@@ -58,33 +54,11 @@ class UserRelationshipMemory:
         normalized = name.strip().lower()
         for person in self.people.values():
             if person.name.lower() == normalized:
-                person_id = person.person_id
-                self.relationships.setdefault(
-                    (relation, person_id),
-                    RelationshipRecord(
-                        relationship_id=f"REL-{uuid4().hex[:12]}",
-                        owner_user_id=self.owner_user_id,
-                        relation=relation,
-                        person_id=person_id,
-                        person_name=person.name,
-                        verification_state=person.verification_state,
-                        linked_slrm_instance_id=person.linked_slrm_instance_id,
-                        source_interaction_id=source_interaction_id,
-                    ),
-                )
+                self._ensure_relationship(person, relation, source_interaction_id)
                 return person
-
         person = PersonRecord(person_id=f"PERSON-{uuid4().hex[:12]}", name=name.strip())
         self.people[person.person_id] = person
-        key = (relation, person.person_id)
-        self.relationships[key] = RelationshipRecord(
-            relationship_id=f"REL-{uuid4().hex[:12]}",
-            owner_user_id=self.owner_user_id,
-            relation=relation,
-            person_id=person.person_id,
-            person_name=person.name,
-            source_interaction_id=source_interaction_id,
-        )
+        self._ensure_relationship(person, relation, source_interaction_id)
         self.open_threads[person.person_id] = {
             "thread_id": f"THREAD-{uuid4().hex[:12]}",
             "person_id": person.person_id,
@@ -92,6 +66,20 @@ class UserRelationshipMemory:
             "status": "OPEN",
         }
         return person
+
+    def _ensure_relationship(self, person, relation, source_interaction_id):
+        key = (relation, person.person_id)
+        if key not in self.relationships:
+            self.relationships[key] = RelationshipRecord(
+                relationship_id=f"REL-{uuid4().hex[:12]}",
+                owner_user_id=self.owner_user_id,
+                relation=relation,
+                person_id=person.person_id,
+                person_name=person.name,
+                verification_state=person.verification_state,
+                linked_slrm_instance_id=person.linked_slrm_instance_id,
+                source_interaction_id=source_interaction_id,
+            )
 
     def find_people_by_name(self, name):
         normalized = name.strip().lower()
@@ -118,6 +106,7 @@ class UserRelationshipMemory:
             remote_slrm_instance_id=remote_slrm_instance_id,
             relationship_type=relationship_type,
             communication_scope=dict(scope or self.default_scope()),
+            status="REQUESTED",
         )
         self.connections[connection.connection_id] = connection
         return connection
@@ -135,12 +124,11 @@ class UserRelationshipMemory:
         return connection
 
     def _refresh_connection_status(self, connection):
-        if connection.local_permission and connection.remote_permission:
-            connection.status = "ACTIVE"
-        elif not connection.local_permission and not connection.remote_permission:
-            connection.status = "PENDING_MUTUAL_PERMISSION"
-        else:
-            connection.status = "PENDING_MUTUAL_PERMISSION"
+        connection.status = (
+            "ACTIVE"
+            if connection.local_permission and connection.remote_permission
+            else "PENDING_MUTUAL_PERMISSION"
+        )
 
     def can_communicate(self, connection_id, capability):
         connection = self.connections[connection_id]
@@ -149,5 +137,23 @@ class UserRelationshipMemory:
     def default_scope(self):
         return dict(self.relationship_schema.get("default_communication_scope", {}))
 
-    def attach_instance_identity(self, slrm_instance_id):
-        self.local_slrm_instance_id = slrm_instance_id
+
+class InterSLRMCommunication:
+    """Governed communication boundary between two SLRM instances."""
+
+    def __init__(self, local_relationship_memory):
+        self.local_relationship_memory = local_relationship_memory
+
+    def send(self, connection_id, content, capability="personal_messages"):
+        if not isinstance(content, str) or not content.strip():
+            raise ValueError("Communication content must be non-empty")
+        if not self.local_relationship_memory.can_communicate(connection_id, capability):
+            raise PermissionError("Inter-SLRM communication is not permitted")
+        connection = self.local_relationship_memory.connections[connection_id]
+        return {
+            "connection_id": connection.connection_id,
+            "from_slrm_instance_id": connection.local_slrm_instance_id,
+            "to_slrm_instance_id": connection.remote_slrm_instance_id,
+            "capability": capability,
+            "content": content.strip(),
+        }
