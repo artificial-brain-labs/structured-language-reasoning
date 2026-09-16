@@ -6,6 +6,7 @@
       "meaning": "USER_RELATIONSHIP",
       "operation": "ASSERT_USER_RELATIONSHIP",
       "relation": "FRIEND",
+      "relationship_target": "subject",
       "slots": {"subject": 0, "object": 3}
     },
     {
@@ -14,6 +15,7 @@
       "meaning": "USER_RELATIONSHIP",
       "operation": "ASSERT_USER_RELATIONSHIP",
       "relation": "KNOWS",
+      "relationship_target": "object",
       "slots": {"subject": 0, "verb": 1, "object": 2}
     },
     {
