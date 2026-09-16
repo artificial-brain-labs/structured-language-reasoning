@@ -35,9 +35,9 @@ def test_unknown_entity_is_not_classified_by_routing():
     slr = SLR()
     response = slr.process("Alex is running.")
     assert "Who is Alex?" in response
-    alex = slr.memory.find_named_entity("Alex")
+    alex = slr.user_memory.find_named_entity("Alex")
     assert alex is not None
-    assert slr.memory.entities[alex]["concept"] == "UNKNOWN"
+    assert slr.user_memory.entities[alex]["concept"] == "UNKNOWN"
 
 
 def test_operation_mechanisms_are_selected_by_execution_policy_data():
