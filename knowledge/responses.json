@@ -15,6 +15,10 @@
       "unknown_result": "unknown_type",
       "success": "{subject_name} is a {concept}."
     },
+    "CLASSIFICATION": {
+      "unknown_result": "unknown",
+      "success": "Yes. {subject_name} is a {concept}."
+    },
     "OBJECT": {
       "unknown_result": "unknown",
       "success": "The {subject_word} {verb_word} the {result_name}."
