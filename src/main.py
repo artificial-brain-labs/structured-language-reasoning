@@ -14,6 +14,8 @@ from .entity_resolver import EntityResolver
 from .clarification_manager import ClarificationManager
 from .clarification_policy import ClarificationPolicy
 from .operation_engine import OperationEngine
+from .semantic_graph import SemanticGraph
+from .graph_builder import SemanticGraphBuilder
 
 
 class SLR:
@@ -47,6 +49,18 @@ class SLR:
         self.query = QueryEngine(self.user_memory, self.lexicon, self.reasoner)
         self.response = ResponseGenerator(self.user_memory)
         self.response_policy = ResponsePolicy(self.executor.definitions)
+
+        # V0.5: the semantic graph is a representation/projection layer. It is
+        # rebuilt from USER MEMORY and never becomes a second source of truth.
+        self.graph_builder = SemanticGraphBuilder()
+        self.graph = SemanticGraph()
+        self._refresh_graph()
+
+    def _refresh_graph(self):
+        self.graph = self.graph_builder.build(
+            self.user_memory,
+            derived=self.reasoner.derive(),
+        )
 
     def _execute_statement(self, parsed):
         meaning = self.semantic_parser.parse(parsed)
@@ -94,12 +108,14 @@ class SLR:
             execution.operation, "success", confirmation_context
         )
         if original_operation is None or original_context is None:
+            self._refresh_graph()
             return confirmation
 
         # Rebind the deferred operation to the same user-memory entity after
         # its explicit classification has been recorded.
         original_operation.subject = self.user_memory.canonical_entity(pending_entity)
         resumed = self.operation_engine.execute(original_operation, original_context)
+        self._refresh_graph()
         if resumed.result is None:
             return self.response.system("classification_resumed_failure", confirmation_context)
 
@@ -135,6 +151,8 @@ class SLR:
                 if failure:
                     return failure
             return self.response.system("execution_failure")
+
+        self._refresh_graph()
 
         success_context = {}
         if parsed.subject_word:
