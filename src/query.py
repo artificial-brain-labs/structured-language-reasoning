@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from .graph_query import SemanticGraphQuery
+from .query_planner import QueryPlanner
 
 
 class QueryEngine:
@@ -29,19 +30,13 @@ class QueryEngine:
         with open(path, "r", encoding="utf-8") as file:
             data = json.load(file)
         self.policy = data.get("question_types", {})
+        self.planner = QueryPlanner(self.policy)
 
     def _resolve(self, word):
-        """Resolve the explicit surface identity without collapsing it early.
-
-        Canonical identity is a storage/query fallback concern. The graph query
-        layer must receive the identity the user actually named so that proofs
-        can begin from that identity and traverse explicit SAME_AS edges only
-        when direct evidence is unavailable.
-        """
+        """Resolve the explicit surface identity without collapsing it early."""
         concept = self.lexicon.concept(word)
         if concept:
-            entity = self.memory.find_entity(concept)
-            return entity
+            return self.memory.find_entity(concept)
         return self.memory.find_named_entity(word)
 
     def _canonical_id(self, entity_id):
@@ -182,6 +177,32 @@ class QueryEngine:
 
         return []
 
+    def _objects(self, parsed):
+        subject = self._resolve(parsed.subject_word)
+        predicate = self._relation(parsed.verb_word)
+        if not subject or not predicate:
+            return []
+        if self.graph_query is not None:
+            return self.graph_query.objects(subject, predicate)
+        return [
+            self._canonical_id(m.object)
+            for m in self.memory.query(subject=subject, predicate=predicate)
+            if m.status != "CONFLICTED"
+        ]
+
+    def _subjects(self, parsed):
+        object_id = self._resolve(parsed.object_word)
+        predicate = self._relation(parsed.verb_word)
+        if not object_id or not predicate:
+            return []
+        if self.graph_query is not None:
+            return self.graph_query.subjects(object_id, predicate)
+        return [
+            self._canonical_id(m.subject)
+            for m in self.memory.query(predicate=predicate)
+            if self._canonical_id(m.object) == object_id and m.status != "CONFLICTED"
+        ]
+
     def _node_concept(self, node_id):
         node = self.graph.nodes.get(node_id)
         return node.concept if node else None
@@ -195,41 +216,13 @@ class QueryEngine:
         return concept
 
     def answer(self, parsed):
-        policy = self.policy.get(parsed.question_type)
-        if policy is None:
+        plan = self.planner.plan(parsed)
+        if plan is None:
             return []
-
-        result_kind = policy.get("result_kind")
-        if result_kind == "classification":
-            return self._classification(parsed)
-
-        if result_kind == "entity_type":
-            return self._entity_type(parsed)
-
-        if result_kind == "object":
-            subject = self._resolve(parsed.subject_word)
-            predicate = self._relation(parsed.verb_word)
-            if not subject or not predicate:
-                return []
-            if self.graph_query is not None:
-                return self.graph_query.objects(subject, predicate)
-            return [
-                self._canonical_id(m.object)
-                for m in self.memory.query(subject=subject, predicate=predicate)
-                if m.status != "CONFLICTED"
-            ]
-
-        if result_kind == "subject":
-            object_id = self._resolve(parsed.object_word)
-            predicate = self._relation(parsed.verb_word)
-            if not object_id or not predicate:
-                return []
-            if self.graph_query is not None:
-                return self.graph_query.subjects(object_id, predicate)
-            return [
-                self._canonical_id(m.subject)
-                for m in self.memory.query(predicate=predicate)
-                if self._canonical_id(m.object) == object_id and m.status != "CONFLICTED"
-            ]
-
-        return []
+        handler_name = plan.get("handler")
+        if not handler_name:
+            return []
+        handler = getattr(self, handler_name, None)
+        if handler is None:
+            return []
+        return handler(parsed)
