@@ -26,6 +26,23 @@ class SemanticGraphQuery:
             and edge.status != "CONFLICTED"
         ]
 
+    def _identity_paths(self, subject_id):
+        """Traverse the explicit identity component and retain proof paths."""
+        if subject_id not in self.graph.nodes:
+            return []
+        queue = [(subject_id, [])]
+        visited = {subject_id}
+        results = []
+        while queue:
+            current, path = queue.pop(0)
+            results.append((current, path))
+            for edge in self._identity_edges(current):
+                if edge.object in visited:
+                    continue
+                visited.add(edge.object)
+                queue.append((edge.object, path + [edge]))
+        return results
+
     def classification(self, subject_id, target_concept):
         """Return a path proving subject_id is classified as target_concept.
 
@@ -41,9 +58,6 @@ class SemanticGraphQuery:
         while queue:
             current, path = queue.pop(0)
 
-            # First traverse explicit identity relationships. This preserves
-            # the actual proof path instead of collapsing identities and then
-            # losing the relationship between the names/entities.
             for edge in self._identity_edges(current):
                 next_path = path + [edge]
                 if edge.object not in visited:
@@ -61,6 +75,32 @@ class SemanticGraphQuery:
                     queue.append((edge.object, next_path))
         return None
 
+    def entity_type(self, subject_id):
+        """Return the first explicit type reachable through identity traversal.
+
+        Identity aliases represent the same explicitly identified entity, so
+        an asserted classification attached to any alias is valid evidence
+        for the queried alias. The returned result retains the identity path
+        so the caller can mark the conclusion as DERIVED when traversal was
+        required.
+        """
+        for entity_id, identity_path in self._identity_paths(subject_id):
+            for edge in self.graph.edges_from(entity_id, "IS_A"):
+                if edge.status != "ASSERTED":
+                    continue
+                concept = self._node_concept(edge.object)
+                if concept and concept != "UNKNOWN":
+                    return {
+                        "entity": subject_id,
+                        "predicate": "IS_A",
+                        "object": concept,
+                        "status": "ASSERTED" if not identity_path else "DERIVED",
+                        "source": edge.source,
+                        "support": list(identity_path) + [edge],
+                        "path": identity_path + [edge],
+                    }
+        return None
+
     def explain_classification(self, subject_id, target_concept):
         """Return a complete structured proof for a classification query.
 
@@ -76,8 +116,6 @@ class SemanticGraphQuery:
         while queue:
             current, identity_path = queue.pop(0)
 
-            # Identity is explicit user knowledge, so it may be traversed as
-            # part of the proof without asserting anything new.
             for identity_edge in self._identity_edges(current):
                 if identity_edge.object in visited:
                     continue
