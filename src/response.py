@@ -25,11 +25,28 @@ class ResponseGenerator:
 
     def generate(self, parsed, results):
         if not results:
-            return self.system("unknown")
+            template = self.query_responses.get(parsed.question_type, {})
+            return self.system(template.get("unknown_result", "unknown"))
 
         template = self.query_responses.get(parsed.question_type)
         if template is None:
             return self.system("unknown")
+
+        if isinstance(results, dict) and parsed.question_type == "CLASSIFICATION":
+            entity = results.get("entity")
+            concept = results.get("object")
+            if not entity or entity not in self.memory.entities or not concept:
+                return self.system(template.get("unknown_result", "unknown"))
+            context = {
+                "subject_name": self.memory.entities[entity]["name"],
+                "concept": concept.lower(),
+                "status": results.get("status", "UNKNOWN"),
+                "source": results.get("source", "UNKNOWN"),
+            }
+            try:
+                return template.get("success", "").format(**context)
+            except (KeyError, ValueError):
+                return self.system("unknown")
 
         entity = results[0]
         concept = self.memory.entities[entity]["concept"]
