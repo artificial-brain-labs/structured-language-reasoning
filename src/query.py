@@ -33,8 +33,31 @@ class QueryEngine:
         if subject is None or target_concept is None:
             return []
 
+        # Classification evidence is based on explicit knowledge first. The
+        # object of an asserted IS_A memory is a data-defined ontology class.
+        # This remains valid even if the entity's cached concept has not been
+        # updated yet; the asserted relation itself is authoritative evidence.
+        target_entity = self.memory.find_entity(target_concept)
+        asserted_classifications = [
+            memory
+            for memory in self.memory.query(subject=subject, predicate="IS_A")
+            if memory.status == "ASSERTED"
+            and self._canonical_id(memory.object) == target_entity
+        ]
+        if asserted_classifications:
+            memory = asserted_classifications[0]
+            return [{
+                "entity": subject,
+                "predicate": "IS_A",
+                "object": target_concept,
+                "status": "ASSERTED",
+                "source": memory.source,
+                "support": [memory],
+            }]
+
         subject_concept = self.memory.entities[subject]["concept"]
 
+        # A direct concept assignment is explicit classification knowledge.
         if subject_concept == target_concept:
             return [{
                 "entity": subject,
@@ -45,22 +68,27 @@ class QueryEngine:
                 "support": [subject],
             }]
 
-        target_entity = self.memory.find_entity(target_concept)
-        for memory in self.memory.query(subject=subject, predicate="IS_A"):
-            if memory.status == "ASSERTED" and self._canonical_id(memory.object) == target_entity:
-                return [{
-                    "entity": subject,
-                    "predicate": "IS_A",
-                    "object": target_concept,
-                    "status": "ASSERTED",
-                    "source": memory.source,
-                    "support": [memory],
-                }]
-
         if self.reasoner is not None:
+            # First use the reasoner's declarative ontology derivation.
             for derived in self.reasoner.infer_is_a(subject):
                 if derived["object"] == target_concept:
                     return [derived]
+
+            # Then use explicitly asserted IS_A evidence as the support for
+            # ontology inheritance. Derived knowledge is never stored.
+            for memory in self.memory.query(subject=subject, predicate="IS_A"):
+                if memory.status != "ASSERTED":
+                    continue
+                source_concept = self.memory.entities.get(memory.object, {}).get("concept")
+                if source_concept and self.reasoner.ontology.is_a(source_concept, target_concept):
+                    return [{
+                        "entity": subject,
+                        "predicate": "IS_A",
+                        "object": target_concept,
+                        "status": "DERIVED",
+                        "source": "ONTOLOGY",
+                        "support": [memory],
+                    }]
 
             for derived in self.reasoner.derive():
                 if (
@@ -70,8 +98,8 @@ class QueryEngine:
                 ):
                     return [derived]
 
-            # Ontology classification is a declarative derivation. Keep the
-            # evidence transient and never write it into asserted memory.
+            # Finally derive directly from the entity's explicit concept.
+            # The ontology is declarative data; this creates no memory entry.
             if subject_concept != "UNKNOWN" and self.reasoner.ontology.is_a(subject_concept, target_concept):
                 return [{
                     "entity": subject,
