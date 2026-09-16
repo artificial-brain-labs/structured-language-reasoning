@@ -72,6 +72,34 @@ class DynamicMemory:
         self.memories.append(new_memory)
         return new_memory
 
+    def apply_operation(self, operation, source="USER", confidence=1.0):
+        """Apply a declaratively described memory operation."""
+        if operation is None or not operation.subject or not operation.predicate:
+            return None
+        if operation.predicate not in self.relations.schemas:
+            return None
+        if operation.object is None:
+            return None
+
+        result = self.add_memory(
+            operation.subject,
+            operation.predicate,
+            operation.object,
+            source,
+            confidence,
+        )
+
+        schema = self.relations.get(operation.predicate) or {}
+        if schema.get("role") == "identity" and schema.get("symmetric"):
+            self.add_memory(
+                operation.object,
+                operation.predicate,
+                operation.subject,
+                source,
+                confidence,
+            )
+        return result
+
     def opposite(self, predicate):
         schema = self.relations.get(predicate) or {}
         return schema.get("opposite")
@@ -90,7 +118,7 @@ class DynamicMemory:
 
     def _identity_predicate(self):
         for predicate, schema in self.relations.schemas.items():
-            if schema.get("type") == "IDENTITY":
+            if schema.get("role") == "identity":
                 return predicate
         return None
 
