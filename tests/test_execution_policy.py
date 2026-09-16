@@ -13,19 +13,19 @@ def test_operation_engine_uses_policy_for_relation_validation():
     slr = SLR()
     slr.process("The cat eats the mouse.")
 
-    memories = slr.memory.query(predicate="EATS")
+    memories = slr.user_memory.query(predicate="EATS")
     assert len(memories) == 1
-    assert memories[0].object in slr.memory.entities
+    assert memories[0].object in slr.user_memory.entities
 
 
 def test_identity_relation_can_resolve_unknown_entities_without_guessing_type():
     slr = SLR()
     slr.process("Tom is Alex.")
 
-    tom = slr.memory.find_named_entity("Tom")
-    alex = slr.memory.find_named_entity("Alex")
+    tom = slr.user_memory.find_named_entity("Tom")
+    alex = slr.user_memory.find_named_entity("Alex")
     assert tom is not None
     assert alex is not None
-    assert slr.memory.entities[tom]["concept"] == "UNKNOWN"
-    assert slr.memory.entities[alex]["concept"] == "UNKNOWN"
-    assert slr.memory.canonical_entity(tom) == slr.memory.canonical_entity(alex)
+    assert slr.user_memory.entities[tom]["concept"] == "UNKNOWN"
+    assert slr.user_memory.entities[alex]["concept"] == "UNKNOWN"
+    assert slr.user_memory.canonical_entity(tom) == slr.user_memory.canonical_entity(alex)
