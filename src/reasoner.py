@@ -3,10 +3,9 @@ class Reasoner:
         self.ontology = ontology
         self.memory = memory
 
-    def relation_name_for_type(self, relation_type):
-        """Resolve the most recently defined relation for a schema type."""
-        for name, schema in reversed(list(self.memory.relations.schemas.items())):
-            if schema.get("type") == relation_type:
+    def relation_name_for_role(self, role):
+        for name, schema in self.memory.relations.schemas.items():
+            if schema.get("role") == role:
                 return name
         return None
 
@@ -29,6 +28,6 @@ class Reasoner:
 
     def infer_is_a(self, entity_id):
         concept = self.memory.entities[entity_id]["concept"]
-        relation_name = self.relation_name_for_type("TAXONOMIC")
+        relation_name = self.relation_name_for_role("canonical_taxonomic")
         return [{"entity": entity_id, "predicate": relation_name, "object": ancestor}
                 for ancestor in self.ontology.ancestors(concept)]
