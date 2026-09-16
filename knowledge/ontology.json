@@ -1,5 +1,5 @@
 {
-  "version": "0.3",
+  "version": "0.4",
   "principles": {
     "no_guessing": true,
     "unknown_is_not_false": true,
@@ -54,6 +54,14 @@
     "DOG": {"parent": "CANINE", "properties": {}},
     "MOUSE": {"parent": "MAMMAL", "properties": {}},
     "FOOD": {"parent": "THING", "properties": {}},
-    "CHAIR": {"parent": "THING", "properties": {"supports_sitting": true}}
+    "CHAIR": {"parent": "THING", "properties": {"supports_sitting": true}},
+    "PLANT": {
+      "parent": "LIVING_THING",
+      "properties": {
+        "can_grow": true
+      }
+    },
+    "TREE": {"parent": "PLANT", "properties": {}},
+    "GARDEN": {"parent": "THING", "properties": {}}
   }
 }
