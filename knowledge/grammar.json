@@ -9,7 +9,7 @@
     },
     {
       "name": "question_is_classification",
-      "pattern": ["QUESTION", "ENTITY", "AUX", "DETERMINER", "NOUN"],
+      "pattern": ["AUX", "ENTITY", "AUX", "DETERMINER", "NOUN"],
       "meaning": "QUERY_CLASSIFICATION",
       "question_type": "CLASSIFICATION",
       "slots": {"subject": 1, "object": 4}
