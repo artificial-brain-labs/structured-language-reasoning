@@ -1,16 +1,19 @@
 {
   "mechanisms": {
     "FACT": {
+      "handler": "fact",
       "resolve_object": "literal",
       "validate_relation": false,
       "clarify_unknown_subject": true
     },
     "RELATION": {
+      "handler": "relation",
       "resolve_object": "entity",
       "validate_relation": true,
       "clarify_unknown_subject": true
     },
     "CLASSIFICATION": {
+      "handler": "classification",
       "resolve_object": "ontology_class",
       "validate_relation": false,
       "clarify_unknown_subject": false,
