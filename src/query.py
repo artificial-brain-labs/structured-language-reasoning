@@ -27,48 +27,41 @@ class QueryEngine:
         return self.lexicon.feature(word, "relation") or self.lexicon.concept(word)
 
     def _classification(self, parsed):
-        """Query asserted and derived type knowledge without mutating memory."""
+        """Return asserted or derived type evidence without mutating memory."""
         subject = self.memory.find_named_entity(parsed.subject_word)
         target_concept = self.lexicon.concept(parsed.object_word)
         if subject is None or target_concept is None:
-            return None
+            return []
 
         subject = self._canonical_id(subject)
         subject_concept = self.memory.entities[subject]["concept"]
 
         if subject_concept == target_concept:
-            return {
+            return [{
                 "entity": subject,
                 "predicate": "IS_A",
                 "object": target_concept,
                 "status": "ASSERTED",
                 "source": "MEMORY",
                 "support": [subject],
-            }
+            }]
 
         target_entity = self.memory.find_entity(target_concept)
         for memory in self.memory.query(subject=subject, predicate="IS_A"):
             if memory.status == "ASSERTED" and self._canonical_id(memory.object) == target_entity:
-                return {
+                return [{
                     "entity": subject,
                     "predicate": "IS_A",
                     "object": target_concept,
                     "status": "ASSERTED",
                     "source": memory.source,
                     "support": [memory],
-                }
+                }]
 
         if self.reasoner is not None:
             for derived in self.reasoner.infer_is_a(subject):
                 if derived["object"] == target_concept:
-                    return {
-                        "entity": subject,
-                        "predicate": "IS_A",
-                        "object": target_concept,
-                        "status": derived["status"],
-                        "source": derived["source"],
-                        "support": derived["support"],
-                    }
+                    return [derived]
 
             for derived in self.reasoner.derive():
                 if (
@@ -76,9 +69,9 @@ class QueryEngine:
                     and derived["predicate"] == "IS_A"
                     and self._canonical_id(derived["object"]) == target_entity
                 ):
-                    return derived
+                    return [derived]
 
-        return None
+        return []
 
     def answer(self, parsed):
         policy = self.policy.get(parsed.question_type)
