@@ -3,6 +3,7 @@
     "ASSERT_STATE": {
       "target": "MEMORY",
       "kind": "FACT",
+      "execution": "STORE_RELATION",
       "requires": ["subject", "predicate", "object"],
       "responses": {
         "success": "I have stored that in memory.",
@@ -12,6 +13,7 @@
     "ASSERT_RELATION": {
       "target": "MEMORY",
       "kind": "RELATION",
+      "execution": "STORE_RELATION",
       "requires": ["subject", "predicate", "object"],
       "responses": {
         "success": "I have stored that in memory.",
@@ -21,6 +23,7 @@
     "ASSERT_CLASSIFICATION": {
       "target": "MEMORY",
       "kind": "CLASSIFICATION",
+      "execution": "STORE_RELATION",
       "requires": ["subject", "predicate", "object"],
       "responses": {
         "success": "Understood. I know that {subject_name} is a {object_word}.",
