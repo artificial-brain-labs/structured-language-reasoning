@@ -10,7 +10,7 @@ def test_classification_query_uses_ontology_derived_knowledge():
 
     assert result
     evidence = result[0]
-    assert evidence["entity"] == slr.memory.find_named_entity("Tom")
+    assert evidence["entity"] == slr.user_memory.find_named_entity("Tom")
     assert evidence["predicate"] == "IS_A"
     assert evidence["object"] == "ANIMAL"
     assert evidence["status"] == "DERIVED"
@@ -23,13 +23,18 @@ def test_classification_query_does_not_store_derived_fact():
 
     slr.process("Is Tom an animal?")
 
-    tom = slr.memory.find_named_entity("Tom")
-    animal = slr.memory.find_entity("ANIMAL")
+    tom = slr.user_memory.find_named_entity("Tom")
+    animal = slr.user_memory.find_entity("ANIMAL")
     assert not any(
-        memory.subject == slr.memory.canonical_entity(tom)
+        memory.subject == slr.user_memory.canonical_entity(tom)
         and memory.predicate == "IS_A"
         and memory.object == animal
         and memory.status == "ASSERTED"
+        for memory in slr.user_memory.memories
+    )
+    assert not any(
+        memory.subject == tom and memory.predicate == "IS_A"
+        and memory.object == slr.memory.find_entity("ANIMAL")
         for memory in slr.memory.memories
     )
 
