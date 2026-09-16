@@ -2,22 +2,24 @@
   "mechanisms": {
     "FACT": {
       "handler": "fact",
+      "target": "USER_MEMORY",
       "resolve_object": "literal",
       "validate_relation": false,
       "clarify_unknown_subject": true
     },
     "RELATION": {
       "handler": "relation",
+      "target": "USER_MEMORY",
       "resolve_object": "entity",
       "validate_relation": true,
       "clarify_unknown_subject": true
     },
     "CLASSIFICATION": {
       "handler": "classification",
+      "target": "USER_MEMORY",
       "resolve_object": "ontology_class",
       "validate_relation": false,
-      "clarify_unknown_subject": false,
-      "update_subject_concept": true
+      "clarify_unknown_subject": false
     }
   }
 }
