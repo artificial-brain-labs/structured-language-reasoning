@@ -2,6 +2,7 @@ from .lexicon import Lexicon
 from .ontology import Ontology
 from .parser import Parser
 from .memory import DynamicMemory
+from .user_memory import UserMemory
 from .reasoner import Reasoner
 from .query import QueryEngine
 from .response import ResponseGenerator
@@ -21,25 +22,30 @@ class SLR:
         self.ontology = Ontology()
         self.parser = Parser(self.lexicon)
         self.semantic_parser = SemanticParser(self.lexicon)
+
+        # System memory is reserved for system/runtime knowledge. User facts
+        # are isolated in a per-instance USER MEMORY store.
         self.memory = DynamicMemory()
-        self.reasoner = Reasoner(self.ontology, self.memory)
-        self.executor = SemanticExecutor(self.memory)
-        self.resolver = EntityResolver(self.lexicon, self.ontology, self.memory)
-        self.clarification = ClarificationManager(self.memory)
+        self.user_memory = UserMemory()
+
+        self.reasoner = Reasoner(self.ontology, self.user_memory)
+        self.executor = SemanticExecutor(self.user_memory)
+        self.resolver = EntityResolver(self.lexicon, self.ontology, self.user_memory)
+        self.clarification = ClarificationManager(self.user_memory)
         self.clarification_policy = ClarificationPolicy()
         self.operation_engine = OperationEngine(
             self.executor.definitions,
             self.resolver,
             self.reasoner,
             self.executor,
-            self.memory,
+            self.user_memory,
             self.lexicon,
             self.clarification,
         )
         self.router = StatementRouter()
         self.router.register_all(self.executor.definitions.operations, self.operation_engine.execute)
-        self.query = QueryEngine(self.memory, self.lexicon, self.reasoner)
-        self.response = ResponseGenerator(self.memory)
+        self.query = QueryEngine(self.user_memory, self.lexicon, self.reasoner)
+        self.response = ResponseGenerator(self.user_memory)
         self.response_policy = ResponsePolicy(self.executor.definitions)
 
     def _execute_statement(self, parsed):
@@ -81,7 +87,7 @@ class SLR:
         if original_operation is None or original_context is None:
             return confirmation
 
-        original_operation.subject = self.memory.canonical_entity(entity)
+        original_operation.subject = self.user_memory.canonical_entity(entity)
         resumed = self.operation_engine.execute(original_operation, original_context)
         if resumed.result is None:
             return self.response.system("classification_resumed_failure", confirmation_context)
@@ -121,8 +127,8 @@ class SLR:
 
         success_context = {}
         if parsed.subject_word:
-            entity = self.memory.canonical_entity(execution.result.subject)
-            success_context["subject_name"] = self.memory.entities[entity]["name"]
+            entity = self.user_memory.canonical_entity(execution.result.subject)
+            success_context["subject_name"] = self.user_memory.entities[entity]["name"]
         if parsed.object_word:
             success_context["object_word"] = parsed.object_word
 
