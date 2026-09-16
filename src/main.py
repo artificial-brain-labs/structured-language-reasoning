@@ -27,7 +27,10 @@ from .tcm import TransientCommunicationMemory
 
 
 class SLR:
-    def __init__(self, user_id, username=None):
+    def __init__(self, user_id=None, username=None):
+        # A missing user_id means an anonymous runtime instance, not an inferred identity.
+        if user_id is None:
+            user_id = f"ANONYMOUS-{uuid4().hex}"
         self.user_profile = UserProfile(user_id=user_id, username=username)
         self.lexicon = Lexicon()
         self.ontology = Ontology()
