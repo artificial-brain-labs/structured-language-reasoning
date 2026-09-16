@@ -3,17 +3,9 @@ from .statement_router import StatementResult
 
 
 class OperationEngine:
-    """Execute declarative operations through reusable execution mechanisms.
+    """Execute declarative operations through reusable execution mechanisms."""
 
-    Domain knowledge lives in operation, relation, ontology, and execution
-    policy data. Python supplies reusable mechanisms; policy data selects
-    which mechanism handles each operation kind.
-
-    Asserted knowledge learned from the current user is executed against the
-    supplied user-memory store. System knowledge is never mutated here.
-    """
-
-    def __init__(self, definitions, resolver, reasoner, executor, memory, lexicon, clarification, policies=None):
+    def __init__(self, definitions, resolver, reasoner, executor, memory, lexicon, clarification, policies=None, relationship_memory=None):
         self.definitions = definitions
         self.resolver = resolver
         self.reasoner = reasoner
@@ -22,6 +14,7 @@ class OperationEngine:
         self.lexicon = lexicon
         self.clarification = clarification
         self.policies = policies or ExecutionPolicies()
+        self.relationship_memory = relationship_memory
         self._handlers = self._build_handlers()
 
     def _build_handlers(self):
@@ -51,17 +44,9 @@ class OperationEngine:
         return getattr(parsed, f"{slot}_surface_word", None) or getattr(parsed, f"{slot}_word", None)
 
     def _resolve_subject(self, operation, parsed):
-        # An operation may already be explicitly bound to a USER MEMORY
-        # entity, for example when a pending clarification is resumed. In
-        # that case preserve the binding instead of resolving the surface
-        # word again and potentially creating a different semantic path.
         if operation.subject in self.memory.entities:
             explicit_types = self.reasoner.explicit_types(operation.subject)
             if explicit_types:
-                # Explicit user-memory classification is sufficient to treat
-                # the entity as known for this operation. Do not change the
-                # entity's cached concept: UNKNOWN remains UNKNOWN unless the
-                # system lexicon originally assigned its concept.
                 return explicit_types[0]
             return self.resolver.concept(operation.subject)
         operation.subject = self.resolver.resolve_canonical(self._surface(parsed, "subject"))
@@ -100,13 +85,8 @@ class OperationEngine:
         resolved_type = self._resolve_object(operation, parsed, policy)
         if not resolved_type:
             return StatementResult(operation=operation)
-
         _, type_entity = resolved_type
         operation.object = type_entity
-
-        # Classification is explicit user knowledge. Store the IS_A relation
-        # in USER MEMORY; never mutate the entity's cached concept and never
-        # write user-specific knowledge into the system/main memory.
         result = self.executor.execute(operation, source="USER")
         return StatementResult(result=result, operation=operation)
 
@@ -132,4 +112,26 @@ class OperationEngine:
         relation_schema = self.memory.relations.get(operation.predicate) or {}
         if result is not None and self._should_clarify_unknown_subject(policy, relation_schema, subject_concept):
             return StatementResult(result=result, clarification=self._request_clarification(operation, parsed), operation=operation)
+        return StatementResult(result=result, operation=operation)
+
+    def _user_relationship(self, operation, parsed):
+        if self.relationship_memory is None:
+            return StatementResult(operation=operation)
+
+        target = operation.attributes.get("relationship_target")
+        if target == "subject":
+            person_name = self._surface(parsed, "subject")
+        elif target == "object":
+            person_name = self._surface(parsed, "object")
+        else:
+            return StatementResult(operation=operation)
+
+        if not person_name:
+            return StatementResult(operation=operation)
+
+        result = self.relationship_memory.record_user_relationship(
+            person_name=person_name,
+            relation=operation.predicate,
+            source_interaction_id=None,
+        )
         return StatementResult(result=result, operation=operation)
