@@ -64,17 +64,46 @@ class SLR:
     def _refresh_graph(self):
         derived = list(self.reasoner.derive())
         for entity_id in self.user_memory.entities:
-            derived.extend(self.reasoner.infer_is_a(entity_id))
+            inferred = self.reasoner.infer_is_a(entity_id)
+            derived.extend(inferred)
+            for item in inferred:
+                self.user_memory.record_derivation(
+                    subject=item["entity"],
+                    predicate=item["predicate"],
+                    object=item["object"],
+                    support=item.get("support", ()),
+                )
         self.graph = self.graph_builder.build(self.user_memory, derived=derived)
         if hasattr(self, "query"):
             self.query.graph = self.graph
             self.query.graph_query = SemanticGraphQuery(self.graph, self.ontology)
+
+    def _record_observation(self, text, parsed):
+        """Record what entered the system before semantic interpretation."""
+        self.user_memory.record_observation(
+            subject=parsed.subject_word,
+            predicate=parsed.verb_word,
+            object=parsed.object_word,
+            source="USER",
+            content=text.strip(),
+        )
+
+    def _record_interpretation(self, parsed, operation):
+        """Record machine interpretation without promoting it to assertion."""
+        self.user_memory.record_interpretation(
+            subject=operation.subject,
+            predicate=operation.predicate,
+            object=operation.object,
+            support=(parsed.rule,) if parsed.rule else (),
+            source="SYSTEM",
+        )
 
     def _execute_statement(self, parsed):
         meaning = self.semantic_parser.parse(parsed)
         operation = meaning.operation
         if operation is None:
             return StatementResult()
+        self._record_interpretation(parsed, operation)
         return self.router.dispatch(operation, parsed)
 
     def _handle_pending_clarification(self, text):
@@ -92,14 +121,12 @@ class SLR:
         if parsed.subject_word.lower() != pending_name.lower():
             return None
 
-        # Execute the explicit clarification directly against the existing
-        # pending entity. Do not re-resolve it through a fresh semantic entity
-        # path: clarification is binding information for that exact node.
         meaning = self.semantic_parser.parse(parsed)
         classification_operation = meaning.operation
         if classification_operation is None:
             return None
         classification_operation.subject = pending_entity
+        self._record_interpretation(parsed, classification_operation)
         execution = self.operation_engine.execute(classification_operation, parsed)
         if execution.result is None:
             return None
@@ -138,6 +165,8 @@ class SLR:
                 return clarification_result
 
         parsed = self.parser.parse(text)
+        if not parsed.question_type:
+            self._record_observation(text, parsed)
 
         if parsed.question_type:
             return self.response.generate(parsed, self.query.answer(parsed))
@@ -180,7 +209,7 @@ class SLR:
 
 def main():
     slr = SLR()
-    print("Structured Language Reasoning V0.7")
+    print("Structured Language Reasoning V0.9")
     print("Type 'exit' to stop.")
     while True:
         text = input("> ")
