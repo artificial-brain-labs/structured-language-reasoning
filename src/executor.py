@@ -3,12 +3,7 @@ from .operations import OperationDefinitions
 
 
 class SemanticExecutor:
-    """Execute semantic operations through a mechanism registry.
-
-    Operation metadata is loaded from declarative knowledge. The registry
-    selects execution mechanisms; domain concepts and relation behavior
-    remain data-driven through knowledge and memory schemas.
-    """
+    """Execute semantic operations through a mechanism registry."""
 
     def __init__(self, memory, registry=None, definitions=None):
         self.memory = memory
@@ -18,24 +13,10 @@ class SemanticExecutor:
 
     def _register_default_operations(self):
         for operation_name in self.definitions.operations:
-            self.registry.register(operation_name, self._assert_memory)
+            self.registry.register(operation_name, self._execute_memory_operation)
 
-    def _assert_memory(self, operation, source="USER", confidence=1.0):
-        schema = self.memory.relations.get(operation.predicate) or {}
-        if schema.get("type") == "IDENTITY":
-            return self.memory.add_identity(
-                operation.subject,
-                operation.object,
-                source,
-                confidence,
-            )
-        return self.memory.add_memory(
-            operation.subject,
-            operation.predicate,
-            operation.object,
-            source,
-            confidence,
-        )
+    def _execute_memory_operation(self, operation, source="USER", confidence=1.0):
+        return self.memory.apply_operation(operation, source, confidence)
 
     def execute(self, operation, source="USER", confidence=1.0):
         if operation is None:
@@ -45,8 +26,4 @@ class SemanticExecutor:
         if handler is None:
             return None
 
-        # Registered handlers are explicit execution mechanisms. Built-in
-        # operations are registered from declarative knowledge; externally
-        # registered operations may therefore be executed without inventing
-        # a knowledge definition here.
         return handler(operation, source, confidence)
