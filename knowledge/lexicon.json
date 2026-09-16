@@ -12,6 +12,8 @@
   "eat": {"concept": "EAT", "pos": "VERB", "relation": "EATS"},
   "sees": {"concept": "SEE", "pos": "VERB", "base": "see", "relation": "SEES"},
   "see": {"concept": "SEE", "pos": "VERB", "relation": "SEES"},
+  "knows": {"concept": "KNOW", "pos": "VERB", "base": "know", "relation": "KNOWS"},
+  "know": {"concept": "KNOW", "pos": "VERB", "relation": "KNOWS"},
   "sleeping": {"concept": "SLEEP", "pos": "STATE", "base": "sleep", "aspect": "PROGRESSIVE"},
   "sleep": {"concept": "SLEEP", "pos": "STATE"},
   "hungry": {"concept": "HUNGRY", "pos": "STATE"},
@@ -28,6 +30,8 @@
   "an": {"concept": "A", "pos": "DETERMINER"},
   "what": {"concept": "WHAT", "pos": "QUESTION"},
   "who": {"concept": "WHO", "pos": "QUESTION"},
+  "friend": {"concept": "FRIEND", "pos": "NOUN"},
+  "friends": {"concept": "FRIEND", "pos": "NOUN"},
   "animal": {"concept": "ANIMAL", "pos": "NOUN"},
   "mammal": {"concept": "MAMMAL", "pos": "NOUN"}
 }
