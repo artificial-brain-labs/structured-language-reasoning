@@ -38,7 +38,7 @@ class SLR:
         )
         self.router = StatementRouter()
         self.router.register_all(self.executor.definitions.operations, self.operation_engine.execute)
-        self.query = QueryEngine(self.memory, self.lexicon)
+        self.query = QueryEngine(self.memory, self.lexicon, self.reasoner)
         self.response = ResponseGenerator(self.memory)
         self.response_policy = ResponsePolicy(self.executor.definitions)
 
