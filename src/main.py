@@ -46,9 +46,6 @@ class SLR:
         )
         self.router = StatementRouter()
         self.router.register_all(self.executor.definitions.operations, self.operation_engine.execute)
-        self.query = QueryEngine(self.user_memory, self.lexicon, self.reasoner)
-        self.response = ResponseGenerator(self.user_memory)
-        self.response_policy = ResponsePolicy(self.executor.definitions)
 
         # V0.5: the semantic graph is a representation/projection layer. It is
         # rebuilt from USER MEMORY and never becomes a second source of truth.
@@ -56,11 +53,20 @@ class SLR:
         self.graph = SemanticGraph()
         self._refresh_graph()
 
+        # V0.6: query the graph representation while USER MEMORY remains the
+        # authoritative persistent store.
+        self.query = QueryEngine(self.user_memory, self.lexicon, self.reasoner, graph=self.graph)
+        self.response = ResponseGenerator(self.user_memory)
+        self.response_policy = ResponsePolicy(self.executor.definitions)
+
     def _refresh_graph(self):
         derived = list(self.reasoner.derive())
         for entity_id in self.user_memory.entities:
             derived.extend(self.reasoner.infer_is_a(entity_id))
         self.graph = self.graph_builder.build(self.user_memory, derived=derived)
+        if hasattr(self, "query"):
+            self.query.graph = self.graph
+            self.query.graph_query = __import__("src.graph_query", fromlist=["SemanticGraphQuery"]).SemanticGraphQuery(self.graph)
 
     def _execute_statement(self, parsed):
         meaning = self.semantic_parser.parse(parsed)
@@ -177,7 +183,7 @@ class SLR:
 
 def main():
     slr = SLR()
-    print("Structured Language Reasoning V0.5")
+    print("Structured Language Reasoning V0.6")
     print("Type 'exit' to stop.")
     while True:
         text = input("> ")
