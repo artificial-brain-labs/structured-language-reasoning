@@ -8,6 +8,9 @@ class ParsedSentence:
     subject_word: str | None = None
     verb_word: str | None = None
     object_word: str | None = None
+    subject_surface_word: str | None = None
+    verb_surface_word: str | None = None
+    object_surface_word: str | None = None
     negated: bool = False
     question_type: str | None = None
     rule: str | None = None
@@ -58,11 +61,18 @@ class Parser:
         return None
 
     def _slot_word(self, tokens, rule, slot):
-        """Read a semantic slot from declarative grammar data."""
+        """Read a normalized semantic slot from declarative grammar data."""
         index = rule.get("slots", {}).get(slot)
         if not isinstance(index, int) or not 0 <= index < len(tokens):
             return None
         return tokens[index]
+
+    def _surface_slot_word(self, surface_tokens, rule, slot):
+        """Read the original surface form for a semantic slot."""
+        index = rule.get("slots", {}).get(slot)
+        if not isinstance(index, int) or not 0 <= index < len(surface_tokens):
+            return None
+        return surface_tokens[index]
 
     def parse(self, text):
         surface_tokens = tokenize(text) if isinstance(text, str) else list(text)
@@ -78,9 +88,12 @@ class Parser:
 
         surface_tokens = surface_tokens if surface_tokens is not None else tokens
         return ParsedSentence(
-            subject_word=self._slot_word(surface_tokens, rule, "subject"),
-            verb_word=self._slot_word(surface_tokens, rule, "verb"),
-            object_word=self._slot_word(surface_tokens, rule, "object"),
+            subject_word=self._slot_word(tokens, rule, "subject"),
+            verb_word=self._slot_word(tokens, rule, "verb"),
+            object_word=self._slot_word(tokens, rule, "object"),
+            subject_surface_word=self._surface_slot_word(surface_tokens, rule, "subject"),
+            verb_surface_word=self._surface_slot_word(surface_tokens, rule, "verb"),
+            object_surface_word=self._surface_slot_word(surface_tokens, rule, "object"),
             question_type=rule.get("question_type"),
             rule=rule.get("name"),
             meaning=rule.get("meaning"),
