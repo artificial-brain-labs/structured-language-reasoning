@@ -74,6 +74,14 @@ class Reasoner:
 
         if required_subject and not any(self.ontology.is_a(concept, required_subject) for concept in subject_concepts):
             return False
+
+        # An explicit relation may refer to an entity whose type is not yet
+        # known. That is not permission to guess the type; it is an explicit
+        # observation whose object classification remains UNKNOWN. Whether
+        # such observations are accepted is declared by the relation schema.
+        if required_object and not object_concepts:
+            return schema.get("allow_unknown_object", False)
+
         if required_object and not any(self.ontology.is_a(concept, required_object) for concept in object_concepts):
             return False
         return True
