@@ -12,7 +12,7 @@ class ResponseGenerator:
         self.query_responses = data.get("queries", {})
 
     def entity_name(self, entity_id):
-        return self.memory.entities[entity_id]["concept"].lower()
+        return self.memory.entities[entity_id]["name"]
 
     def system(self, name, context=None):
         template = self.system_responses.get(name)
@@ -44,4 +44,7 @@ class ResponseGenerator:
             "verb_word": parsed.verb_word or "",
             "object_word": parsed.object_word or "",
         }
-        return template.get("success", "").format(**context)
+        try:
+            return template.get("success", "").format(**context)
+        except (KeyError, ValueError):
+            return self.system("unknown")
