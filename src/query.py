@@ -31,12 +31,18 @@ class QueryEngine:
         self.policy = data.get("question_types", {})
 
     def _resolve(self, word):
+        """Resolve the explicit surface identity without collapsing it early.
+
+        Canonical identity is a storage/query fallback concern. The graph query
+        layer must receive the identity the user actually named so that proofs
+        can begin from that identity and traverse explicit SAME_AS edges only
+        when direct evidence is unavailable.
+        """
         concept = self.lexicon.concept(word)
         if concept:
             entity = self.memory.find_entity(concept)
-        else:
-            entity = self.memory.find_named_entity(word)
-        return self.memory.canonical_entity(entity) if entity else None
+            return entity
+        return self.memory.find_named_entity(word)
 
     def _canonical_id(self, entity_id):
         return self.memory.canonical_entity(entity_id)
@@ -171,7 +177,7 @@ class QueryEngine:
                         "person_id": person.person_id,
                         "person_name": person.name,
                         "relation": relationships[0].relation,
-                        "status": relationships[0].verification_state,
+                        "status": person.verification_state,
                     }]
 
         return []
@@ -179,6 +185,14 @@ class QueryEngine:
     def _node_concept(self, node_id):
         node = self.graph.nodes.get(node_id)
         return node.concept if node else None
+
+    def _relation(self, word):
+        concept = self.lexicon.concept(word)
+        if concept:
+            entry = self.lexicon.get(word) if hasattr(self.lexicon, "get") else None
+            if isinstance(entry, dict):
+                return entry.get("relation") or concept
+        return concept
 
     def answer(self, parsed):
         policy = self.policy.get(parsed.question_type)
@@ -219,6 +233,3 @@ class QueryEngine:
             ]
 
         return []
-
-    def _relation(self, word):
-        return self.lexicon.feature(word, "relation") or self.lexicon.concept(word)
