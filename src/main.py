@@ -57,10 +57,10 @@ class SLR:
         self._refresh_graph()
 
     def _refresh_graph(self):
-        self.graph = self.graph_builder.build(
-            self.user_memory,
-            derived=self.reasoner.derive(),
-        )
+        derived = list(self.reasoner.derive())
+        for entity_id in self.user_memory.entities:
+            derived.extend(self.reasoner.infer_is_a(entity_id))
+        self.graph = self.graph_builder.build(self.user_memory, derived=derived)
 
     def _execute_statement(self, parsed):
         meaning = self.semantic_parser.parse(parsed)
