@@ -51,6 +51,12 @@ class OperationEngine:
         return getattr(parsed, f"{slot}_surface_word", None) or getattr(parsed, f"{slot}_word", None)
 
     def _resolve_subject(self, operation, parsed):
+        # An operation may already be explicitly bound to a USER MEMORY
+        # entity, for example when a pending clarification is resumed. In
+        # that case preserve the binding instead of resolving the surface
+        # word again and potentially creating a different semantic path.
+        if operation.subject in self.memory.entities:
+            return self.resolver.concept(operation.subject)
         operation.subject = self.resolver.resolve_canonical(self._surface(parsed, "subject"))
         return self.resolver.concept(operation.subject)
 
