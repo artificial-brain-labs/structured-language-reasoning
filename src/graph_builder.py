@@ -13,7 +13,7 @@ class SemanticGraphBuilder:
 
         for entity_id, data in memory.entities.items():
             concept = data.get("concept", "UNKNOWN")
-            node_type = "CLASS" if entity_id.endswith(f"_{concept.lower()}") and data.get("name") == concept else "ENTITY"
+            node_type = "CLASS" if data.get("name") == concept else "ENTITY"
             graph.add_node(
                 GraphNode(
                     node_id=entity_id,
