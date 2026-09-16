@@ -16,6 +16,7 @@ from .clarification_policy import ClarificationPolicy
 from .operation_engine import OperationEngine
 from .semantic_graph import SemanticGraph
 from .graph_builder import SemanticGraphBuilder
+from .graph_query import SemanticGraphQuery
 
 
 class SLR:
@@ -66,7 +67,7 @@ class SLR:
         self.graph = self.graph_builder.build(self.user_memory, derived=derived)
         if hasattr(self, "query"):
             self.query.graph = self.graph
-            self.query.graph_query = __import__("src.graph_query", fromlist=["SemanticGraphQuery"]).SemanticGraphQuery(self.graph)
+            self.query.graph_query = SemanticGraphQuery(self.graph)
 
     def _execute_statement(self, parsed):
         meaning = self.semantic_parser.parse(parsed)
