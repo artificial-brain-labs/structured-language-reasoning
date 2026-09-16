@@ -17,7 +17,11 @@ class QueryEngine:
             if schema.get("role") == "identity"
         }
         self.graph_query = (
-            SemanticGraphQuery(graph, identity_predicates=self.identity_predicates)
+            SemanticGraphQuery(
+                graph,
+                ontology=reasoner.ontology if reasoner is not None else None,
+                identity_predicates=self.identity_predicates,
+            )
             if graph is not None
             else None
         )
