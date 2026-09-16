@@ -135,8 +135,6 @@ class QueryEngine:
         if entity is not None and self.graph_query is not None:
             result = self.graph_query.entity_type(entity)
             if result is not None:
-                # Preserve the queried entity while retaining the identity path
-                # as support. A traversed identity makes the classification derived.
                 result["entity"] = entity
                 return [result]
 
@@ -156,9 +154,6 @@ class QueryEngine:
                         "support": [memory],
                     }]
 
-        # A person relationship is not an ontology type. It is a separate,
-        # explicit piece of USER MEMORY and therefore can answer WHO/WHAT
-        # without guessing that the person belongs to an ontology class.
         if self.relationship_memory is not None:
             people = self.relationship_memory.find_people_by_name(parsed.subject_word)
             if people:
