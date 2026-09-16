@@ -11,6 +11,7 @@
     "role": "relation",
     "subject_type": "ANIMAL",
     "object_type": "THING",
+    "allow_unknown_object": true,
     "opposite": "NOT_EATS"
   },
   "NOT_EATS": {
@@ -18,6 +19,7 @@
     "role": "relation",
     "subject_type": "ANIMAL",
     "object_type": "THING",
+    "allow_unknown_object": true,
     "opposite": "EATS"
   },
   "IS_A": {
