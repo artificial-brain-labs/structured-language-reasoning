@@ -17,6 +17,7 @@ class ParsedSentence:
     meaning: str | None = None
     operation: str | None = None
     relation: str | None = None
+    relationship_target: str | None = None
     tokens: list[str] | None = None
 
 
@@ -30,20 +31,12 @@ class Parser:
         return self.lexicon.pos(word) if self.lexicon else None
 
     def _category(self, word):
-        """Resolve a token to the category used by the declarative grammar.
-
-        ENTITY is a syntactic placeholder for an unresolved named entity.
-        It does not assert the entity's real-world type.
-        """
         pos = self._pos(word)
         if pos:
             return pos
         return "ENTITY"
 
     def _matches_category(self, actual, expected):
-        # ENTITY is an unresolved entity candidate. It is intentionally
-        # distinct from lexical NOUN so grammar rules can require either a
-        # known lexical noun or an unresolved name.
         return actual == expected
 
     def _matches(self, tokens, pattern):
@@ -61,14 +54,12 @@ class Parser:
         return None
 
     def _slot_word(self, tokens, rule, slot):
-        """Read a normalized semantic slot from declarative grammar data."""
         index = rule.get("slots", {}).get(slot)
         if not isinstance(index, int) or not 0 <= index < len(tokens):
             return None
         return tokens[index]
 
     def _surface_slot_word(self, surface_tokens, rule, slot):
-        """Read the original surface form for a semantic slot."""
         index = rule.get("slots", {}).get(slot)
         if not isinstance(index, int) or not 0 <= index < len(surface_tokens):
             return None
@@ -99,5 +90,6 @@ class Parser:
             meaning=rule.get("meaning"),
             operation=rule.get("operation"),
             relation=rule.get("relation"),
+            relationship_target=rule.get("relationship_target"),
             tokens=tokens,
         )
