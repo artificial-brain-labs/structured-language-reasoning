@@ -54,9 +54,10 @@ class SLR:
         self.graph = SemanticGraph()
         self._refresh_graph()
 
-        # V0.6: query the graph representation while USER MEMORY remains the
-        # authoritative persistent store.
+        # V0.6/V0.7: query and explanation operate over the graph while the
+        # ontology supplies declarative class relationships for proof chains.
         self.query = QueryEngine(self.user_memory, self.lexicon, self.reasoner, graph=self.graph)
+        self.query.graph_query = SemanticGraphQuery(self.graph, self.ontology)
         self.response = ResponseGenerator(self.user_memory)
         self.response_policy = ResponsePolicy(self.executor.definitions)
 
@@ -67,7 +68,7 @@ class SLR:
         self.graph = self.graph_builder.build(self.user_memory, derived=derived)
         if hasattr(self, "query"):
             self.query.graph = self.graph
-            self.query.graph_query = SemanticGraphQuery(self.graph)
+            self.query.graph_query = SemanticGraphQuery(self.graph, self.ontology)
 
     def _execute_statement(self, parsed):
         meaning = self.semantic_parser.parse(parsed)
@@ -118,8 +119,6 @@ class SLR:
             self._refresh_graph()
             return confirmation
 
-        # Rebind the deferred operation to the same user-memory entity after
-        # its explicit classification has been recorded.
         original_operation.subject = self.user_memory.canonical_entity(pending_entity)
         resumed = self.operation_engine.execute(original_operation, original_context)
         self._refresh_graph()
@@ -149,9 +148,6 @@ class SLR:
         execution = self._execute_statement(parsed)
 
         if execution.clarification:
-            # Preserve the explicit observation in the graph even when the
-            # system still needs identity/type clarification. This does not
-            # turn UNKNOWN into a guessed type.
             self._refresh_graph()
             return execution.clarification
 
@@ -184,7 +180,7 @@ class SLR:
 
 def main():
     slr = SLR()
-    print("Structured Language Reasoning V0.6")
+    print("Structured Language Reasoning V0.7")
     print("Type 'exit' to stop.")
     while True:
         text = input("> ")
