@@ -8,6 +8,9 @@ class OperationEngine:
     Domain knowledge lives in operation, relation, ontology, and execution
     policy data. Python supplies reusable mechanisms; policy data selects
     which mechanism handles each operation kind.
+
+    Asserted knowledge learned from the current user is executed against the
+    supplied user-memory store. System knowledge is never mutated here.
     """
 
     def __init__(self, definitions, resolver, reasoner, executor, memory, lexicon, clarification, policies=None):
@@ -81,11 +84,14 @@ class OperationEngine:
         resolved_type = self._resolve_object(operation, parsed, policy)
         if not resolved_type:
             return StatementResult(operation=operation)
-        concept, type_entity = resolved_type
+
+        _, type_entity = resolved_type
         operation.object = type_entity
-        result = self.executor.execute(operation)
-        if result is not None and policy.get("update_subject_concept", False):
-            self.memory.set_entity_concept(operation.subject, concept)
+
+        # Classification is explicit user knowledge. Store the IS_A relation
+        # in USER MEMORY; never mutate the entity's cached concept and never
+        # write user-specific knowledge into the system/main memory.
+        result = self.executor.execute(operation, source="USER")
         return StatementResult(result=result, operation=operation)
 
     def _relation(self, operation, parsed):
@@ -99,14 +105,14 @@ class OperationEngine:
             return StatementResult(operation=operation)
         if policy.get("validate_relation", False) and not self.reasoner.validate_relation(operation.subject, operation.predicate, operation.object):
             return StatementResult(operation=operation)
-        result = self.executor.execute(operation)
+        result = self.executor.execute(operation, source="USER")
         return StatementResult(result=result, operation=operation)
 
     def _fact(self, operation, parsed):
         policy = self._policy(operation)
         subject_concept = self._resolve_subject(operation, parsed)
         operation.object = self._resolve_object(operation, parsed, policy)
-        result = self.executor.execute(operation)
+        result = self.executor.execute(operation, source="USER")
         relation_schema = self.memory.relations.get(operation.predicate) or {}
         if result is not None and self._should_clarify_unknown_subject(policy, relation_schema, subject_concept):
             return StatementResult(result=result, clarification=self._request_clarification(operation, parsed), operation=operation)
