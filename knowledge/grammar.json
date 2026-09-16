@@ -8,8 +8,15 @@
       "slots": {"subject": 2}
     },
     {
-      "name": "question_is_classification",
+      "name": "question_is_classification_known_type",
       "pattern": ["AUX", "ENTITY", "AUX", "DETERMINER", "NOUN"],
+      "meaning": "QUERY_CLASSIFICATION",
+      "question_type": "CLASSIFICATION",
+      "slots": {"subject": 1, "object": 4}
+    },
+    {
+      "name": "question_is_classification_unknown_type",
+      "pattern": ["AUX", "ENTITY", "AUX", "DETERMINER", "ENTITY"],
       "meaning": "QUERY_CLASSIFICATION",
       "question_type": "CLASSIFICATION",
       "slots": {"subject": 1, "object": 4}
