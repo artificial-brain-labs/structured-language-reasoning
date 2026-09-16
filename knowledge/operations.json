@@ -29,6 +29,16 @@
         "success": "Understood. I know that {subject_name} is a {object_word}.",
         "failure": "I don't know that type yet."
       }
+    },
+    "ASSERT_USER_RELATIONSHIP": {
+      "target": "USER_RELATIONSHIP_MEMORY",
+      "kind": "USER_RELATIONSHIP",
+      "execution": "STORE_USER_RELATIONSHIP",
+      "requires": ["predicate"],
+      "responses": {
+        "success": "I have recorded that relationship with {person_name}.",
+        "conflict": "The relationship was recorded, but its identity remains unresolved."
+      }
     }
   }
 }
