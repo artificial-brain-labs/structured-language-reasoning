@@ -1,12 +1,16 @@
 import json
 from pathlib import Path
 
+from .graph_query import SemanticGraphQuery
+
 
 class QueryEngine:
-    def __init__(self, memory, lexicon, reasoner=None, policy_path=None):
+    def __init__(self, memory, lexicon, reasoner=None, policy_path=None, graph=None):
         self.memory = memory
         self.lexicon = lexicon
         self.reasoner = reasoner
+        self.graph = graph
+        self.graph_query = SemanticGraphQuery(graph) if graph is not None else None
         path = policy_path or Path(__file__).resolve().parent.parent / "knowledge" / "query_policy.json"
         with open(path, "r", encoding="utf-8") as file:
             data = json.load(file)
@@ -23,16 +27,34 @@ class QueryEngine:
     def _canonical_id(self, entity_id):
         return self.memory.canonical_entity(entity_id)
 
-    def _relation(self, word):
-        return self.lexicon.feature(word, "relation") or self.lexicon.concept(word)
-
     def _classification(self, parsed):
-        """Return asserted or derived type evidence without mutating memory."""
+        """Return graph-backed asserted or derived type evidence."""
         subject = self._resolve(parsed.subject_word)
         target_concept = self.lexicon.concept(parsed.object_word)
         if subject is None or target_concept is None:
             return []
 
+        # V0.6: the semantic graph is the query representation. It exposes
+        # both asserted and derived evidence without mutating USER MEMORY.
+        if self.graph_query is not None:
+            path = self.graph_query.classification(subject, target_concept)
+            if path:
+                last = path[-1]
+                status = "ASSERTED" if any(edge.status == "ASSERTED" for edge in path) and len(path) == 1 else "DERIVED"
+                if len(path) == 1 and last.status == "ASSERTED":
+                    status = "ASSERTED"
+                return [{
+                    "entity": subject,
+                    "predicate": "IS_A",
+                    "object": target_concept,
+                    "status": status,
+                    "source": last.source,
+                    "support": list(last.support) or path,
+                    "path": path,
+                }]
+
+        # Compatibility fallback for callers that construct QueryEngine
+        # without a graph.
         target_entity = self.memory.find_entity(target_concept)
         asserted_classifications = [
             memory
@@ -52,7 +74,6 @@ class QueryEngine:
             }]
 
         subject_concept = self.memory.entities[subject]["concept"]
-
         if subject_concept == target_concept:
             return [{
                 "entity": subject,
@@ -103,14 +124,29 @@ class QueryEngine:
         return []
 
     def _entity_type(self, parsed):
-        """Return the entity's explicit user classification without mutation.
-
-        Identity is resolved first, so a name such as Tom can inherit an
-        explicitly asserted classification stored for Dom when Tom IS Dom.
-        No ontology-derived type is promoted to asserted user knowledge.
-        """
+        """Return the entity's explicit user classification without mutation."""
         entity = self._resolve(parsed.subject_word)
         if entity is None:
+            return []
+
+        if self.graph_query is not None:
+            # TYPE asks for explicit user knowledge. Derived ontology edges are
+            # deliberately excluded from this result.
+            asserted = [
+                edge for edge in self.graph.edges_from(entity, "IS_A")
+                if edge.status == "ASSERTED"
+            ]
+            for edge in asserted:
+                concept = self._node_concept(edge.object)
+                if concept and concept != "UNKNOWN":
+                    return [{
+                        "entity": entity,
+                        "predicate": "IS_A",
+                        "object": concept,
+                        "status": "ASSERTED",
+                        "source": edge.source,
+                        "support": list(edge.support),
+                    }]
             return []
 
         for memory in self.memory.query(subject=entity, predicate="IS_A"):
@@ -130,6 +166,10 @@ class QueryEngine:
 
         return []
 
+    def _node_concept(self, node_id):
+        node = self.graph.nodes.get(node_id)
+        return node.concept if node else None
+
     def answer(self, parsed):
         policy = self.policy.get(parsed.question_type)
         if policy is None:
@@ -147,6 +187,8 @@ class QueryEngine:
             predicate = self._relation(parsed.verb_word)
             if not subject or not predicate:
                 return []
+            if self.graph_query is not None:
+                return self.graph_query.objects(subject, predicate)
             return [
                 self._canonical_id(m.object)
                 for m in self.memory.query(subject=subject, predicate=predicate)
@@ -158,6 +200,8 @@ class QueryEngine:
             predicate = self._relation(parsed.verb_word)
             if not object_id or not predicate:
                 return []
+            if self.graph_query is not None:
+                return self.graph_query.subjects(object_id, predicate)
             return [
                 self._canonical_id(m.subject)
                 for m in self.memory.query(predicate=predicate)
@@ -165,3 +209,6 @@ class QueryEngine:
             ]
 
         return []
+
+    def _relation(self, word):
+        return self.lexicon.feature(word, "relation") or self.lexicon.concept(word)
