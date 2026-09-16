@@ -116,7 +116,10 @@ class SemanticGraphQuery:
                 if source_concept is None or source_concept == "UNKNOWN":
                     continue
 
-                path = list(identity_path) + [self._proof_edge(first)]
+                path = []
+                if identity_path:
+                    path.extend(identity_path)
+                path.append(self._proof_edge(first))
 
                 if source_concept == target_concept:
                     return self._proof(subject_id, target_concept, path)
