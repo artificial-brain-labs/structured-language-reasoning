@@ -48,6 +48,30 @@ class DynamicMemory:
     def set_entity_concept(self, entity_id, concept):
         self.entities[entity_id]["concept"] = concept
 
+    def apply_operation(self, operation, source="USER", confidence=1.0):
+        """Apply a declaratively defined memory operation.
+
+        The operation supplies the requested execution mechanism while the
+        relation schema supplies relation-specific memory semantics.
+        Undefined relations are stored as ordinary relations rather than
+        being rejected or guessed.
+        """
+        schema = self.relations.get(operation.predicate) or {}
+        if schema.get("role") == "identity":
+            return self.add_identity(
+                operation.subject,
+                operation.object,
+                source,
+                confidence,
+            )
+        return self.add_memory(
+            operation.subject,
+            operation.predicate,
+            operation.object,
+            source,
+            confidence,
+        )
+
     def add_memory(self, subject, predicate, object_, source="USER", confidence=1.0):
         subject = self.canonical_entity(subject)
         identity_predicate = self._identity_predicate()
@@ -71,34 +95,6 @@ class DynamicMemory:
         new_memory = Memory(subject, predicate, object_, "ASSERTED", confidence, source)
         self.memories.append(new_memory)
         return new_memory
-
-    def apply_operation(self, operation, source="USER", confidence=1.0):
-        """Apply a declaratively described memory operation."""
-        if operation is None or not operation.subject or not operation.predicate:
-            return None
-        if operation.predicate not in self.relations.schemas:
-            return None
-        if operation.object is None:
-            return None
-
-        result = self.add_memory(
-            operation.subject,
-            operation.predicate,
-            operation.object,
-            source,
-            confidence,
-        )
-
-        schema = self.relations.get(operation.predicate) or {}
-        if schema.get("role") == "identity" and schema.get("symmetric"):
-            self.add_memory(
-                operation.object,
-                operation.predicate,
-                operation.subject,
-                source,
-                confidence,
-            )
-        return result
 
     def opposite(self, predicate):
         schema = self.relations.get(predicate) or {}
