@@ -13,6 +13,9 @@
     },
     "SUBJECT_RELATION": {
       "predicate": {"source": "grammar", "field": "relation"}
+    },
+    "USER_RELATIONSHIP": {
+      "predicate": {"source": "grammar", "field": "relation"}
     }
   }
 }
