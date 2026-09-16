@@ -22,7 +22,6 @@ from .clarification_policy import ClarificationPolicy
 from .operation_engine import OperationEngine
 from .semantic_graph import SemanticGraph
 from .graph_builder import SemanticGraphBuilder
-from .graph_query import SemanticGraphQuery
 from .tcm import TransientCommunicationMemory
 
 
@@ -78,7 +77,6 @@ class SLR:
             graph=self.graph,
             relationship_memory=self.relationships,
         )
-        self.query.graph_query = SemanticGraphQuery(self.graph, self.ontology)
         self.response = ResponseGenerator(self.user_memory)
         self.response_policy = ResponsePolicy(self.executor.definitions)
 
@@ -97,7 +95,7 @@ class SLR:
         self.graph = self.graph_builder.build(self.user_memory, derived=derived)
         if hasattr(self, "query"):
             self.query.graph = self.graph
-            self.query.graph_query = SemanticGraphQuery(self.graph, self.ontology)
+            self.query.graph_query.graph = self.graph
 
     def _record_observation(self, text, parsed):
         self.user_memory.record_observation(
