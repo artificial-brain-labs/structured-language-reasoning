@@ -60,12 +60,14 @@ def test_user_memory_records_explicit_assertion_evidence():
 
     slr.process("Tom is a cat.")
 
+    tom = slr.user_memory.find_named_entity("Tom")
+    cat = slr.user_memory.find_entity("CAT")
     assertions = [record for record in slr.user_memory.evidence.records if record.kind == EvidenceKind.ASSERTION]
     assert assertions
     assert any(
-        record.subject == slr.user_memory.find_named_entity("Tom")
+        record.subject == tom
         and record.predicate == "IS_A"
-        and record.object == slr.ontology.resolve("CAT")
+        and record.object == cat
         and record.confirmed
         for record in assertions
     )
