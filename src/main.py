@@ -33,18 +33,10 @@ class SLR:
         self.parser = Parser(self.lexicon)
         self.semantic_parser = SemanticParser(self.lexicon)
 
-        # System memory is reserved for system/runtime knowledge. User facts
-        # are isolated in a per-instance USER MEMORY store.
         self.memory = DynamicMemory()
         self.user_memory = UserMemory()
-
-        # V1.0: TCM stores raw communication temporarily. It is deliberately
-        # separate from USER MEMORY and has no assertion or identity semantics.
         self.tcm = TransientCommunicationMemory()
 
-        # V1.0: relationships belong to this user's memory. Relationship and
-        # communication policy are loaded from data rather than encoded as facts
-        # in procedural logic.
         relationship_path = Path(__file__).resolve().parent.parent / "knowledge" / "relationships.json"
         with relationship_path.open("r", encoding="utf-8") as handle:
             self.relationship_schema = json.load(handle)
@@ -53,6 +45,8 @@ class SLR:
             slrm_instance_id=self.user_profile.slrm_instance_id,
             relationship_schema=self.relationship_schema,
         )
+        # Relationship state is explicitly owned by this user's memory.
+        self.user_memory.relationships = self.relationships
         self.communication = InterSLRMCommunication(self.relationships)
 
         self.reasoner = Reasoner(self.ontology, self.user_memory)
@@ -148,13 +142,8 @@ class SLR:
         original_operation = request.original_operation
         original_context = request.original_context
         self.clarification.clear()
-        confirmation_context = {
-            "subject_name": pending_name,
-            "object_word": parsed.object_word,
-        }
-        confirmation = self.response_policy.render(
-            execution.operation, "success", confirmation_context
-        )
+        confirmation_context = {"subject_name": pending_name, "object_word": parsed.object_word}
+        confirmation = self.response_policy.render(execution.operation, "success", confirmation_context)
         if original_operation is None or original_context is None:
             self._refresh_graph()
             return confirmation
