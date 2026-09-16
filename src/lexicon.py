@@ -7,7 +7,7 @@ class Lexicon:
             self.words = json.load(f)
 
     def get(self, word):
-        return self.words.get(word)
+        return self.words.get(word.lower()) if isinstance(word, str) else None
 
     def concept(self, word):
         entry = self.get(word)
@@ -22,4 +22,4 @@ class Lexicon:
         return entry.get(name) if entry else None
 
     def contains(self, word):
-        return word in self.words
+        return isinstance(word, str) and word.lower() in self.words
