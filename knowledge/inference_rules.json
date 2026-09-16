@@ -1,0 +1,13 @@
+{
+  "rules": [
+    {
+      "name": "transitive_is_a",
+      "relation": "IS_A",
+      "type": "TRANSITIVE",
+      "derive": {
+        "predicate": "IS_A"
+      },
+      "enabled": true
+    }
+  ]
+}
