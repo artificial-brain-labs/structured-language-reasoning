@@ -17,6 +17,10 @@ class Lexicon:
         entry = self.get(word)
         return entry.get("pos") if entry else None
 
+    def relation(self, word):
+        entry = self.get(word)
+        return entry.get("relation") if entry else None
+
     def feature(self, word, name):
         entry = self.get(word)
         return entry.get(name) if entry else None
