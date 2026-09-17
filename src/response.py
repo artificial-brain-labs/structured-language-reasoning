@@ -60,6 +60,13 @@ class ResponseGenerator:
             return self.system("unknown")
 
         first = results[0]
+        if isinstance(first, dict) and first.get("kind") == "LEXICAL_AMBIGUITY":
+            senses = first.get("senses", [])
+            descriptions = []
+            for sense in senses:
+                definition = sense.get("definition") or sense.get("concept") or "unknown meaning"
+                descriptions.append(f'{sense.get("id", "sense")}: {definition}')
+            return f"{first.get('word')} has multiple dictionary meanings: " + "; ".join(descriptions)
         if isinstance(first, dict) and first.get("relation"):
             # Relationship knowledge is not an ontology classification. It is
             # returned separately so the response does not turn FRIEND/KNOWS
