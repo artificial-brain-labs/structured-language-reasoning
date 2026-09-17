@@ -10,18 +10,32 @@ class SemanticComposer:
         self.lexicon = lexicon
         self.grammar_parser = grammar_parser
 
+    def _lexical_features(self, token):
+        entry = self.lexicon.get(token) if self.lexicon else None
+        if not entry:
+            return {}
+        features = {}
+        for name in ("base", "aspect", "tense"):
+            if entry.get(name) is not None:
+                features[name] = entry[name]
+        return features
+
     def compose(self, node, tokens):
         production = self.grammar_parser.production_for(node)
 
         if node.production_name is None:
             token = tokens[node.start]
-            return {
+            result = {
                 "category": node.category,
                 "token": token,
                 "concept": self.lexicon.concept(token),
                 "pos": self.lexicon.pos(token),
                 "relation": self.lexicon.relation(token),
             }
+            features = self._lexical_features(token)
+            if features:
+                result["features"] = features
+            return result
 
         children = [self.compose(child, tokens) for child in node.children]
         result = {
@@ -42,5 +56,9 @@ class SemanticComposer:
                         roles[role] = children[index]
             if roles:
                 result["roles"] = roles
+
+            semantic_features = production.get("semantic_features")
+            if semantic_features:
+                result["features"] = dict(semantic_features)
 
         return result
