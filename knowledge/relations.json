@@ -34,5 +34,12 @@
   "SEES": {
     "type": "ACTION",
     "role": "relation"
+  },
+  "HAS_PROPERTY": {
+    "type": "DESCRIPTIVE",
+    "role": "modifier",
+    "symmetric": false,
+    "transitive": false,
+    "traversable": true
   }
 }
