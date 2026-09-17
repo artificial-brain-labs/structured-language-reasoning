@@ -106,7 +106,7 @@ class Parser:
             verb_surface_word=surface_for("verb"),
             object_surface_word=surface_for("object"),
             question_type=production.get("question_type"),
-            rule=production.get("legacy_rule", production.get("name")),
+            rule=production.get("legacy_rule") or production.get("name"),
             meaning=production.get("meaning"),
             operation=production.get("operation"),
             relation=production.get("relation"),
