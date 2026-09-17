@@ -10,10 +10,16 @@ class ParseNode:
     end: int
     children: tuple = ()
     head_index: int | None = None
+    production_name: str | None = None
 
 
 class CompositionalGrammarParser:
-    """Data-driven CFG parser for the foundational language grammar."""
+    """Data-driven CFG parser for the foundational language grammar.
+
+    The parser returns all valid derivations. A parse node records the
+    production that created it so alternative derivations remain distinct
+    instead of being silently collapsed.
+    """
 
     def __init__(self, lexicon, grammar_path="knowledge/grammar_foundation.json"):
         self.lexicon = lexicon
@@ -58,7 +64,12 @@ class CompositionalGrammarParser:
                 for children in parse_sequence(tuple(production.get("rhs", [])), start, end):
                     if self._constraints_match(production, children):
                         candidates.append(ParseNode(
-                            category, start, end, tuple(children), production.get("head")
+                            category,
+                            start,
+                            end,
+                            tuple(children),
+                            production.get("head"),
+                            production.get("name"),
                         ))
             return tuple(candidates)
 
@@ -82,6 +93,10 @@ class CompositionalGrammarParser:
         return parse_category(start_symbol, 0, len(tokens))
 
     def production_for(self, node):
+        if node.production_name is not None:
+            for production in self.by_lhs.get(node.category, []):
+                if production.get("name") == node.production_name:
+                    return production
         for production in self.by_lhs.get(node.category, []):
             rhs = production.get("rhs", [])
             if len(rhs) == len(node.children) and all(
