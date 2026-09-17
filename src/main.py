@@ -35,12 +35,12 @@ class SLR:
         self.lexicon = Lexicon()
         self.ontology = Ontology()
         self.parser = Parser(self.lexicon)
-        self.semantic_parser = SemanticParser(self.lexicon, contextual_memory=self.contextual_meaning)
 
         self.memory = DynamicMemory()
         self.user_memory = UserMemory()
         self.tcm = TransientCommunicationMemory()
         self.contextual_meaning = ContextualMeaningMemory()
+        self.semantic_parser = SemanticParser(self.lexicon, contextual_memory=self.contextual_meaning)
 
         self.relationships = UserRelationshipMemory(
             owner_user_id=self.user_profile.user_id,
