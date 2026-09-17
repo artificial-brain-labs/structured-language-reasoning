@@ -33,6 +33,13 @@
       "slots": {"subject": 2}
     },
     {
+      "name": "question_what_determined_concept_type",
+      "pattern": ["QUESTION", "AUX", "DETERMINER", "NOUN"],
+      "meaning": "QUERY_TYPE",
+      "question_type": "TYPE",
+      "slots": {"subject": 3}
+    },
+    {
       "name": "question_is_classification_known_type",
       "pattern": ["AUX", "ENTITY", "DETERMINER", "NOUN"],
       "meaning": "QUERY_CLASSIFICATION",
