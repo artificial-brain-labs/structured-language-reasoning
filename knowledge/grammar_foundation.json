@@ -307,6 +307,10 @@
         "verb": [
           2,
           "head"
+        ],
+        "object": [
+          2,
+          "head"
         ]
       }
     },
@@ -327,6 +331,10 @@
           "head"
         ],
         "verb": [
+          2,
+          "head"
+        ],
+        "object": [
           2,
           "head"
         ]
