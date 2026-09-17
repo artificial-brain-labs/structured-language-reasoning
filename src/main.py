@@ -134,8 +134,8 @@ class SLR:
             source="SYSTEM",
         )
 
-    def _execute_statement(self, parsed):
-        meaning = self.semantic_parser.parse(parsed)
+    def _execute_statement(self, parsed, context=None):
+        meaning = self.semantic_parser.parse(parsed, context=context)
         operation = meaning.operation
         if operation is None:
             return StatementResult()
@@ -233,7 +233,7 @@ class SLR:
             return self.response.generate(parsed, self.query.answer(parsed))
         if not parsed.meaning:
             return self.response.system("parse_failure")
-        execution = self._execute_statement(parsed)
+        execution = self._execute_statement(parsed, context=text)
         if execution.clarification:
             self._refresh_graph()
             return execution.clarification
