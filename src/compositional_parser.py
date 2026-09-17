@@ -31,9 +31,16 @@ class CompositionalGrammarParser:
             self.by_lhs.setdefault(production["lhs"], []).append(production)
         self.lexical_categories = set(self.grammar.get("lexical_categories", []))
 
-    def lexical_category(self, word):
+    def lexical_categories(self, word):
+        if self.lexicon is not None and hasattr(self.lexicon, "pos_candidates"):
+            categories = self.lexicon.pos_candidates(word)
+            if categories:
+                return tuple(categories)
         pos = self.lexicon.pos(word) if self.lexicon else None
-        return pos or "ENTITY"
+        return (pos,) if pos else ("ENTITY",)
+
+    def lexical_category(self, word):
+        return self.lexical_categories(word)[0]
 
     def _head_lexical_category(self, node):
         if node.category in self.lexical_categories:
@@ -53,12 +60,12 @@ class CompositionalGrammarParser:
 
     def parse(self, tokens, start_symbol="STATEMENT"):
         tokens = list(tokens)
-        lexical_categories = tuple(self.lexical_category(token) for token in tokens)
+        lexical_categories = tuple(self.lexical_categories(token) for token in tokens)
 
         @lru_cache(maxsize=None)
         def parse_category(category, start, end):
             candidates = []
-            if end == start + 1 and lexical_categories[start] == category:
+            if end == start + 1 and category in lexical_categories[start]:
                 candidates.append(ParseNode(category, start, end))
             for production in self.by_lhs.get(category, []):
                 for children in parse_sequence(tuple(production.get("rhs", [])), start, end):
