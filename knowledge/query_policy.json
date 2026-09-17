@@ -19,6 +19,11 @@
       "result_kind": "subject",
       "handler": "_subjects",
       "unknown_result": "unknown"
+    },
+    "PROPERTY": {
+      "result_kind": "property",
+      "handler": "_property",
+      "unknown_result": "unknown"
     }
   }
 }
