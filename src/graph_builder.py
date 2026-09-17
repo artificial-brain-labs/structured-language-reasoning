@@ -2,15 +2,10 @@ from .semantic_graph import GraphEdge, GraphNode, SemanticGraph
 
 
 class SemanticGraphBuilder:
-    """Project memory and derived results into a semantic graph.
-
-    Persisted user entities keep their USER MEMORY identifiers. Ontology-only
-    concepts used by derived reasoning receive stable graph-local identifiers;
-    they are representation nodes, not new user memories.
-    """
+    """Project memory and derived results into a semantic graph."""
 
     def build(self, memory, derived=None):
-        graph = SemanticGraph()
+        graph = SemanticGraph(relation_schemas=getattr(memory.relations, "schemas", {}))
         for entity_id, data in memory.entities.items():
             concept = data.get("concept", "UNKNOWN")
             node_type = "CLASS" if data.get("name") == concept else "ENTITY"
@@ -36,8 +31,7 @@ class SemanticGraphBuilder:
             graph.add_edge(GraphEdge(
                 edge_id=f"derived_{index:04d}", subject=subject_id,
                 predicate=item["predicate"], object=object_id, status="DERIVED",
-                source=item.get("source", "INFERENCE"),
-                confidence=item.get("confidence", 1.0),
+                source=item.get("source", "INFERENCE"), confidence=item.get("confidence", 1.0),
                 support=tuple(self._support_ids(item.get("support", []))),
                 attributes={"rule": item["rule"]} if item.get("rule") else {},
             ))
