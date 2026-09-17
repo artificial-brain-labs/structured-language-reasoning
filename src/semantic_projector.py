@@ -27,17 +27,16 @@ class SemanticGraphProjector:
         subject_id = self._project_np(graph, subject, "subject", entity_resolver)
         object_id = self._project_np(graph, object_, "object", entity_resolver) if object_ else None
 
-        if subject_id and object_id and verb:
-            predicate = self._head(verb).get("concept")
-            if predicate and predicate != "UNKNOWN":
-                self._add_edge(graph, subject_id, predicate, object_id, source, support, "relation")
+        relation = self._relation(verb)
+        if subject_id and object_id and relation and relation != "UNKNOWN":
+            self._add_edge(graph, subject_id, relation, object_id, source, support, "relation")
         return graph
 
     def _project_np(self, graph, structure, role, entity_resolver):
         head = self._head(structure)
-        concept = head.get("concept")
+        concept = head.get("concept") or "UNKNOWN"
         token = head.get("token")
-        if not token or not concept or concept == "UNKNOWN":
+        if not token:
             return None
 
         resolved = entity_resolver(token, concept) if entity_resolver else None
@@ -45,6 +44,8 @@ class SemanticGraphProjector:
             node_id = resolved
             node_type = "ENTITY"
             name = token
+        elif concept == "UNKNOWN":
+            return None
         else:
             node_id = f"sentence:{role}:{token}"
             node_type = "REFERENT"
@@ -65,6 +66,10 @@ class SemanticGraphProjector:
         while isinstance(current, dict) and "head" in current:
             current = current["head"]
         return current if isinstance(current, dict) else {}
+
+    def _relation(self, structure):
+        head = self._head(structure)
+        return head.get("relation") or "UNKNOWN"
 
     def _modifiers(self, structure):
         modifiers = []
