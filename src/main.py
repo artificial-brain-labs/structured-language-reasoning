@@ -25,6 +25,7 @@ from .graph_builder import SemanticGraphBuilder
 from .tcm import TransientCommunicationMemory
 from .contextual_meaning_memory import ContextualMeaningMemory
 from .semantic_context import SemanticContextExtractor
+from .semantic_context_resolver import SemanticContextResolver
 
 
 class SLR:
@@ -42,6 +43,9 @@ class SLR:
         self.tcm = TransientCommunicationMemory()
         self.contextual_meaning = ContextualMeaningMemory(self.lexicon)
         self.semantic_context = SemanticContextExtractor(self.lexicon)
+        self.semantic_context_resolver = SemanticContextResolver(
+            self.contextual_meaning, self.lexicon
+        )
         self.semantic_parser = SemanticParser(self.lexicon, contextual_memory=self.contextual_meaning)
 
         self.relationships = UserRelationshipMemory(
@@ -102,17 +106,21 @@ class SLR:
             self.query.graph = self.graph
             self.query.graph_query.graph = self.graph
 
-    def _lexical_ambiguity(self, parsed, original_text):
+    def _lexical_ambiguity(self, parsed, original_text, semantic_context=None):
         """Return the first unresolved lexical ambiguity in this sentence."""
-        for word in (parsed.subject_word, parsed.verb_word, parsed.object_word):
-            if not word:
+        checked = set()
+        for word in (parsed.subject_word, parsed.verb_word, parsed.object_word, *(parsed.tokens or ())):
+            if not word or word.lower() in checked:
                 continue
+            checked.add(word.lower())
             senses = self.lexicon.senses(word) if hasattr(self.lexicon, "senses") else []
-            if len(senses) > 1 and not self.contextual_meaning.preferred_sense(word, original_text, semantic_context):
-                return word, senses
-        for word in (parsed.tokens or []):
-            senses = self.lexicon.senses(word) if hasattr(self.lexicon, "senses") else []
-            if len(senses) > 1 and not self.contextual_meaning.preferred_sense(word, original_text):
+            if len(senses) <= 1:
+                continue
+            candidate_ids = [sense.sense_id for sense in senses]
+            selected = self.semantic_context_resolver.resolve(
+                word, semantic_context, candidate_ids
+            )
+            if selected is None:
                 return word, senses
         return None
 
@@ -150,15 +158,20 @@ class SLR:
             selected = self.clarification.resolve_lexical_response(text)
             if selected is None:
                 return request.question
+            original_text = request.original_context
+            original_parsed = self.parser.parse(original_text)
+            original_semantic_context = self.semantic_context.extract(
+                original_parsed, original_text
+            )
             self.contextual_meaning.learn(
                 request.word,
                 selected,
                 request.candidates,
-                request.original_context,
+                original_text,
+                semantic_context=original_semantic_context,
             )
-            original_text = request.original_context
             self.clarification.clear()
-            return self.process(original_text)
+            return self.process(original_text, _add_tcm=False)
         return self._handle_pending_entity_clarification(text)
 
     def _handle_pending_entity_clarification(self, text):
@@ -209,8 +222,9 @@ class SLR:
             {"person_name": person.name},
         )
 
-    def process(self, text):
-        self.tcm.add(text)
+    def process(self, text, _add_tcm=True):
+        if _add_tcm:
+            self.tcm.add(text)
         if self.clarification.has_pending():
             clarification_result = self._handle_pending_clarification(text)
             if clarification_result is not None:
@@ -219,7 +233,7 @@ class SLR:
         semantic_context = self.semantic_context.extract(parsed, text)
         if not parsed.question_type:
             self._record_observation(text, parsed)
-            ambiguity = self._lexical_ambiguity(parsed, text)
+            ambiguity = self._lexical_ambiguity(parsed, text, semantic_context)
             if ambiguity is not None:
                 word, senses = ambiguity
                 request = self.clarification.request_lexical_meaning(
