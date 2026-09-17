@@ -100,6 +100,20 @@ class SLR:
             self.query.graph = self.graph
             self.query.graph_query.graph = self.graph
 
+    def _lexical_ambiguity(self, parsed, original_text):
+        """Return the first unresolved lexical ambiguity in this sentence."""
+        for word in (parsed.subject_word, parsed.verb_word, parsed.object_word):
+            if not word:
+                continue
+            senses = self.lexicon.senses(word) if hasattr(self.lexicon, "senses") else []
+            if len(senses) > 1 and not self.contextual_meaning.preferred_sense(word, original_text):
+                return word, senses
+        for word in (parsed.tokens or []):
+            senses = self.lexicon.senses(word) if hasattr(self.lexicon, "senses") else []
+            if len(senses) > 1 and not self.contextual_meaning.preferred_sense(word, original_text):
+                return word, senses
+        return None
+
     def _record_observation(self, text, parsed):
         self.user_memory.record_observation(
             subject=parsed.subject_word,
@@ -127,6 +141,23 @@ class SLR:
         return self.router.dispatch(operation, parsed)
 
     def _handle_pending_clarification(self, text):
+        request = self.clarification.current()
+        if request is None:
+            return None
+        if request.kind == "lexical_meaning":
+            selected = self.clarification.resolve_lexical_response(text)
+            if selected is None:
+                return request.question
+            self.contextual_meaning.learn(
+                request.word,
+                selected,
+                request.candidates,
+                request.original_context,
+            )
+            original_text = request.original_context
+            self.clarification.clear()
+            return self.process(original_text)
+    def _handle_pending_entity_clarification(self, text):
         request = self.clarification.current()
         if request is None:
             return None
@@ -183,6 +214,16 @@ class SLR:
         parsed = self.parser.parse(text)
         if not parsed.question_type:
             self._record_observation(text, parsed)
+            ambiguity = self._lexical_ambiguity(parsed, text)
+            if ambiguity is not None:
+                word, senses = ambiguity
+                request = self.clarification.request_lexical_meaning(
+                    word,
+                    [{"id": sense.sense_id} for sense in senses],
+                    text,
+                )
+                if request is not None:
+                    return request.question
         if parsed.question_type:
             return self.response.generate(parsed, self.query.answer(parsed))
         if not parsed.meaning:
