@@ -16,8 +16,8 @@ def test_reasoning_has_ontology_targets_without_persisting_them_to_user_memory()
 
 def test_observed_classification_never_enters_reasoning_even_with_ontology_nodes():
     pipeline = CognitivePipeline()
-    graph = pipeline.build_user_graph()
     subject = pipeline.user_memory.create_named_entity("Tom")
+    graph = pipeline.build_user_graph()
     cat = "concept:CAT"
 
     from src.semantic_graph import GraphEdge
