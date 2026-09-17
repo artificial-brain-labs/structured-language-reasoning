@@ -157,6 +157,8 @@ class SLR:
             original_text = request.original_context
             self.clarification.clear()
             return self.process(original_text)
+        return self._handle_pending_entity_clarification(text)
+
     def _handle_pending_entity_clarification(self, text):
         request = self.clarification.current()
         if request is None:
