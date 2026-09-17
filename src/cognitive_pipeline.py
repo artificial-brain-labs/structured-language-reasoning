@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from types import SimpleNamespace
 
 from .entity_resolver import EntityResolver
 from .graph_builder import SemanticGraphBuilder
@@ -40,7 +39,7 @@ class CognitivePipeline:
         self.parser = Parser(self.lexicon)
         self.resolver = EntityResolver(self.lexicon, self.ontology, self.user_memory)
         self.projector = SemanticGraphProjector(getattr(self.user_memory.relations, "schemas", {}))
-        self.builder = SemanticGraphBuilder()
+        self.builder = SemanticGraphBuilder(self.ontology)
         self.reasoner = SemanticGraphReasoner(self.ontology)
 
     def process(self, text, source="USER"):
