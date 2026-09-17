@@ -39,7 +39,7 @@ class SLR:
         self.memory = DynamicMemory()
         self.user_memory = UserMemory()
         self.tcm = TransientCommunicationMemory()
-        self.contextual_meaning = ContextualMeaningMemory()
+        self.contextual_meaning = ContextualMeaningMemory(self.lexicon)
         self.semantic_parser = SemanticParser(self.lexicon, contextual_memory=self.contextual_meaning)
 
         self.relationships = UserRelationshipMemory(
