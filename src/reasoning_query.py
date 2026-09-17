@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from .relations import RelationSchema
 from .semantic_graph import SemanticGraph
 
 
@@ -25,7 +26,7 @@ class GraphQueryReasoner:
 
     def __init__(self, ontology, relation_schemas=None):
         self.ontology = ontology
-        self.relation_schemas = relation_schemas or {}
+        self.relation_schemas = relation_schemas or RelationSchema().schemas
 
     def _relation_for_role(self, role):
         candidates = [
