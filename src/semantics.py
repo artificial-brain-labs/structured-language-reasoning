@@ -44,10 +44,11 @@ class SemanticMappings:
 
 
 class SemanticParser:
-    def __init__(self, lexicon=None, mappings=None):
+    def __init__(self, lexicon=None, mappings=None, contextual_memory=None):
         self.lexicon = lexicon
         self.mappings = mappings or SemanticMappings()
         self.entity_counter = 0
+        self.contextual_memory = contextual_memory
 
     def _concept(self, word):
         return self.lexicon.concept(word) if self.lexicon else None
@@ -60,8 +61,16 @@ class SemanticParser:
         base = (concept or word or "unknown").lower()
         return f"{base}_{self.entity_counter:03d}"
 
-    def _entity(self, word):
+    def _entity(self, word, context=None):
         concept = self._concept(word) or "UNKNOWN"
+        selected_sense = None
+        if self.contextual_memory is not None and context is not None:
+            selected_sense = self.contextual_memory.preferred_sense(word, context)
+        if selected_sense:
+            for sense in self.lexicon.senses(word):
+                if sense.sense_id == selected_sense:
+                    concept = sense.concept or concept
+                    break
         return Entity(self._new_entity_id(concept, word), concept)
 
     def _operation_attributes(self, subject_word=None, object_word=None, tree=None):
@@ -113,13 +122,13 @@ class SemanticParser:
             attributes=self._operation_attributes(tree.subject_word, tree.object_word, tree),
         )
 
-    def parse(self, tree):
+    def parse(self, tree, context=None):
         meaning = SemanticRepresentation()
         mapping = self.mappings.get(tree.meaning)
         if mapping is None:
             return meaning
-        subject = self._entity(tree.subject_word) if tree.subject_word else None
-        object_ = self._entity(tree.object_word) if tree.object_word else None
+        subject = self._entity(tree.subject_word, context=context) if tree.subject_word else None
+        object_ = self._entity(tree.object_word, context=context) if tree.object_word else None
         predicate = self._predicate(tree, mapping)
         if predicate is None:
             return meaning
