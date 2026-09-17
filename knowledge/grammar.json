@@ -26,6 +26,13 @@
       "slots": {"subject": 2}
     },
     {
+      "name": "question_what_concept_type",
+      "pattern": ["QUESTION", "AUX", "NOUN"],
+      "meaning": "QUERY_TYPE",
+      "question_type": "TYPE",
+      "slots": {"subject": 2}
+    },
+    {
       "name": "question_is_classification_known_type",
       "pattern": ["AUX", "ENTITY", "DETERMINER", "NOUN"],
       "meaning": "QUERY_CLASSIFICATION",
@@ -38,6 +45,20 @@
       "meaning": "QUERY_CLASSIFICATION",
       "question_type": "CLASSIFICATION",
       "slots": {"subject": 1, "object": 3}
+    },
+    {
+      "name": "question_is_classification_concept",
+      "pattern": ["AUX", "NOUN", "DETERMINER", "NOUN"],
+      "meaning": "QUERY_CLASSIFICATION",
+      "question_type": "CLASSIFICATION",
+      "slots": {"subject": 1, "object": 3}
+    },
+    {
+      "name": "question_is_classification_determined_concept",
+      "pattern": ["AUX", "DETERMINER", "NOUN", "DETERMINER", "NOUN"],
+      "meaning": "QUERY_CLASSIFICATION",
+      "question_type": "CLASSIFICATION",
+      "slots": {"subject": 2, "object": 4}
     },
     {
       "name": "question_what_object",
