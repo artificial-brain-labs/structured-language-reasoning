@@ -81,7 +81,10 @@ class Parser:
     def _from_compositional(self, tokens, surface_tokens):
         if self.compositional is None:
             return None
-        start_symbol = "QUESTION" if self._category(tokens[0]) == "QUESTION" else "STATEMENT"
+
+        first_category = self._category(tokens[0])
+        start_by_category = self.compositional.grammar.get("start_symbol_by_first_category", {})
+        start_symbol = start_by_category.get(first_category, "STATEMENT")
         candidates = self.compositional.parse(tokens, start_symbol=start_symbol)
         if len(candidates) != 1:
             return None
