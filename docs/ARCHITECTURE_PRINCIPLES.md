@@ -37,6 +37,8 @@ Knowledge belongs in data structures and knowledge files wherever practical:
 
 Procedural code provides mechanisms for interpreting and validating those declarations. Adding a normal linguistic or world-knowledge concept should not require adding a word-specific Python branch.
 
+Relation roles are the mechanism-level interface for semantic reasoning. Code must resolve roles such as `canonical_taxonomic` from relation data rather than embedding a domain predicate as a reasoning rule.
+
 ## 4. User Knowledge Belongs to User Memory
 
 Facts explicitly supplied or explicitly confirmed by a user are stored in that user's memory.
@@ -74,6 +76,8 @@ Shared properties and taxonomic relationships belong to ontology data. Child cla
 ## 8. The Semantic Graph Is a Projection
 
 The semantic graph is a read/query representation of user memory plus derived results. It must not become a second source of truth or invent knowledge.
+
+Graph edges representing user memory retain provenance metadata linking them to the user's evidence ledger when that ledger is available.
 
 ## 9. Reasoning Must Be Explainable
 
@@ -117,14 +121,24 @@ In particular:
 
 ## 13. Transient Communication Memory (TCM)
 
-TCM is a planned architectural component, not yet a fully implemented V0.9 subsystem.
+TCM is implemented as a bounded temporary communication store. Its responsibility is raw interaction/conversation material for the active cognitive pipeline; it does not represent identity, asserted knowledge, or enduring user memory.
 
-Its intended responsibility is bounded temporary storage of raw interaction/conversation material. Persistent Cognitive Graph/Memory structures should contain enduring cognitive transformations rather than raw conversational history.
+Persistent user memory contains cognitive transformations such as explicit facts, classifications, relationships, and identity statements. TCM may decay or be cleared independently of user memory.
 
-TCM must therefore not be treated as implemented merely because current user memory stores interaction-derived facts.
+TCM records do not become assertions merely because they were received. Promotion into user memory occurs through the governed semantic interpretation and execution path.
+
+## 14. Single Cognitive Graph and Reasoning Kernel
+
+`SemanticGraph` is the canonical graph representation and `SemanticGraphReasoner` is the canonical graph reasoning mechanism for the V1.x architecture.
+
+Legacy graph/inference modules, where retained for compatibility, must be facades over the canonical implementation and must not maintain an independent source of truth or competing reasoning rules.
+
+## 15. Evidence-to-Graph Traceability
+
+Every asserted user-memory edge projected into the semantic graph should be traceable to the corresponding evidence record when user evidence is available. Derived edges must identify their supporting graph evidence and derivation mechanism.
 
 ## Compliance Gate
 
-Before a release is frozen, the implementation must pass the architecture-principle regression tests in `tests/test_architecture_principles.py` together with the complete existing test suite and the V0.9 epistemic-state tests.
+Before a release is frozen, the implementation must pass the architecture-principle regression tests in `tests/test_architecture_principles.py` together with the complete existing test suite and the epistemic-state tests.
 
 A passing feature test alone is insufficient when a change can violate an architectural invariant.
