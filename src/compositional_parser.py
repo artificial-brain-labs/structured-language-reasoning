@@ -105,6 +105,13 @@ class CompositionalGrammarParser:
                 return production
         return None
 
+    def derivation_signature(self, node):
+        """Return a stable, data-derived representation of one parse tree."""
+        if node.production_name is None:
+            return node.category
+        children = tuple(self.derivation_signature(child) for child in node.children)
+        return (node.production_name, children)
+
     def role_token_index(self, node, role):
         production = self.production_for(node)
         role_path = production.get("roles", {}).get(role) if production else None
