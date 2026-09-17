@@ -2,7 +2,14 @@ from .semantic_graph import GraphEdge, GraphNode, SemanticGraph
 
 
 class SemanticGraphBuilder:
-    """Project memory and derived results into a semantic graph."""
+    """Project memory and system ontology into a semantic graph.
+
+    Ontology classes are graph structure supplied from system knowledge. They
+    are not user memories and are never created from an observation or guess.
+    """
+
+    def __init__(self, ontology=None):
+        self.ontology = ontology
 
     def build(self, memory, derived=None):
         graph = SemanticGraph(relation_schemas=getattr(memory.relations, "schemas", {}))
@@ -10,6 +17,13 @@ class SemanticGraphBuilder:
             concept = data.get("concept", "UNKNOWN")
             node_type = "CLASS" if data.get("name") == concept else "ENTITY"
             graph.add_node(GraphNode(entity_id, node_type, data.get("name", entity_id), concept))
+
+        # Ontology classes are system knowledge, represented as graph nodes so
+        # reasoning can return well-formed derived edges without mutating memory.
+        if self.ontology is not None:
+            for concept in self.ontology.classes:
+                node_id = f"concept:{concept}"
+                graph.add_node(GraphNode(node_id, "CLASS", concept, concept))
 
         for index, item in enumerate(memory.memories, 1):
             object_id = self._ensure_value_node(graph, memory, item.object)
