@@ -1,4 +1,13 @@
+"""Compatibility facade for the pre-V1 semantic graph API.
+
+The canonical graph implementation is :mod:`src.semantic_graph`. This module
+contains no independent graph state or reasoning rules; it exists only for
+older callers that still use the original KnowledgeGraph API.
+"""
+
 from dataclasses import dataclass
+
+from .semantic_graph import GraphEdge, GraphNode, SemanticGraph
 
 
 @dataclass(frozen=True)
@@ -11,35 +20,59 @@ class Edge:
 
 
 class KnowledgeGraph:
-    """Explicit graph memory. Derived relationships are queried, not stored."""
+    """Compatibility facade backed by the canonical SemanticGraph."""
 
     def __init__(self):
-        self.entities = {}
-        self.edges = []
+        self._graph = SemanticGraph()
+
+    @property
+    def entities(self):
+        return {
+            node_id: {"type": node.concept if node.node_type in {"CLASS", "CONCEPT"} else node.concept}
+            for node_id, node in self._graph.nodes.items()
+            if node.node_type in {"ENTITY", "REFERENT", "CLASS", "CONCEPT"}
+        }
+
+    @property
+    def edges(self):
+        return [
+            Edge(edge.subject, edge.predicate, edge.object, edge.source, edge.status)
+            for edge in self._graph.edges.values()
+        ]
 
     def add_entity(self, entity_id, entity_type=None):
-        self.entities.setdefault(entity_id, {"type": entity_type})
-        if entity_type is not None:
-            self.entities[entity_id]["type"] = entity_type
+        concept = entity_type or "UNKNOWN"
+        node_type = "CLASS" if entity_type is not None else "ENTITY"
+        self._graph.add_node(GraphNode(entity_id, node_type, entity_id, concept))
 
     def add_edge(self, subject, predicate, object_, source="USER", status="ASSERTED"):
-        edge = Edge(subject, predicate, object_, source, status)
-        if edge not in self.edges:
-            self.edges.append(edge)
-        return edge
+        if subject not in self._graph.nodes:
+            self.add_entity(subject)
+        if object_ not in self._graph.nodes:
+            self.add_entity(object_)
+        return self._graph.add_edge(
+            GraphEdge(
+                edge_id=f"compat:{len(self._graph.edges) + 1:04d}",
+                subject=subject,
+                predicate=predicate,
+                object=object_,
+                source=source,
+                status=status,
+            )
+        )
 
     def has_edge(self, subject, predicate, object_=None):
         return any(
-            e.subject == subject
-            and e.predicate == predicate
-            and (object_ is None or e.object == object_)
-            for e in self.edges
+            edge.subject == subject
+            and edge.predicate == predicate
+            and (object_ is None or edge.object == object_)
+            for edge in self._graph.edges_from(subject, predicate)
         )
 
     def query(self, subject=None, predicate=None, object_=None):
         return [
-            e for e in self.edges
-            if (subject is None or e.subject == subject)
-            and (predicate is None or e.predicate == predicate)
-            and (object_ is None or e.object == object_)
+            edge for edge in self.edges
+            if (subject is None or edge.subject == subject)
+            and (predicate is None or edge.predicate == predicate)
+            and (object_ is None or edge.object == object_)
         ]
