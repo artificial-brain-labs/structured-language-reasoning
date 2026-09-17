@@ -135,7 +135,7 @@ class QueryEngine:
         return []
 
     def _entity_type(self, parsed):
-        """Return explicit type evidence, including identity-connected types."""
+        """Return explicit type evidence for an entity or ontology concept."""
         entity = self._resolve(parsed.subject_word)
         if entity is not None and self.graph_query is not None:
             result = self.graph_query.entity_type(entity)
@@ -158,6 +158,22 @@ class QueryEngine:
                         "source": memory.source,
                         "support": [memory],
                     }]
+
+        # A lexical noun may resolve to an ontology class rather than an
+        # individual entity. Its type is the explicitly declared ontology
+        # parent; no world knowledge is invented here.
+        concept = self.lexicon.concept(parsed.subject_word)
+        if concept and self.reasoner is not None and concept in self.reasoner.ontology.classes:
+            parent = self.reasoner.ontology.parent(concept)
+            if parent is not None:
+                return [{
+                    "entity": entity or concept,
+                    "predicate": "IS_A",
+                    "object": parent,
+                    "status": "DERIVED",
+                    "source": "ONTOLOGY",
+                    "support": [concept],
+                }]
 
         if self.relationship_memory is not None:
             people = self.relationship_memory.find_people_by_name(parsed.subject_word)
