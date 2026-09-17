@@ -16,7 +16,31 @@ class Lexicon:
 
     def pos(self, word):
         entry = self.get(word)
-        return entry.get("pos") if entry else None
+        if not entry:
+            return None
+        senses = entry.get("senses")
+        if senses:
+            positions = []
+            for sense in senses:
+                value = sense.get("pos")
+                if value and value not in positions:
+                    positions.append(value)
+            return positions[0] if len(positions) == 1 else (positions[0] if positions else entry.get("pos"))
+        return entry.get("pos")
+
+    def pos_candidates(self, word):
+        entry = self.get(word)
+        if not entry:
+            return []
+        positions = []
+        for value in ([entry.get("pos")] if entry.get("pos") else []):
+            if value not in positions:
+                positions.append(value)
+        for sense in entry.get("senses", []):
+            value = sense.get("pos")
+            if value and value not in positions:
+                positions.append(value)
+        return positions
 
     def relation(self, word):
         entry = self.get(word)
