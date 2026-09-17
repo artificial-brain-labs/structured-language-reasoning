@@ -66,7 +66,8 @@ class SLR:
         self.router = StatementRouter()
         self.router.register_all(self.executor.definitions.operations, self.operation_engine.execute)
 
-        self.graph_builder = SemanticGraphBuilder()
+        # The graph builder requires the same ontology data used by the reasoner.
+        self.graph_builder = SemanticGraphBuilder(self.ontology)
         self.graph = SemanticGraph()
         self._refresh_graph()
 
