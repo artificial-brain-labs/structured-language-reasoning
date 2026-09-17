@@ -1,4 +1,5 @@
 import json
+from .ambiguity import MeaningCandidate
 
 
 class Lexicon:
@@ -27,3 +28,15 @@ class Lexicon:
 
     def contains(self, word):
         return isinstance(word, str) and word.lower() in self.words
+
+    def senses(self, word):
+        entry = self.get(word)
+        if not entry:
+            return []
+        explicit = entry.get('senses')
+        if explicit:
+            return [MeaningCandidate(s.get('id', f"{word.lower()}.{i}"), s.get('concept'), s.get('pos'), s.get('definition')) for i, s in enumerate(explicit, 1)]
+        return [MeaningCandidate(f"{word.lower()}.default", entry.get('concept'), entry.get('pos'), entry.get('definition'))]
+
+    def meanings(self, word):
+        return self.senses(word)
