@@ -11,12 +11,25 @@ class EntityResolver:
         self.memory = memory
 
     def resolve(self, word):
-        concept = self.lexicon.concept(word)
+        senses = self.lexicon.senses(word) if hasattr(self.lexicon, "senses") else []
+        # Multiple dictionary senses must not be collapsed into one concept.
+        # The surface word remains a distinct unresolved lexical reference.
+        if len(senses) > 1:
+            entity = self.memory.find_named_entity(word)
+            return entity or self.memory.create_named_entity(word)
+
+        concept = senses[0].concept if senses else self.lexicon.concept(word)
         if concept in self.ontology.classes:
             # Class nodes are references to system ontology concepts. Creating
             # a local node is not user knowledge; it is only a graph handle
             # needed to represent an explicit user assertion such as IS_A.
             return self.memory.find_entity(concept)
+
+        if concept:
+            entity = self.memory.find_named_entity(word)
+            if entity:
+                return entity
+            return self.memory.create_entity(concept, name=word)
 
         entity = self.memory.find_named_entity(word)
         return entity or self.memory.create_named_entity(word)
