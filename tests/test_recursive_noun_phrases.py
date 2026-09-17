@@ -20,7 +20,7 @@ def test_multiple_adjectives_compose_recursively():
     assert len(candidates) == 1
     signature = grammar.derivation_signature(candidates[0])
     assert signature[0] == "np_determiner_adjp_noun"
-    assert signature[1][0] == "adjp_adjective_adjp"
+    assert signature[1][1][0] == "adjp_adjective_adjp"
 
 
 def test_adjective_phrase_without_determiner_composes():
