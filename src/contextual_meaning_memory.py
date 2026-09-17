@@ -10,6 +10,7 @@ class MeaningResolution:
     selected_sense_id: str
     candidate_sense_ids: tuple[str, ...]
     context: str
+    semantic_context: object = None
     source: str = "USER_CLARIFICATION"
     status: str = "CONFIRMED"
     created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
@@ -53,12 +54,26 @@ class ContextualMeaningMemory:
         target = word.lower()
         return self._tokens(context) - {target}
 
-    def learn(self, word, selected_sense_id, candidate_sense_ids, context):
+    def _semantic_signature(self, semantic_context):
+        if semantic_context is None:
+            return set()
+        values = set(getattr(semantic_context, "concepts", ()) or ())
+        for value in (
+            getattr(semantic_context, "predicate", None),
+            getattr(semantic_context, "object", None),
+            getattr(semantic_context, "subject", None),
+        ):
+            if value:
+                values.add(value.lower())
+        return values
+
+    def learn(self, word, selected_sense_id, candidate_sense_ids, context, semantic_context=None):
         resolution = MeaningResolution(
             word=word.lower(),
             selected_sense_id=selected_sense_id,
             candidate_sense_ids=tuple(candidate_sense_ids),
             context=context.strip(),
+            semantic_context=semantic_context,
         )
         self.resolutions.append(resolution)
         return resolution
@@ -70,7 +85,7 @@ class ContextualMeaningMemory:
             return matches
         return [r for r in matches if r.context.lower() == context.strip().lower()]
 
-    def match(self, word, context):
+    def match(self, word, context, semantic_context=None):
         """Return equally best learned interpretations with evidence.
 
         Evidence consists of:
@@ -81,7 +96,8 @@ class ContextualMeaningMemory:
         between different senses.
         """
         current = self._context_signature(word, context)
-        if not current:
+        current_semantic = self._semantic_signature(semantic_context)
+        if not current and not current_semantic:
             return []
 
         candidates = []
@@ -89,13 +105,15 @@ class ContextualMeaningMemory:
             learned_context = self._context_signature(word, resolution.context)
             direct = current & learned_context
             semantic = current & self._sense_anchors(resolution.selected_sense_id)
-            score = len(direct) + len(semantic)
+            learned_semantic = self._semantic_signature(resolution.semantic_context)
+            semantic_structure = current_semantic & learned_semantic
+            score = len(direct) + len(semantic) + len(semantic_structure)
             if score:
                 candidates.append({
                     "score": score,
                     "resolution": resolution,
                     "direct_evidence": sorted(direct),
-                    "semantic_evidence": sorted(semantic),
+                    "semantic_evidence": sorted(semantic | semantic_structure),
                 })
 
         if not candidates:
@@ -103,8 +121,8 @@ class ContextualMeaningMemory:
         best_score = max(item["score"] for item in candidates)
         return [item for item in candidates if item["score"] == best_score]
 
-    def preferred_sense(self, word, context):
-        matches = self.match(word, context)
+    def preferred_sense(self, word, context, semantic_context=None):
+        matches = self.match(word, context, semantic_context=semantic_context)
         if not matches:
             return None
         sense_ids = {item["resolution"].selected_sense_id for item in matches}
@@ -112,8 +130,8 @@ class ContextualMeaningMemory:
             return None
         return next(iter(sense_ids))
 
-    def evidence(self, word, context):
-        return self.match(word, context)
+    def evidence(self, word, context, semantic_context=None):
+        return self.match(word, context, semantic_context=semantic_context)
 
     def clear(self):
         self.resolutions.clear()
