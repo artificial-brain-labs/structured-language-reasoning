@@ -24,6 +24,7 @@ from .semantic_graph import SemanticGraph
 from .graph_builder import SemanticGraphBuilder
 from .tcm import TransientCommunicationMemory
 from .contextual_meaning_memory import ContextualMeaningMemory
+from .semantic_context import SemanticContextExtractor
 
 
 class SLR:
@@ -40,6 +41,7 @@ class SLR:
         self.user_memory = UserMemory()
         self.tcm = TransientCommunicationMemory()
         self.contextual_meaning = ContextualMeaningMemory(self.lexicon)
+        self.semantic_context = SemanticContextExtractor(self.lexicon)
         self.semantic_parser = SemanticParser(self.lexicon, contextual_memory=self.contextual_meaning)
 
         self.relationships = UserRelationshipMemory(
@@ -106,7 +108,7 @@ class SLR:
             if not word:
                 continue
             senses = self.lexicon.senses(word) if hasattr(self.lexicon, "senses") else []
-            if len(senses) > 1 and not self.contextual_meaning.preferred_sense(word, original_text):
+            if len(senses) > 1 and not self.contextual_meaning.preferred_sense(word, original_text, semantic_context):
                 return word, senses
         for word in (parsed.tokens or []):
             senses = self.lexicon.senses(word) if hasattr(self.lexicon, "senses") else []
@@ -214,6 +216,7 @@ class SLR:
             if clarification_result is not None:
                 return clarification_result
         parsed = self.parser.parse(text)
+        semantic_context = self.semantic_context.extract(parsed, text)
         if not parsed.question_type:
             self._record_observation(text, parsed)
             ambiguity = self._lexical_ambiguity(parsed, text)
