@@ -63,7 +63,7 @@ def test_confirmed_graph_edge_promotes_into_user_memory():
     assert result.memory.object == mouse_id
     assert result.memory.status == "ASSERTED"
     assert len(memory.memories) == 1
-    assert len(memory.evidence.items) == 1
+    assert len(memory.evidence.records) == 1
 
 
 def test_derived_or_hypothetical_edges_cannot_cross_boundary():
