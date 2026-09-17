@@ -1,6 +1,7 @@
 import json
 from dataclasses import dataclass
 from .tokenizer import tokenize
+from .compositional_parser import CompositionalGrammarParser
 
 
 @dataclass
@@ -26,6 +27,11 @@ class Parser:
         self.lexicon = lexicon
         with open(grammar_path, "r", encoding="utf-8") as f:
             self.grammar = json.load(f)
+        self.compositional = (
+            CompositionalGrammarParser(lexicon)
+            if lexicon is not None
+            else None
+        )
 
     def _pos(self, word):
         return self.lexicon.pos(word) if self.lexicon else None
@@ -44,8 +50,6 @@ class Parser:
     def _matches_category(self, word, actual, expected):
         if actual == expected:
             return True
-        # Grammar may name a lexical concept as a category (for example MY)
-        # while the lexicon still exposes its grammatical POS (DETERMINER).
         return self._concept(word) == expected
 
     def _matches(self, tokens, pattern):
@@ -74,11 +78,51 @@ class Parser:
             return None
         return surface_tokens[index]
 
+    def _from_compositional(self, tokens, surface_tokens):
+        if self.compositional is None:
+            return None
+        start_symbol = "QUESTION" if self._category(tokens[0]) == "QUESTION" else "STATEMENT"
+        candidates = self.compositional.parse(tokens, start_symbol=start_symbol)
+        if len(candidates) != 1:
+            # Multiple parses are ambiguity, not permission to guess. Legacy
+            # grammar may still provide an explicitly defined interpretation.
+            return None
+        node = candidates[0]
+        production = self.compositional.production_for(node)
+        if not production:
+            return None
+
+        def token_for(role):
+            index = self.compositional.role_token_index(node, role)
+            return tokens[index] if index is not None else None
+
+        def surface_for(role):
+            index = self.compositional.role_token_index(node, role)
+            return surface_tokens[index] if index is not None else None
+
+        return ParsedSentence(
+            subject_word=token_for("subject"),
+            verb_word=token_for("verb"),
+            object_word=token_for("object"),
+            subject_surface_word=surface_for("subject"),
+            verb_surface_word=surface_for("verb"),
+            object_surface_word=surface_for("object"),
+            question_type=production.get("question_type"),
+            rule=production.get("name"),
+            meaning=production.get("meaning"),
+            operation=production.get("operation"),
+            relation=production.get("relation"),
+            tokens=tokens,
+        )
+
     def parse(self, text):
         surface_tokens = tokenize(text) if isinstance(text, str) else list(text)
         tokens = [token.lower() for token in surface_tokens]
         if not tokens:
             return ParsedSentence(tokens=tokens)
+        compositional = self._from_compositional(tokens, surface_tokens)
+        if compositional is not None:
+            return compositional
         return self.parse_statement(tokens, surface_tokens=surface_tokens)
 
     def parse_statement(self, tokens, surface_tokens=None):
