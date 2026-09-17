@@ -14,10 +14,11 @@ def test_cat_sleeping_produces_compositional_structure():
     assert structure["features"] == {"tense": "PRESENT"}
 
     subject = structure["roles"]["subject"]
-    assert subject["category"] == "NOUN"
-    assert subject["token"] == "cat"
-    assert subject["concept"] == "CAT"
-    assert subject["pos"] == "NOUN"
+    assert subject["category"] == "NP"
+    assert subject["head"]["category"] == "NOUN"
+    assert subject["head"]["token"] == "cat"
+    assert subject["head"]["concept"] == "CAT"
+    assert subject["head"]["pos"] == "NOUN"
 
     predicate = structure["roles"]["verb"]
     assert predicate["category"] == "STATE"
@@ -37,6 +38,9 @@ def test_unknown_word_remains_unknown_in_structured_representation():
     structure = parsed.semantic_structure
 
     assert parsed.parse_status == "DETERMINED"
-    assert structure["roles"]["subject"]["token"] == "zorb"
-    assert structure["roles"]["subject"]["concept"] is None
-    assert structure["roles"]["subject"]["pos"] is None
+    subject = structure["roles"]["subject"]
+    assert subject["category"] == "NP"
+    assert subject["head"]["category"] == "ENTITY"
+    assert subject["head"]["token"] == "zorb"
+    assert subject["head"]["concept"] is None
+    assert subject["head"]["pos"] is None
