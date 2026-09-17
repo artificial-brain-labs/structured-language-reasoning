@@ -56,7 +56,7 @@ class GraphQueryReasoner:
         return [
             (graph.nodes[edge.object].concept, edge.edge_id)
             for edge in graph.edges_from(subject_id, "IS_A")
-            if edge.status in {"ASSERTED", "OBSERVED"}
+            if edge.status == "ASSERTED"
             and edge.object in graph.nodes
             and graph.nodes[edge.object].node_type in {"CONCEPT", "CLASS"}
         ]
