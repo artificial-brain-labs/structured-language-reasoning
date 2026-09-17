@@ -84,8 +84,6 @@ class Parser:
         start_symbol = "QUESTION" if self._category(tokens[0]) == "QUESTION" else "STATEMENT"
         candidates = self.compositional.parse(tokens, start_symbol=start_symbol)
         if len(candidates) != 1:
-            # Multiple parses are ambiguity, not permission to guess. Legacy
-            # grammar may still provide an explicitly defined interpretation.
             return None
         node = candidates[0]
         production = self.compositional.production_for(node)
@@ -108,7 +106,7 @@ class Parser:
             verb_surface_word=surface_for("verb"),
             object_surface_word=surface_for("object"),
             question_type=production.get("question_type"),
-            rule=production.get("name"),
+            rule=production.get("legacy_rule", production.get("name")),
             meaning=production.get("meaning"),
             operation=production.get("operation"),
             relation=production.get("relation"),
