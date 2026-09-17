@@ -4,7 +4,7 @@ class SemanticGraphQuery:
     def __init__(self, graph, ontology=None, relation_schemas=None, identity_predicates=None):
         self.graph = graph
         self.ontology = ontology
-        self.relation_schemas = relation_schemas or {}
+        self.relation_schemas = relation_schemas or getattr(graph, "relation_schemas", {})
         self.identity_predicates = set(identity_predicates or ())
 
     def _node_concept(self, node_id):
@@ -25,26 +25,19 @@ class SemanticGraphQuery:
         return bool(self._schema(predicate).get("traversable"))
 
     def _neighbors(self, subject_id, classification_only=False):
-        """Return schema-permitted traversal edges without mutating memory."""
+        """Return schema-permitted traversal edges, including symmetric reverse traversal."""
         results = []
         for edge in self.graph.edges_from(subject_id):
             if edge.status == "CONFLICTED" or not self._traversable(edge.predicate):
                 continue
-            if classification_only and not (
-                self._is_identity(edge.predicate) or self._is_taxonomic(edge.predicate)
-            ):
+            if classification_only and not (self._is_identity(edge.predicate) or self._is_taxonomic(edge.predicate)):
                 continue
             results.append((edge, edge.object))
-
         for edge in self.graph.edges_to(subject_id):
             schema = self._schema(edge.predicate)
-            if edge.status == "CONFLICTED" or not self._traversable(edge.predicate):
+            if edge.status == "CONFLICTED" or not self._traversable(edge.predicate) or not schema.get("symmetric"):
                 continue
-            if not schema.get("symmetric"):
-                continue
-            if classification_only and not (
-                self._is_identity(edge.predicate) or self._is_taxonomic(edge.predicate)
-            ):
+            if classification_only and not (self._is_identity(edge.predicate) or self._is_taxonomic(edge.predicate)):
                 continue
             results.append((edge, edge.subject))
         return results
@@ -66,7 +59,6 @@ class SemanticGraphQuery:
         return results
 
     def classification(self, subject_id, target_concept):
-        """Find a schema-permitted classification path."""
         if subject_id not in self.graph.nodes:
             return None
         queue = [(subject_id, [])]
@@ -83,26 +75,18 @@ class SemanticGraphQuery:
         return None
 
     def entity_type(self, subject_id):
-        """Return the first explicit taxonomic type reachable through identity."""
         for entity_id, identity_path in self._identity_paths(subject_id):
             for edge, neighbor in self._neighbors(entity_id, classification_only=True):
                 if not self._is_taxonomic(edge.predicate) or edge.status != "ASSERTED":
                     continue
                 concept = self._node_concept(neighbor)
                 if concept and concept != "UNKNOWN":
-                    return {
-                        "entity": subject_id,
-                        "predicate": edge.predicate,
-                        "object": concept,
-                        "status": "ASSERTED" if not identity_path else "DERIVED",
-                        "source": edge.source,
-                        "support": list(identity_path) + [edge],
-                        "path": identity_path + [edge],
-                    }
+                    return {"entity": subject_id, "predicate": edge.predicate, "object": concept,
+                            "status": "ASSERTED" if not identity_path else "DERIVED", "source": edge.source,
+                            "support": list(identity_path) + [edge], "path": identity_path + [edge]}
         return None
 
     def explain_classification(self, subject_id, target_concept):
-        """Return a structured proof using graph evidence plus ontology derivation."""
         if subject_id not in self.graph.nodes:
             return None
         for entity_id, identity_path in self._identity_paths(subject_id):
@@ -130,28 +114,17 @@ class SemanticGraphQuery:
                 if concepts[-1] != target_concept:
                     continue
                 for child, parent in zip(concepts, concepts[1:]):
-                    path.append({
-                        "subject": child,
-                        "predicate": edge.predicate,
-                        "object": parent,
-                        "status": "DERIVED",
-                        "source": "ONTOLOGY",
-                        "support": [child],
-                        "rule": "ONTOLOGY_PARENT",
-                    })
+                    path.append({"subject": child, "predicate": edge.predicate, "object": parent,
+                                 "status": "DERIVED", "source": "ONTOLOGY", "support": [child],
+                                 "rule": "ONTOLOGY_PARENT"})
                 return self._proof(subject_id, target_concept, path)
         return None
 
     def _proof_edge(self, edge):
-        return {
-            "subject": edge.subject,
-            "predicate": edge.predicate,
-            "object": self._node_concept(edge.object) or edge.object,
-            "status": edge.status,
-            "source": edge.source,
-            "support": list(edge.support),
-            "rule": edge.attributes.get("rule"),
-        }
+        return {"subject": edge.subject, "predicate": edge.predicate,
+                "object": self._node_concept(edge.object) or edge.object,
+                "status": edge.status, "source": edge.source,
+                "support": list(edge.support), "rule": edge.attributes.get("rule")}
 
     def _proof(self, subject_id, target_concept, path):
         return {"subject": subject_id, "target": target_concept, "status": "PROVEN", "path": path}
