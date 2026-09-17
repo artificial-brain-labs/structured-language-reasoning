@@ -20,6 +20,7 @@ class SemanticComposer:
                 "token": token,
                 "concept": self.lexicon.concept(token),
                 "pos": self.lexicon.pos(token),
+                "relation": self.lexicon.relation(token),
             }
 
         children = [self.compose(child, tokens) for child in node.children]
