@@ -2,6 +2,7 @@ import json
 from dataclasses import dataclass
 from .tokenizer import tokenize
 from .compositional_parser import CompositionalGrammarParser
+from .semantic_composer import SemanticComposer
 
 
 @dataclass
@@ -22,6 +23,7 @@ class ParsedSentence:
     tokens: list[str] | None = None
     parse_status: str = "UNKNOWN"
     parse_candidates: tuple = ()
+    semantic_structure: dict | None = None
 
 
 class Parser:
@@ -32,6 +34,11 @@ class Parser:
         self.compositional = (
             CompositionalGrammarParser(lexicon)
             if lexicon is not None
+            else None
+        )
+        self.semantic_composer = (
+            SemanticComposer(lexicon, self.compositional)
+            if self.compositional is not None
             else None
         )
 
@@ -114,6 +121,8 @@ class Parser:
             index = self.compositional.role_token_index(node, role)
             return surface_tokens[index] if index is not None else None
 
+        semantic_structure = self.semantic_composer.compose(node, tokens) if self.semantic_composer else None
+
         return ParsedSentence(
             subject_word=token_for("subject"),
             verb_word=token_for("verb"),
@@ -129,6 +138,7 @@ class Parser:
             tokens=tokens,
             parse_status="DETERMINED",
             parse_candidates=(self.compositional.derivation_signature(node),),
+            semantic_structure=semantic_structure,
         )
 
     def parse(self, text):
