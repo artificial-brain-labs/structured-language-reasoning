@@ -49,3 +49,23 @@ def test_definition_semantics_does_not_resolve_without_evidence():
     memory = ContextualMeaningMemory(slr.lexicon)
     memory.learn("bat", "bat.animal", ["bat.animal", "bat.sports"], "I saw the bat")
     assert memory.preferred_sense("bat", "The bat is expensive") is None
+
+
+def test_semantic_context_extractor_preserves_explicit_sentence_structure():
+    from src.semantic_context import SemanticContextExtractor
+    slr = SLR()
+    parsed = slr.parser.parse("Tom sees bat")
+    context = SemanticContextExtractor(slr.lexicon).extract(parsed, "Tom sees bat")
+    assert context.subject == "tom"
+    assert context.predicate == "sees"
+    assert context.object == "bat"
+    assert "SEE" in context.concepts
+
+
+def test_semantic_context_does_not_invent_meanings_for_ambiguous_words():
+    from src.semantic_context import SemanticContextExtractor
+    slr = SLR()
+    parsed = slr.parser.parse("Tom sees bat")
+    context = SemanticContextExtractor(slr.lexicon).extract(parsed, "Tom sees bat")
+    assert "BAT_ANIMAL" not in context.concepts
+    assert "BAT_EQUIPMENT" not in context.concepts
