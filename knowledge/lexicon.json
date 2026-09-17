@@ -34,5 +34,9 @@
   "friend": {"concept": "FRIEND", "pos": "NOUN"},
   "friends": {"concept": "FRIEND", "pos": "NOUN"},
   "animal": {"concept": "ANIMAL", "pos": "NOUN"},
-  "mammal": {"concept": "MAMMAL", "pos": "NOUN"}
+  "mammal": {"concept": "MAMMAL", "pos": "NOUN"},
+  "small": {"concept": "SMALL", "pos": "ADJECTIVE"},
+  "big": {"concept": "BIG", "pos": "ADJECTIVE"},
+  "black": {"concept": "BLACK", "pos": "ADJECTIVE"},
+  "young": {"concept": "YOUNG", "pos": "ADJECTIVE"}
 }
