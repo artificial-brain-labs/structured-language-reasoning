@@ -40,6 +40,29 @@ class KnowledgeGraph:
             for edge in self._graph.edges.values()
         ]
 
+    @property
+    def asserted_edges(self):
+        """Compatibility view of asserted edges from the canonical graph.
+
+        This is deliberately a computed view rather than a second edge store,
+        preserving the V1 rule that ``SemanticGraph`` is the single graph
+        source of truth.
+        """
+        return [
+            edge
+            for edge in self.edges
+            if edge.status == "ASSERTED"
+        ]
+
+    @property
+    def derived_edges(self):
+        """Compatibility view of derived edges from the canonical graph."""
+        return [
+            edge
+            for edge in self.edges
+            if edge.status == "DERIVED"
+        ]
+
     def add_entity(self, entity_id, entity_type=None):
         concept = entity_type or "UNKNOWN"
         node_type = "CLASS" if entity_type is not None else "ENTITY"
