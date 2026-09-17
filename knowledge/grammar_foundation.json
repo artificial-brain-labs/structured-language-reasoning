@@ -1,0 +1,25 @@
+{
+  "version": "1.1",
+  "principles": {
+    "data_before_logic": true,
+    "no_guessing": true,
+    "grammar_is_data": true,
+    "recursive_composition": true
+  },
+  "lexical_categories": ["QUESTION", "AUX", "VERB", "STATE", "NOUN", "PRONOUN", "DETERMINER", "ENTITY"],
+  "phrase_categories": ["NP", "STATEMENT", "QUESTION"],
+  "productions": [
+    {"name":"np_determiner_noun","lhs":"NP","rhs":["DETERMINER","NOUN"],"head":1},
+    {"name":"np_determiner_entity","lhs":"NP","rhs":["DETERMINER","ENTITY"],"head":1},
+    {"name":"np_noun","lhs":"NP","rhs":["NOUN"],"head":0},
+    {"name":"np_entity","lhs":"NP","rhs":["ENTITY"],"head":0},
+    {"name":"statement_state_np_aux_state","lhs":"STATEMENT","rhs":["NP","AUX","STATE"],"meaning":"SUBJECT_STATE","operation":"ASSERT_STATE","roles":{"subject":[0,"head"],"verb":[2,"head"]}},
+    {"name":"statement_transitive_np_verb_np","lhs":"STATEMENT","rhs":["NP","VERB","NP"],"meaning":"SUBJECT_VERB_OBJECT","operation":"ASSERT_RELATION","roles":{"subject":[0,"head"],"verb":[1,"head"],"object":[2,"head"]}},
+    {"name":"statement_type_entity_aux_np","lhs":"STATEMENT","rhs":["ENTITY","AUX","NP"],"meaning":"TYPE_ASSIGNMENT","operation":"ASSERT_CLASSIFICATION","relation":"IS_A","roles":{"subject":[0,"head"],"object":[2,"head"]},"constraints":{"head_categories":{"2":["NOUN"]}}},
+    {"name":"statement_entity_relation","lhs":"STATEMENT","rhs":["ENTITY","AUX","ENTITY"],"meaning":"SUBJECT_RELATION","operation":"ASSERT_RELATION","relation":"SAME_AS","roles":{"subject":[0,"head"],"object":[2,"head"]},"constraints":{"head_categories":{"2":["ENTITY"]}}},
+    {"name":"question_type_question_aux_np","lhs":"QUESTION","rhs":["QUESTION","AUX","NP"],"meaning":"QUERY_TYPE","question_type":"TYPE","roles":{"subject":[2,"head"]}},
+    {"name":"question_classification_aux_np_np","lhs":"QUESTION","rhs":["AUX","NP","NP"],"meaning":"QUERY_CLASSIFICATION","question_type":"CLASSIFICATION","roles":{"subject":[1,"head"],"object":[2,"head"]}},
+    {"name":"question_object_question_aux_np_verb","lhs":"QUESTION","rhs":["QUESTION","AUX","NP","VERB"],"meaning":"QUERY_OBJECT","question_type":"OBJECT","roles":{"subject":[2,"head"],"verb":[3,"head"]}},
+    {"name":"question_subject_question_verb_np","lhs":"QUESTION","rhs":["QUESTION","VERB","NP"],"meaning":"QUERY_SUBJECT","question_type":"SUBJECT","roles":{"verb":[1,"head"],"object":[2,"head"]}}
+  ]
+}
