@@ -4,6 +4,7 @@
     "role": "identity",
     "symmetric": true,
     "transitive": true,
+    "traversable": true,
     "allow_unknown_subject": true
   },
   "EATS": {
@@ -25,8 +26,10 @@
   "IS_A": {
     "type": "TAXONOMIC",
     "role": "canonical_taxonomic",
-    "subject_type": "THING",
-    "object_type": "THING"
+    "symmetric": false,
+    "transitive": true,
+    "traversable": true,
+    "direction": "forward"
   },
   "SEES": {
     "type": "ACTION",
