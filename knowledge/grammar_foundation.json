@@ -8,6 +8,10 @@
   },
   "lexical_categories": ["QUESTION", "AUX", "VERB", "STATE", "NOUN", "PRONOUN", "DETERMINER", "ENTITY"],
   "phrase_categories": ["NP", "STATEMENT", "QUESTION"],
+  "start_symbol_by_first_category": {
+    "QUESTION": "QUESTION",
+    "AUX": "QUESTION"
+  },
   "productions": [
     {"name":"np_determiner_noun","lhs":"NP","rhs":["DETERMINER","NOUN"],"head":1},
     {"name":"np_determiner_entity","lhs":"NP","rhs":["DETERMINER","ENTITY"],"head":1},
@@ -20,6 +24,6 @@
     {"name":"question_type_question_aux_np","lhs":"QUESTION","rhs":["QUESTION","AUX","NP"],"meaning":"QUERY_TYPE","question_type":"TYPE","roles":{"subject":[2,"head"]}},
     {"name":"question_classification_aux_np_np","lhs":"QUESTION","rhs":["AUX","NP","NP"],"meaning":"QUERY_CLASSIFICATION","question_type":"CLASSIFICATION","legacy_rule":"question_classification_aux_np_np","roles":{"subject":[1,"head"],"object":[2,"head"]}},
     {"name":"question_object_question_aux_np_verb","lhs":"QUESTION","rhs":["QUESTION","AUX","NP","VERB"],"meaning":"QUERY_OBJECT","question_type":"OBJECT","roles":{"subject":[2,"head"],"verb":[3,"head"]}},
-    {"name":"question_subject_question_verb_np","lhs":"QUESTION","rhs":["QUESTION","VERB","NP"],"meaning":"QUERY_SUBJECT","question_type":"SUBJECT","roles":{"verb":[1,"head"],"object":[2,"head"]}}
+    {"name":"question_subject_question_verb_np","lhs":"QUESTION","rhs":["QUESTION","VERB","NP"],"meaning":"QUERY_SUBJECT","roles":{"verb":[1,"head"],"object":[2,"head"]},"question_type":"SUBJECT"}
   ]
 }
