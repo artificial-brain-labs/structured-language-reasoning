@@ -1,3 +1,4 @@
+from .ontology import Ontology
 from .semantic_graph import GraphEdge, GraphNode, SemanticGraph
 
 
@@ -9,8 +10,10 @@ class SemanticGraphBuilder:
     user-memory evidence records are attached as provenance metadata.
     """
 
-    def __init__(self, ontology):
-        self.ontology = ontology
+    def __init__(self, ontology=None):
+        # Keep the legacy no-argument construction usable while allowing the
+        # canonical SLR runtime to inject its shared ontology instance.
+        self.ontology = ontology if ontology is not None else Ontology()
 
     def build(self, memory, derived=None):
         graph = SemanticGraph(relation_schemas=getattr(memory.relations, "schemas", {}))
