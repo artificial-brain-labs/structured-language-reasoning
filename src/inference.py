@@ -19,17 +19,26 @@ class InferenceEngine:
         return [concept] + self.ontology.ancestors(concept)
 
     def entity_is_a(self, graph, entity_id, target_class):
-        """Return True only when an explicit asserted classification proves it."""
+        """Return True only when an explicit type or asserted classification proves it."""
+        explicit_concept = self._explicit_concept(graph, entity_id)
+        if explicit_concept is not None:
+            return self.ontology.is_a(explicit_concept, target_class)
+
         result = self.reasoner.reason(graph)
         for edge in result.edges:
-            if edge.subject == entity_id and edge.predicate == self._taxonomic_relation():
-                node = graph.nodes.get(edge.object)
-                if node and node.concept == target_class:
-                    return True
+            if edge.subject != entity_id or edge.predicate != self._taxonomic_relation():
+                continue
+            node = graph.nodes.get(edge.object)
+            if node and node.concept == target_class:
+                return True
         return self._explicit_type_matches(graph, entity_id, target_class)
 
     def inherited_properties(self, graph, entity_id):
         """Return ontology properties justified by an explicit graph type."""
+        explicit_concept = self._explicit_concept(graph, entity_id)
+        if explicit_concept is not None:
+            return self.ontology.properties(explicit_concept)
+
         for edge in graph.edges_from(entity_id):
             if edge.status != "ASSERTED" or edge.predicate != self._taxonomic_relation():
                 continue
@@ -40,6 +49,11 @@ class InferenceEngine:
 
     def explain_is_a(self, graph, entity_id, target_class):
         """Return the ontology chain when explicit graph evidence supports it."""
+        explicit_concept = self._explicit_concept(graph, entity_id)
+        if explicit_concept is not None and self.ontology.is_a(explicit_concept, target_class):
+            chain = [explicit_concept] + self.ontology.ancestors(explicit_concept)
+            return chain[: chain.index(target_class) + 1]
+
         for edge in graph.edges_from(entity_id, self._taxonomic_relation()):
             if edge.status != "ASSERTED":
                 continue
@@ -48,6 +62,16 @@ class InferenceEngine:
                 chain = [node.concept] + self.ontology.ancestors(node.concept)
                 return chain[: chain.index(target_class) + 1]
         return None
+
+    def _explicit_concept(self, graph, entity_id):
+        """Read an explicitly stored graph type; never infer a type from other relations."""
+        node = graph.nodes.get(entity_id)
+        if node is None:
+            return None
+        concept = getattr(node, "concept", "UNKNOWN")
+        if concept == "UNKNOWN" or not self.ontology.class_exists(concept):
+            return None
+        return concept
 
     def _taxonomic_relation(self):
         candidates = [
