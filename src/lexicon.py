@@ -1,5 +1,5 @@
 import json
-from .ambiguity import MeaningCandidate
+from .ambiguity import AmbiguityResolver, MeaningCandidate
 
 
 class Lexicon:
@@ -40,3 +40,7 @@ class Lexicon:
 
     def meanings(self, word):
         return self.senses(word)
+
+    def resolve_meaning(self, word, allowed_pos=None, required_concept=None):
+        resolver = AmbiguityResolver()
+        return resolver.resolve(self.senses(word), allowed_pos=allowed_pos, required_concept=required_concept)
