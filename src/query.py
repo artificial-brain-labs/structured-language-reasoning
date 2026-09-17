@@ -135,7 +135,18 @@ class QueryEngine:
         return []
 
     def _entity_type(self, parsed):
-        """Return explicit type evidence for an entity or ontology concept."""
+        """Return explicit type evidence or dictionary meaning without guessing."""
+        senses = self.lexicon.senses(parsed.subject_word) if parsed.subject_word else []
+        if len(senses) > 1:
+            return [{
+                "kind": "LEXICAL_AMBIGUITY",
+                "word": parsed.subject_word,
+                "senses": [
+                    {"id": x.sense_id, "concept": x.concept, "definition": x.definition, "pos": x.pos}
+                    for x in senses
+                ],
+            }]
+
         entity = self._resolve(parsed.subject_word)
         if entity is not None and self.graph_query is not None:
             result = self.graph_query.entity_type(entity)
@@ -192,6 +203,18 @@ class QueryEngine:
                     }]
 
         return []
+
+    def _property(self, parsed):
+        subject = self._resolve(parsed.subject_word)
+        value = self._resolve(parsed.object_word)
+        if subject is None or value is None:
+            return []
+        if self.graph_query is not None:
+            matches = self.graph_query.objects(subject, "HAS_PROPERTY")
+        else:
+            matches = [m.object for m in self.memory.query(subject=subject, predicate="HAS_PROPERTY")
+                       if m.status != "CONFLICTED"]
+        return [item for item in matches if self._canonical_id(item) == self._canonical_id(value)]
 
     def _objects(self, parsed):
         subject = self._resolve(parsed.subject_word)
