@@ -91,10 +91,20 @@ class Parser:
         if self.compositional is None:
             return None
 
-        first_category = self._category(tokens[0])
+        first_categories = (
+            self.lexicon.pos_candidates(tokens[0])
+            if self.lexicon is not None and hasattr(self.lexicon, "pos_candidates")
+            else [self._category(tokens[0])]
+        )
         start_by_category = self.compositional.grammar.get("start_symbol_by_first_category", {})
-        start_symbol = start_by_category.get(first_category, "STATEMENT")
-        candidates = self.compositional.parse(tokens, start_symbol=start_symbol)
+        start_symbols = []
+        for category in first_categories:
+            symbol = start_by_category.get(category, "STATEMENT")
+            if symbol not in start_symbols:
+                start_symbols.append(symbol)
+        candidates = []
+        for start_symbol in start_symbols:
+            candidates.extend(self.compositional.parse(tokens, start_symbol=start_symbol))
         if not candidates:
             return None
 
