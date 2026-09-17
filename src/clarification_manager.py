@@ -11,6 +11,9 @@ class ClarificationRequest:
     question: str
     original_operation: object = None
     original_context: object = None
+    kind: str = "entity_identity"
+    word: str | None = None
+    candidates: tuple = ()
 
 
 class ClarificationManager:
