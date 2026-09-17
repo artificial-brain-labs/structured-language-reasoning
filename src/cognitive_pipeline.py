@@ -6,6 +6,7 @@ from .graph_reasoner import SemanticGraphReasoner
 from .lexicon import Lexicon
 from .ontology import Ontology
 from .parser import Parser
+from .reasoning_query import GraphQueryReasoner
 from .semantic_projector import SemanticGraphProjector
 from .tcm import TransientCommunicationMemory
 from .user_memory import UserMemory
@@ -28,7 +29,7 @@ class CognitivePipeline:
     This class is orchestration only. Linguistic and domain knowledge remains
     in the data files consumed by the component layers. Explicit user facts
     enter UserMemory; observations remain observations; derived knowledge is
-    produced transiently by the reasoner.
+    produced transiently by the single semantic-graph reasoning kernel.
     """
 
     def __init__(self, user_memory=None, lexicon=None, ontology=None, tcm=None):
@@ -38,9 +39,11 @@ class CognitivePipeline:
         self.tcm = tcm or TransientCommunicationMemory()
         self.parser = Parser(self.lexicon)
         self.resolver = EntityResolver(self.lexicon, self.ontology, self.user_memory)
-        self.projector = SemanticGraphProjector(getattr(self.user_memory.relations, "schemas", {}))
+        relation_schemas = getattr(self.user_memory.relations, "schemas", {})
+        self.projector = SemanticGraphProjector(relation_schemas)
         self.builder = SemanticGraphBuilder(self.ontology)
-        self.reasoner = SemanticGraphReasoner(self.ontology)
+        self.reasoner = SemanticGraphReasoner(self.ontology, relation_schemas)
+        self.query_reasoner = GraphQueryReasoner(self.ontology, relation_schemas)
 
     def process(self, text, source="USER"):
         interaction = self.tcm.add(text)
@@ -56,7 +59,7 @@ class CognitivePipeline:
                 target_concept, target_id = target
                 memory = self.user_memory.add_memory(
                     subject_id,
-                    parsed.relation or "IS_A",
+                    parsed.relation or self._taxonomic_relation(),
                     target_id,
                     source=source,
                 )
@@ -85,13 +88,23 @@ class CognitivePipeline:
         return graph, self.reasoner.reason(graph)
 
     def _resolve_for_projection(self, token):
-        entity = self.user_memory.find_named_entity(token)
-        return entity
+        return self.user_memory.find_named_entity(token)
+
+    def _taxonomic_relation(self):
+        candidates = [
+            (schema.get("priority", 0), name)
+            for name, schema in self.user_memory.relations.schemas.items()
+            if schema.get("role") == "canonical_taxonomic"
+        ]
+        if not candidates:
+            return None
+        highest = max(priority for priority, _ in candidates)
+        matches = [name for priority, name in candidates if priority == highest]
+        return matches[0] if len(matches) == 1 else None
 
     def query_is_a(self, subject_name, target_concept):
         graph = self.build_user_graph()
         subject_id = self.user_memory.find_named_entity(subject_name)
         if subject_id is None:
             return None
-        from .reasoning_query import GraphQueryReasoner
-        return GraphQueryReasoner(self.ontology).is_a(graph, subject_id, target_concept)
+        return self.query_reasoner.is_a(graph, subject_id, target_concept)
