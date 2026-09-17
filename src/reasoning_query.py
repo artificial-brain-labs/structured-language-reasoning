@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 
 from .semantic_graph import SemanticGraph
-from .graph_reasoner import SemanticGraphReasoner
 
 
 @dataclass(frozen=True)
@@ -16,15 +15,29 @@ class QueryReasoningResult:
 
 
 class GraphQueryReasoner:
-    """Answer classification queries using explicit graph facts and ontology data.
+    """Answer classification queries using asserted graph facts and ontology data.
 
     The query layer derives an answer at query time. It never writes derived
-    edges back into the graph or into memory. Unknown remains unknown.
+    edges back into the graph or into memory. Relation roles come from the
+    declarative relation schemas, so the query mechanism does not embed domain
+    relation names.
     """
 
-    def __init__(self, ontology):
-        self.reasoner = SemanticGraphReasoner(ontology)
+    def __init__(self, ontology, relation_schemas=None):
         self.ontology = ontology
+        self.relation_schemas = relation_schemas or {}
+
+    def _relation_for_role(self, role):
+        candidates = [
+            (schema.get("priority", 0), name)
+            for name, schema in self.relation_schemas.items()
+            if schema.get("role") == role
+        ]
+        if not candidates:
+            return None
+        highest = max(priority for priority, _ in candidates)
+        matches = [name for priority, name in candidates if priority == highest]
+        return matches[0] if len(matches) == 1 else None
 
     def is_a(self, graph: SemanticGraph, subject_id: str, target_concept: str) -> QueryReasoningResult:
         subject = graph.nodes.get(subject_id)
@@ -33,7 +46,11 @@ class GraphQueryReasoner:
         if not self.ontology.class_exists(target_concept):
             return QueryReasoningResult("UNKNOWN", subject_id, target_concept, reason="unknown_target_concept")
 
-        starts = self._explicit_is_a_targets(graph, subject_id)
+        relation = self._relation_for_role("canonical_taxonomic")
+        if relation is None:
+            return QueryReasoningResult("UNKNOWN", subject_id, target_concept, reason="no_taxonomic_relation")
+
+        starts = self._explicit_classifications(graph, subject_id, relation)
         if not starts:
             return QueryReasoningResult("UNKNOWN", subject_id, target_concept, reason="no_explicit_classification")
 
@@ -52,10 +69,10 @@ class GraphQueryReasoner:
 
         return QueryReasoningResult("UNKNOWN", subject_id, target_concept, reason="not_derivable")
 
-    def _explicit_is_a_targets(self, graph, subject_id):
+    def _explicit_classifications(self, graph, subject_id, relation):
         return [
             (graph.nodes[edge.object].concept, edge.edge_id)
-            for edge in graph.edges_from(subject_id, "IS_A")
+            for edge in graph.edges_from(subject_id, relation)
             if edge.status == "ASSERTED"
             and edge.object in graph.nodes
             and graph.nodes[edge.object].node_type in {"CONCEPT", "CLASS"}
