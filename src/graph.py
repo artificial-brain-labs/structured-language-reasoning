@@ -26,9 +26,13 @@ class KnowledgeGraph:
         self._graph = SemanticGraph()
 
     @property
+    def nodes(self):
+        return self._graph.nodes
+
+    @property
     def entities(self):
         return {
-            node_id: {"type": node.concept if node.node_type in {"CLASS", "CONCEPT"} else node.concept}
+            node_id: {"type": node.concept}
             for node_id, node in self._graph.nodes.items()
             if node.node_type in {"ENTITY", "REFERENT", "CLASS", "CONCEPT"}
         }
@@ -40,28 +44,13 @@ class KnowledgeGraph:
             for edge in self._graph.edges.values()
         ]
 
-    @property
     def asserted_edges(self):
-        """Compatibility view of asserted edges from the canonical graph.
+        """Return asserted edges as a computed compatibility view."""
+        return [edge for edge in self.edges if edge.status == "ASSERTED"]
 
-        This is deliberately a computed view rather than a second edge store,
-        preserving the V1 rule that ``SemanticGraph`` is the single graph
-        source of truth.
-        """
-        return [
-            edge
-            for edge in self.edges
-            if edge.status == "ASSERTED"
-        ]
-
-    @property
     def derived_edges(self):
-        """Compatibility view of derived edges from the canonical graph."""
-        return [
-            edge
-            for edge in self.edges
-            if edge.status == "DERIVED"
-        ]
+        """Return derived edges as a computed compatibility view."""
+        return [edge for edge in self.edges if edge.status == "DERIVED"]
 
     def add_entity(self, entity_id, entity_type=None):
         concept = entity_type or "UNKNOWN"
@@ -91,6 +80,12 @@ class KnowledgeGraph:
             and (object_ is None or edge.object == object_)
             for edge in self._graph.edges_from(subject, predicate)
         )
+
+    def edges_from(self, subject, predicate=None):
+        return self._graph.edges_from(subject, predicate)
+
+    def edges_to(self, object_, predicate=None):
+        return self._graph.edges_to(object_, predicate)
 
     def query(self, subject=None, predicate=None, object_=None):
         return [
