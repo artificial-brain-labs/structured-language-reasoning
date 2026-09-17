@@ -1,42 +1,221 @@
 {
-  "cat": {"concept": "CAT", "pos": "NOUN", "synonyms": ["kitty", "feline"]},
-  "kitty": {"concept": "CAT", "pos": "NOUN"},
-  "feline": {"concept": "CAT", "pos": "NOUN"},
-  "mouse": {"concept": "MOUSE", "pos": "NOUN", "synonyms": ["rodent"]},
-  "rodent": {"concept": "MOUSE", "pos": "NOUN"},
-  "dog": {"concept": "DOG", "pos": "NOUN"},
-  "chair": {"concept": "CHAIR", "pos": "NOUN"},
-  "tree": {"concept": "TREE", "pos": "NOUN"},
-  "garden": {"concept": "GARDEN", "pos": "NOUN"},
-  "eats": {"concept": "EAT", "pos": "VERB", "base": "eat", "relation": "EATS"},
-  "eat": {"concept": "EAT", "pos": "VERB", "relation": "EATS"},
-  "sees": {"concept": "SEE", "pos": "VERB", "base": "see", "relation": "SEES"},
-  "see": {"concept": "SEE", "pos": "VERB", "relation": "SEES"},
-  "knows": {"concept": "KNOW", "pos": "VERB", "base": "know", "relation": "KNOWS"},
-  "know": {"concept": "KNOW", "pos": "VERB", "relation": "KNOWS"},
-  "sleeping": {"concept": "SLEEP", "pos": "STATE", "base": "sleep", "aspect": "PROGRESSIVE"},
-  "sleep": {"concept": "SLEEP", "pos": "STATE"},
-  "hungry": {"concept": "HUNGRY", "pos": "STATE"},
-  "tired": {"concept": "TIRED", "pos": "STATE"},
-  "running": {"concept": "RUN", "pos": "STATE", "base": "run", "aspect": "PROGRESSIVE"},
-  "runs": {"concept": "RUN", "pos": "VERB", "base": "run"},
-  "does": {"concept": "DO", "pos": "AUX"},
-  "not": {"concept": "NOT", "pos": "NEGATION"},
-  "is": {"concept": "IS", "pos": "AUX"},
-  "are": {"concept": "IS", "pos": "AUX"},
-  "my": {"concept": "MY", "pos": "DETERMINER"},
-  "the": {"concept": "THE", "pos": "DETERMINER"},
-  "a": {"concept": "A", "pos": "DETERMINER"},
-  "an": {"concept": "A", "pos": "DETERMINER"},
-  "what": {"concept": "WHAT", "pos": "QUESTION"},
-  "who": {"concept": "WHO", "pos": "QUESTION"},
-  "i": {"concept": "SELF", "pos": "PRONOUN"},
-  "friend": {"concept": "FRIEND", "pos": "NOUN"},
-  "friends": {"concept": "FRIEND", "pos": "NOUN"},
-  "animal": {"concept": "ANIMAL", "pos": "NOUN"},
-  "mammal": {"concept": "MAMMAL", "pos": "NOUN"},
-  "small": {"concept": "SMALL", "pos": "ADJECTIVE"},
-  "big": {"concept": "BIG", "pos": "ADJECTIVE"},
-  "black": {"concept": "BLACK", "pos": "ADJECTIVE"},
-  "young": {"concept": "YOUNG", "pos": "ADJECTIVE"}
+  "cat": {
+    "concept": "CAT",
+    "pos": "NOUN",
+    "synonyms": [
+      "kitty",
+      "feline"
+    ]
+  },
+  "kitty": {
+    "concept": "CAT",
+    "pos": "NOUN"
+  },
+  "feline": {
+    "concept": "CAT",
+    "pos": "NOUN"
+  },
+  "mouse": {
+    "concept": "MOUSE",
+    "pos": "NOUN",
+    "synonyms": [
+      "rodent"
+    ]
+  },
+  "rodent": {
+    "concept": "MOUSE",
+    "pos": "NOUN"
+  },
+  "dog": {
+    "concept": "DOG",
+    "pos": "NOUN"
+  },
+  "chair": {
+    "concept": "CHAIR",
+    "pos": "NOUN"
+  },
+  "tree": {
+    "concept": "TREE",
+    "pos": "NOUN"
+  },
+  "garden": {
+    "concept": "GARDEN",
+    "pos": "NOUN"
+  },
+  "eats": {
+    "concept": "EAT",
+    "pos": "VERB",
+    "base": "eat",
+    "relation": "EATS"
+  },
+  "eat": {
+    "concept": "EAT",
+    "pos": "VERB",
+    "relation": "EATS"
+  },
+  "sees": {
+    "concept": "SEE",
+    "pos": "VERB",
+    "base": "see",
+    "relation": "SEES"
+  },
+  "see": {
+    "concept": "SEE",
+    "pos": "VERB",
+    "relation": "SEES"
+  },
+  "knows": {
+    "concept": "KNOW",
+    "pos": "VERB",
+    "base": "know",
+    "relation": "KNOWS"
+  },
+  "know": {
+    "concept": "KNOW",
+    "pos": "VERB",
+    "relation": "KNOWS"
+  },
+  "sleeping": {
+    "concept": "SLEEP",
+    "pos": "STATE",
+    "base": "sleep",
+    "aspect": "PROGRESSIVE"
+  },
+  "sleep": {
+    "concept": "SLEEP",
+    "pos": "STATE"
+  },
+  "hungry": {
+    "concept": "HUNGRY",
+    "pos": "STATE"
+  },
+  "tired": {
+    "concept": "TIRED",
+    "pos": "STATE"
+  },
+  "running": {
+    "concept": "RUN",
+    "pos": "STATE",
+    "base": "run",
+    "aspect": "PROGRESSIVE"
+  },
+  "runs": {
+    "concept": "RUN",
+    "pos": "VERB",
+    "base": "run"
+  },
+  "does": {
+    "concept": "DO",
+    "pos": "AUX"
+  },
+  "not": {
+    "concept": "NOT",
+    "pos": "NEGATION"
+  },
+  "is": {
+    "concept": "IS",
+    "pos": "AUX"
+  },
+  "are": {
+    "concept": "IS",
+    "pos": "AUX"
+  },
+  "my": {
+    "concept": "MY",
+    "pos": "DETERMINER"
+  },
+  "the": {
+    "concept": "THE",
+    "pos": "DETERMINER"
+  },
+  "a": {
+    "concept": "A",
+    "pos": "DETERMINER"
+  },
+  "an": {
+    "concept": "A",
+    "pos": "DETERMINER"
+  },
+  "what": {
+    "concept": "WHAT",
+    "pos": "QUESTION"
+  },
+  "who": {
+    "concept": "WHO",
+    "pos": "QUESTION"
+  },
+  "i": {
+    "concept": "SELF",
+    "pos": "PRONOUN"
+  },
+  "friend": {
+    "concept": "FRIEND",
+    "pos": "NOUN"
+  },
+  "friends": {
+    "concept": "FRIEND",
+    "pos": "NOUN"
+  },
+  "animal": {
+    "concept": "ANIMAL",
+    "pos": "NOUN"
+  },
+  "mammal": {
+    "concept": "MAMMAL",
+    "pos": "NOUN"
+  },
+  "small": {
+    "concept": "SMALL",
+    "pos": "ADJECTIVE"
+  },
+  "big": {
+    "concept": "BIG",
+    "pos": "ADJECTIVE"
+  },
+  "black": {
+    "concept": "BLACK",
+    "pos": "ADJECTIVE"
+  },
+  "young": {
+    "concept": "YOUNG",
+    "pos": "ADJECTIVE"
+  },
+  "blue": {
+    "pos": "ADJECTIVE",
+    "concept": "COLOR",
+    "definition": "A color in the visible spectrum; used as a property of an entity.",
+    "senses": [
+      {
+        "id": "blue.color",
+        "pos": "ADJECTIVE",
+        "concept": "COLOR",
+        "definition": "A color."
+      },
+      {
+        "id": "blue.sadness",
+        "pos": "ADJECTIVE",
+        "concept": "EMOTIONAL_STATE",
+        "definition": "Relating to sadness or low mood."
+      }
+    ]
+  },
+  "bat": {
+    "pos": "NOUN",
+    "concept": "BAT",
+    "definition": "A word with more than one established sense.",
+    "senses": [
+      {
+        "id": "bat.animal",
+        "pos": "NOUN",
+        "concept": "BAT_ANIMAL",
+        "definition": "A flying mammal."
+      },
+      {
+        "id": "bat.sports",
+        "pos": "NOUN",
+        "concept": "BAT_EQUIPMENT",
+        "definition": "Sports equipment used to hit a ball."
+      }
+    ]
+  }
 }
