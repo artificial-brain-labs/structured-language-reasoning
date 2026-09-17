@@ -25,12 +25,22 @@ class SemanticComposer:
 
         if node.production_name is None:
             token = tokens[node.start]
+            senses = self.lexicon.senses(token) if hasattr(self.lexicon, "senses") else []
             result = {
                 "category": node.category,
                 "token": token,
                 "concept": self.lexicon.concept(token),
-                "pos": self.lexicon.pos(token),
+                "pos": node.category,
                 "relation": self.lexicon.relation(token),
+                "senses": [
+                    {
+                        "id": sense.sense_id,
+                        "concept": sense.concept,
+                        "pos": sense.pos,
+                        "definition": sense.definition,
+                    }
+                    for sense in senses
+                ],
             }
             features = self._lexical_features(token)
             if features:
