@@ -35,3 +35,17 @@ def test_conflicting_learned_contexts_do_not_create_a_guess():
     memory.learn("bat", "bat.animal", ["bat.animal", "bat.sports"], "I saw the bat")
     memory.learn("bat", "bat.sports", ["bat.animal", "bat.sports"], "I saw the bat")
     assert memory.preferred_sense("bat", "I saw the bat") is None
+
+
+def test_definition_semantics_can_resolve_a_related_future_context():
+    slr = SLR()
+    memory = ContextualMeaningMemory(slr.lexicon)
+    memory.learn("bat", "bat.animal", ["bat.animal", "bat.sports"], "I saw the bat")
+    assert memory.preferred_sense("bat", "The bat was flying") == "bat.animal"
+
+
+def test_definition_semantics_does_not_resolve_without_evidence():
+    slr = SLR()
+    memory = ContextualMeaningMemory(slr.lexicon)
+    memory.learn("bat", "bat.animal", ["bat.animal", "bat.sports"], "I saw the bat")
+    assert memory.preferred_sense("bat", "The bat is expensive") is None
