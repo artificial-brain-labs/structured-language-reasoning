@@ -20,6 +20,8 @@ class ParsedSentence:
     relation: str | None = None
     relationship_target: str | None = None
     tokens: list[str] | None = None
+    parse_status: str = "UNKNOWN"
+    parse_candidates: tuple = ()
 
 
 class Parser:
@@ -86,8 +88,19 @@ class Parser:
         start_by_category = self.compositional.grammar.get("start_symbol_by_first_category", {})
         start_symbol = start_by_category.get(first_category, "STATEMENT")
         candidates = self.compositional.parse(tokens, start_symbol=start_symbol)
-        if len(candidates) != 1:
+        if not candidates:
             return None
+
+        if len(candidates) > 1:
+            return ParsedSentence(
+                tokens=tokens,
+                parse_status="AMBIGUOUS",
+                parse_candidates=tuple(
+                    self.compositional.derivation_signature(candidate)
+                    for candidate in candidates
+                ),
+            )
+
         node = candidates[0]
         production = self.compositional.production_for(node)
         if not production:
@@ -114,13 +127,15 @@ class Parser:
             operation=production.get("operation"),
             relation=production.get("relation"),
             tokens=tokens,
+            parse_status="DETERMINED",
+            parse_candidates=(self.compositional.derivation_signature(node),),
         )
 
     def parse(self, text):
         surface_tokens = tokenize(text) if isinstance(text, str) else list(text)
         tokens = [token.lower() for token in surface_tokens]
         if not tokens:
-            return ParsedSentence(tokens=tokens)
+            return ParsedSentence(tokens=tokens, parse_status="UNPARSED")
         compositional = self._from_compositional(tokens, surface_tokens)
         if compositional is not None:
             return compositional
@@ -129,7 +144,7 @@ class Parser:
     def parse_statement(self, tokens, surface_tokens=None):
         rule = self._grammar_rule(tokens)
         if not rule:
-            return ParsedSentence(tokens=tokens)
+            return ParsedSentence(tokens=tokens, parse_status="UNPARSED")
 
         surface_tokens = surface_tokens if surface_tokens is not None else tokens
         return ParsedSentence(
@@ -146,4 +161,6 @@ class Parser:
             relation=rule.get("relation"),
             relationship_target=rule.get("relationship_target"),
             tokens=tokens,
+            parse_status="DETERMINED",
+            parse_candidates=(rule.get("name"),),
         )
