@@ -9,14 +9,56 @@
     "knowledge_provenance_required": true
   },
   "memory_boundaries": {
-    "system_knowledge": ["lexicon", "grammar", "ontology", "relations", "semantic_mappings", "execution_policies", "operations", "response_policies"],
-    "user_memory": ["explicit_user_facts", "explicit_user_classifications", "explicit_user_relationships", "explicit_user_identity_statements"],
-    "derived_knowledge": {"storage": "TRANSIENT", "may_be_asserted": false, "promotion_requires_explicit_confirmation": true}
+    "system_knowledge": [
+      "lexicon",
+      "grammar",
+      "ontology",
+      "relations",
+      "semantic_mappings",
+      "execution_policies",
+      "operations",
+      "response_policies"
+    ],
+    "user_memory": [
+      "explicit_user_facts",
+      "explicit_user_classifications",
+      "explicit_user_relationships",
+      "explicit_user_identity_statements"
+    ],
+    "derived_knowledge": {
+      "storage": "TRANSIENT",
+      "may_be_asserted": false,
+      "promotion_requires_explicit_confirmation": true
+    }
   },
   "mechanisms": {
-    "FACT": {"handler": "fact", "target": "USER_MEMORY", "resolve_object": "literal", "validate_relation": false, "clarify_unknown_subject": true},
-    "RELATION": {"handler": "relation", "target": "USER_MEMORY", "resolve_object": "entity", "validate_relation": true, "clarify_unknown_subject": true},
-    "CLASSIFICATION": {"handler": "classification", "target": "USER_MEMORY", "resolve_object": "ontology_class", "validate_relation": false, "clarify_unknown_subject": false},
-    "USER_RELATIONSHIP": {"handler": "user_relationship", "target": "USER_RELATIONSHIP_MEMORY", "resolve_object": "relationship_target", "validate_relation": false, "clarify_unknown_subject": false}
+    "FACT": {
+      "handler": "fact",
+      "target": "USER_MEMORY",
+      "resolve_object": "literal",
+      "validate_relation": false,
+      "clarify_unknown_subject": true
+    },
+    "RELATION": {
+      "handler": "relation",
+      "target": "USER_MEMORY",
+      "resolve_object": "entity",
+      "validate_relation": true,
+      "clarify_unknown_subject": true
+    },
+    "CLASSIFICATION": {
+      "handler": "classification",
+      "target": "USER_MEMORY",
+      "resolve_object": "ontology_class",
+      "validate_relation": false,
+      "clarify_unknown_subject": false
+    },
+    "USER_RELATIONSHIP": {
+      "handler": "user_relationship",
+      "target": "USER_RELATIONSHIP_MEMORY",
+      "resolve_object": "relationship_target",
+      "validate_relation": false,
+      "clarify_unknown_subject": false
+    }
   }
 }
