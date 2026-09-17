@@ -28,6 +28,10 @@
     "SUBJECT": {
       "unknown_result": "unknown",
       "success": "The {result_name} {verb_word} the {object_word}."
+    },
+    "PROPERTY": {
+      "unknown_result": "unknown",
+      "success": "Yes."
     }
   }
 }
