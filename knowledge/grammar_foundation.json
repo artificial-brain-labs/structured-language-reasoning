@@ -1,5 +1,5 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "principles": {
     "data_before_logic": true,
     "no_guessing": true,
@@ -21,7 +21,7 @@
     {"name":"adjp_adjective_adjp","lhs":"ADJP","rhs":["ADJECTIVE","ADJP"],"head":1},
     {"name":"np_determiner_adjp_noun","lhs":"NP","rhs":["DETERMINER","ADJP","NOUN"],"head":2},
     {"name":"np_adjp_noun","lhs":"NP","rhs":["ADJP","NOUN"],"head":1},
-    {"name":"statement_state_np_aux_state","lhs":"STATEMENT","rhs":["NP","AUX","STATE"],"meaning":"SUBJECT_STATE","operation":"ASSERT_STATE","legacy_rule":"simple_present_progressive","roles":{"subject":[0,"head"],"verb":[2,"head"]}},
+    {"name":"statement_state_np_aux_state","lhs":"STATEMENT","rhs":["NP","AUX","STATE"],"meaning":"SUBJECT_STATE","operation":"ASSERT_STATE","semantic_features":{"tense":"PRESENT"},"roles":{"subject":[0,"head"],"verb":[2,"head"]}},
     {"name":"statement_transitive_np_verb_np","lhs":"STATEMENT","rhs":["NP","VERB","NP"],"meaning":"SUBJECT_VERB_OBJECT","operation":"ASSERT_RELATION","roles":{"subject":[0,"head"],"verb":[1,"head"],"object":[2,"head"]}},
     {"name":"statement_type_entity_aux_np","lhs":"STATEMENT","rhs":["ENTITY","AUX","NP"],"meaning":"TYPE_ASSIGNMENT","operation":"ASSERT_CLASSIFICATION","relation":"IS_A","roles":{"subject":[0,"head"],"object":[2,"head"]},"constraints":{"head_categories":{"2":["NOUN"]}}},
     {"name":"statement_entity_relation","lhs":"STATEMENT","rhs":["ENTITY","AUX","ENTITY"],"meaning":"SUBJECT_RELATION","operation":"ASSERT_RELATION","relation":"SAME_AS","roles":{"subject":[0,"head"],"object":[2,"head"]},"constraints":{"head_categories":{"2":["ENTITY"]}}},
