@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .semantic_graph import GraphEdge, GraphNode, SemanticGraph
+from .semantic_graph import GraphEdge, SemanticGraph
 
 
 @dataclass(frozen=True)
@@ -11,11 +11,13 @@ class ReasoningResult:
 
 
 class SemanticGraphReasoner:
-    """Derive knowledge from explicit graph relationships without storing it.
+    """Derive knowledge from explicit asserted graph relationships without storing it.
 
     Ontology hierarchy is supplied as data. The reasoner provides mechanisms for
     traversing that data; it never embeds domain knowledge in procedural code.
-    Derived edges remain DERIVED and are returned as a reasoning result only.
+    Only ASSERTED classification edges may serve as evidence for derived facts.
+    OBSERVED, HYPOTHESIS, and other non-asserted states are not promoted by
+    reasoning.
     """
 
     def __init__(self, ontology):
@@ -23,7 +25,7 @@ class SemanticGraphReasoner:
 
     def reason(self, graph: SemanticGraph) -> ReasoningResult:
         derived = []
-        for edge in graph.asserted_edges() + [e for e in graph.edges.values() if e.status == "OBSERVED"]:
+        for edge in graph.asserted_edges():
             if edge.predicate != "IS_A":
                 continue
             subject = graph.nodes.get(edge.subject)
@@ -42,7 +44,7 @@ class SemanticGraphReasoner:
 
     def _concept_node(self, graph, concept):
         for node in graph.nodes.values():
-            if node.node_type == "CONCEPT" and node.concept == concept:
+            if node.node_type in {"CONCEPT", "CLASS"} and node.concept == concept:
                 return node.node_id
         return None
 
