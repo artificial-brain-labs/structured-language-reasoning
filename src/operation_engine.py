@@ -55,7 +55,11 @@ class OperationEngine:
         selected_concept = operation.attributes.get("subject_concept")
         surface = self._surface(parsed, "subject")
         if selected_concept and selected_concept != "UNKNOWN" and surface:
-            operation.subject = self.memory.create_entity(selected_concept, name=surface)
+            existing = self.memory.find_named_entity(surface)
+            if existing is not None and self.memory.entities[existing].get("concept") == selected_concept:
+                operation.subject = existing
+            else:
+                operation.subject = self.memory.create_entity(selected_concept, name=surface)
         else:
             operation.subject = self.resolver.resolve_canonical(surface)
 
@@ -85,6 +89,9 @@ class OperationEngine:
             object_word = self._surface(parsed, "object")
             selected_concept = operation.attributes.get("object_concept")
             if selected_concept and selected_concept != "UNKNOWN" and object_word:
+                existing = self.memory.find_named_entity(object_word)
+                if existing is not None and self.memory.entities[existing].get("concept") == selected_concept:
+                    return self.memory.canonical_entity(existing)
                 return self.memory.canonical_entity(
                     self.memory.create_entity(selected_concept, name=object_word)
                 )
