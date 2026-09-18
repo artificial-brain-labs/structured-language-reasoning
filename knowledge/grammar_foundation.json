@@ -322,32 +322,6 @@
       }
     },
     {
-      "name": "statement_property_entity_aux_adjective",
-      "lhs": "STATEMENT",
-      "rhs": [
-        "ENTITY",
-        "AUX",
-        "ADJECTIVE"
-      ],
-      "meaning": "PROPERTY_ASSIGNMENT",
-      "operation": "ASSERT_RELATION",
-      "relation": "HAS_PROPERTY",
-      "roles": {
-        "subject": [
-          0,
-          "head"
-        ],
-        "verb": [
-          2,
-          "head"
-        ],
-        "object": [
-          2,
-          "head"
-        ]
-      }
-    },
-    {
       "name": "statement_property_np_aux_adjective",
       "lhs": "STATEMENT",
       "rhs": [
