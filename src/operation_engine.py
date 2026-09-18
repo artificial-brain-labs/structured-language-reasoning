@@ -83,6 +83,11 @@ class OperationEngine:
             return operation.object
         if mode == "entity":
             object_word = self._surface(parsed, "object")
+            selected_concept = operation.attributes.get("object_concept")
+            if selected_concept and selected_concept != "UNKNOWN" and object_word:
+                return self.memory.canonical_entity(
+                    self.memory.create_entity(selected_concept, name=object_word)
+                )
             return self.resolver.resolve_canonical(object_word) if object_word else None
         if mode == "ontology_class" and parsed.object_word:
             return self.resolver.resolve_type(parsed.object_word)
