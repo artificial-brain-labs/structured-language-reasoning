@@ -48,10 +48,12 @@ class SemanticContextExtractor:
         if parsed.operation:
             features["operation"] = parsed.operation
         relation = parsed.relation
-        if relation is None and parsed.question_type == "CLASSIFICATION":
+        if parsed.question_type == "CLASSIFICATION":
             relation = "IS_A"
-        if relation is None and parsed.verb_word:
-            relation = self.lexicon.relation(parsed.verb_word) if self.lexicon is not None else None
+        elif parsed.verb_word and self.lexicon is not None:
+            lexical_relation = self.lexicon.relation(parsed.verb_word)
+            if lexical_relation:
+                relation = lexical_relation
         if relation:
             features["relation"] = relation
 
