@@ -109,10 +109,23 @@ class SLR:
     def _lexical_ambiguity(self, parsed, original_text, semantic_context=None):
         """Return the first unresolved lexical ambiguity in this sentence."""
         checked = set()
+        property_value = (
+            parsed.operation == "ASSERT_RELATION"
+            and parsed.relation == "HAS_PROPERTY"
+            and parsed.object_word is not None
+        )
         for word in (parsed.subject_word, parsed.verb_word, parsed.object_word, *(parsed.tokens or ())):
             if not word or word.lower() in checked:
                 continue
             checked.add(word.lower())
+
+            # A property value can remain an unresolved lexical reference.
+            # The asserted relation is still explicit: entity HAS_PROPERTY word.
+            # Forcing a dictionary sense here would block valid observations
+            # such as "zorb is blue" and would confuse property with type.
+            if property_value and word.lower() == parsed.object_word.lower():
+                continue
+
             senses = self.lexicon.senses(word) if hasattr(self.lexicon, "senses") else []
             if len(senses) <= 1:
                 continue
