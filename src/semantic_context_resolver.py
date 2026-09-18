@@ -29,6 +29,15 @@ class SemanticContextResolver:
             if token not in stopwords
         }
 
+    def _sense(self, sense_id):
+        if self.lexicon is None:
+            return None
+        for entry in self.lexicon.words.values():
+            for sense in entry.get("senses", []):
+                if sense.get("id") == sense_id:
+                    return sense
+        return None
+
     def _definition_anchors(self, sense_id):
         if self.contextual_memory is None:
             return set()
@@ -119,10 +128,46 @@ class SemanticContextResolver:
             evidence.extend(f"context_word:{value}" for value in sorted(direct))
             score += len(direct)
 
-            anchors = self._definition_anchors(resolution.selected_sense_id)
-            semantic_words = current_tokens & anchors
-            evidence.extend(f"sense_definition:{value}" for value in sorted(semantic_words))
-            score += len(semantic_words)
+            sense = self._sense(resolution.selected_sense_id)
+            profile = (sense or {}).get("semantic_profile") or {}
+            current_concepts = set(getattr(current_context, "concepts", ()) or ())
+            current_relation = str(
+                (getattr(current_context, "features", {}) or {}).get("relation", "") or ""
+            ).lower()
+
+            compatible_concepts = set(profile.get("compatible_concepts", ()))
+            compatible_relations = {
+                str(value).lower()
+                for value in profile.get("compatible_relations", ())
+            }
+
+            if profile:
+                # Explicit semantic profiles are data, not probabilities.
+                # They may support or exclude a sense, but never manufacture
+                # a fact that is absent from the current structured context.
+                concept_matches = current_concepts & compatible_concepts
+                relation_matches = (
+                    {current_relation} & compatible_relations
+                    if current_relation else set()
+                )
+                evidence.extend(
+                    f"compatible_concept:{value}"
+                    for value in sorted(concept_matches)
+                )
+                evidence.extend(
+                    f"compatible_relation:{value}"
+                    for value in sorted(relation_matches)
+                )
+                score += len(concept_matches) + len(relation_matches)
+            else:
+                # Legacy senses without explicit profiles retain the old
+                # definition-anchor mechanism until their data is migrated.
+                anchors = self._definition_anchors(resolution.selected_sense_id)
+                semantic_words = current_tokens & anchors
+                evidence.extend(
+                    f"sense_definition:{value}" for value in sorted(semantic_words)
+                )
+                score += len(semantic_words)
 
             if score:
                 matches.append(SemanticContextMatch(
