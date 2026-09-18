@@ -129,12 +129,17 @@ class SemanticParser:
     def _build_operation(self, tree, subject, predicate, object_value):
         if not tree.operation:
             return None
+        attributes = self._operation_attributes(tree.subject_word, tree.object_word, tree)
+        if subject is not None:
+            attributes["subject_concept"] = subject.concept
+        if object_ is not None:
+            attributes["object_concept"] = object_.concept
         return SemanticOperation(
             name=tree.operation,
             subject=subject.entity_id if subject else None,
             predicate=predicate,
             object=object_value,
-            attributes=self._operation_attributes(tree.subject_word, tree.object_word, tree),
+            attributes=attributes,
         )
 
     def parse(self, tree, context=None):
