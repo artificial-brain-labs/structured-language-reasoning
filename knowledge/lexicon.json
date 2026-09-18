@@ -53,6 +53,27 @@
     "pos": "VERB",
     "relation": "EATS"
   },
+  "hits": {
+    "concept": "HIT",
+    "pos": "VERB",
+    "base": "hit",
+    "relation": "HITS"
+  },
+  "hit": {
+    "concept": "HIT",
+    "pos": "VERB",
+    "relation": "HITS"
+  },
+  "flying": {
+    "concept": "FLY",
+    "pos": "STATE",
+    "base": "fly",
+    "aspect": "PROGRESSIVE"
+  },
+  "fly": {
+    "concept": "FLY",
+    "pos": "STATE"
+  },
   "sees": {
     "concept": "SEE",
     "pos": "VERB",
@@ -208,13 +229,19 @@
         "id": "bat.animal",
         "pos": "NOUN",
         "concept": "BAT_ANIMAL",
-        "definition": "A flying mammal."
+        "definition": "A flying mammal.",
+        "semantic_profile": {
+          "compatible_concepts": ["FLY", "MAMMAL"]
+        }
       },
       {
         "id": "bat.sports",
         "pos": "NOUN",
         "concept": "BAT_EQUIPMENT",
-        "definition": "Sports equipment used to hit a ball."
+        "definition": "Sports equipment used to hit a ball.",
+        "semantic_profile": {
+          "compatible_concepts": ["HIT"]
+        }
       }
     ]
   }
