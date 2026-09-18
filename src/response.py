@@ -89,6 +89,21 @@ class ResponseGenerator:
             except (KeyError, ValueError):
                 return self.system("unknown")
 
+        if isinstance(first, dict) and first.get("kind") == "LEXICAL_CLASSIFICATION":
+            target = first.get("object")
+            sense_concept = first.get("sense_concept")
+            if not target or not sense_concept:
+                return self.system(template.get("unknown_result", "unknown"))
+            answer = template.get("success", "Yes.")
+            reasoning = f"{sense_concept} -> {target}"
+            proof_template = template.get("explanation")
+            if proof_template:
+                try:
+                    answer = f"{answer} {proof_template.format(reasoning=reasoning)}"
+                except (KeyError, ValueError):
+                    pass
+            return answer
+
         if isinstance(first, dict):
             entity = first.get("entity")
             concept = first.get("object")
