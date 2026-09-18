@@ -46,7 +46,7 @@ class SLR:
         self.semantic_context_resolver = SemanticContextResolver(
             self.contextual_meaning, self.lexicon, self.ontology
         )
-        self.semantic_parser = SemanticParser(self.lexicon, contextual_memory=self.contextual_meaning)
+        self.semantic_parser = SemanticParser(\n            self.lexicon,\n            contextual_memory=self.contextual_meaning,\n            semantic_context_resolver=self.semantic_context_resolver,\n        )
 
         self.relationships = UserRelationshipMemory(
             owner_user_id=self.user_profile.user_id,
@@ -260,7 +260,7 @@ class SLR:
             return self.response.generate(parsed, self.query.answer(parsed))
         if not parsed.meaning:
             return self.response.system("parse_failure")
-        execution = self._execute_statement(parsed, context=text)
+        execution = self._execute_statement(parsed, context=semantic_context)
         if execution.clarification:
             self._refresh_graph()
             return execution.clarification
