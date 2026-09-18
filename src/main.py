@@ -189,7 +189,41 @@ class SLR:
                 semantic_context=original_semantic_context,
             )
             self.clarification.clear()
-            return self.process(original_text, _add_tcm=False)
+
+            # The user explicitly resolved the only lexical ambiguity in the
+            # original statement. Resume that same observation directly.
+            # Any unresolved entity remains UNKNOWN; no type is inferred.
+            resumed_parsed = self.parser.parse(original_text)
+            resumed_context = self.semantic_context.extract(
+                resumed_parsed, original_text
+            )
+            if not resumed_parsed.meaning:
+                return self.response.system("parse_failure")
+            resumed_meaning = self.semantic_parser.parse(
+                resumed_parsed, context=resumed_context
+            )
+            resumed_operation = resumed_meaning.operation
+            if resumed_operation is None:
+                return self.response.system("execution_failure")
+            resumed_operation.attributes["explicitly_confirmed_context"] = True
+            self._record_interpretation(resumed_parsed, resumed_operation)
+            execution = self.router.dispatch(resumed_operation, resumed_parsed)
+            if execution.clarification:
+                return execution.clarification
+            if execution.result is None:
+                failure = self.response_policy.render(resumed_operation, "failure")
+                return failure or self.response.system("execution_failure")
+            self._refresh_graph()
+            success_context = {}
+            if resumed_parsed.subject_word:
+                entity = self.user_memory.canonical_entity(execution.result.subject)
+                success_context["subject_name"] = self.user_memory.entities[entity]["name"]
+            if resumed_parsed.object_word:
+                success_context["object_word"] = resumed_parsed.object_word
+            success = self.response_policy.render(
+                resumed_operation, "success", success_context
+            )
+            return success or self.response.system("execution_failure")
         return self._handle_pending_entity_clarification(text)
 
     def _handle_pending_entity_clarification(self, text):
