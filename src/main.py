@@ -85,6 +85,7 @@ class SLR:
             self.reasoner,
             graph=self.graph,
             relationship_memory=self.relationships,
+            semantic_context_resolver=self.semantic_context_resolver,
         )
         self.response = ResponseGenerator(self.user_memory)
         self.response_policy = ResponsePolicy(self.executor.definitions)
@@ -257,7 +258,7 @@ class SLR:
                 if request is not None:
                     return request.question
         if parsed.question_type:
-            return self.response.generate(parsed, self.query.answer(parsed))
+            return self.response.generate(parsed, self.query.answer(parsed, semantic_context=semantic_context))
         if not parsed.meaning:
             return self.response.system("parse_failure")
         execution = self._execute_statement(parsed, context=semantic_context)
