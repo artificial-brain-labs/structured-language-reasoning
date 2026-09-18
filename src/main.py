@@ -135,10 +135,10 @@ class SLR:
             if len(senses) <= 1:
                 continue
             candidate_ids = [sense.sense_id for sense in senses]
-            selected = self.semantic_context_resolver.resolve(
+            resolution = self.semantic_context_resolver.resolve_result(
                 word, semantic_context, candidate_ids
             )
-            if selected is None:
+            if resolution.status == "AMBIGUOUS":
                 return word, senses
         return None
 
