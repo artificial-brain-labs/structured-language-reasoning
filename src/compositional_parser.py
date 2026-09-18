@@ -29,7 +29,7 @@ class CompositionalGrammarParser:
         self.by_lhs = {}
         for production in self.productions:
             self.by_lhs.setdefault(production["lhs"], []).append(production)
-        self.lexical_categories = set(self.grammar.get("lexical_categories", []))
+        self._lexical_categories = set(self.grammar.get("lexical_categories", []))
 
     def lexical_categories(self, word):
         if self.lexicon is not None and hasattr(self.lexicon, "pos_candidates"):
@@ -43,7 +43,7 @@ class CompositionalGrammarParser:
         return self.lexical_categories(word)[0]
 
     def _head_lexical_category(self, node):
-        if node.category in self.lexical_categories:
+        if node.category in self._lexical_categories:
             return node.category
         if node.head_index is None:
             return None
