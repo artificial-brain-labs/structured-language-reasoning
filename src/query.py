@@ -34,21 +34,11 @@ class QueryEngine:
         self.planner = QueryPlanner(self.policy)
 
     def _resolve(self, word):
-        """Resolve an existing user entity or ontology class without mutation."""
-        named = self.memory.find_named_entity(word) if word else None
-        if named is not None:
-            return named
+        """Resolve the explicit surface identity without collapsing it early."""
         concept = self.lexicon.concept(word)
         if concept:
-            return next(
-                (
-                    entity_id
-                    for entity_id, data in self.memory.entities.items()
-                    if data.get("concept") == concept and data.get("name") == concept
-                ),
-                None,
-            )
-        return None
+            return self.memory.find_entity(concept)
+        return self.memory.find_named_entity(word)
 
     def _canonical_id(self, entity_id):
         return self.memory.canonical_entity(entity_id)
