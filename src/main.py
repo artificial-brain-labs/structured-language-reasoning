@@ -44,7 +44,7 @@ class SLR:
         self.contextual_meaning = ContextualMeaningMemory(self.lexicon)
         self.semantic_context = SemanticContextExtractor(self.lexicon)
         self.semantic_context_resolver = SemanticContextResolver(
-            self.contextual_meaning, self.lexicon
+            self.contextual_meaning, self.lexicon, self.ontology
         )
         self.semantic_parser = SemanticParser(self.lexicon, contextual_memory=self.contextual_meaning)
 
