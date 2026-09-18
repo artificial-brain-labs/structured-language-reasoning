@@ -362,29 +362,12 @@
       }
     },
     {
-      "name": "question_type_question_aux_adjective",
+      "name": "question_meaning_question_aux_adjective",
       "lhs": "QUESTION",
       "rhs": [
         "QUESTION",
         "AUX",
         "ADJECTIVE"
-      ],
-      "meaning": "QUERY_TYPE",
-      "question_type": "TYPE",
-      "roles": {
-        "subject": [
-          2,
-          "head"
-        ]
-      }
-    },
-    {
-      "name": "question_meaning_question_aux_np",
-      "lhs": "QUESTION",
-      "rhs": [
-        "QUESTION",
-        "AUX",
-        "NP"
       ],
       "meaning": "QUERY_MEANING",
       "question_type": "MEANING",
