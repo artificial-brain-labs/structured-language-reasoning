@@ -33,13 +33,15 @@
   },
   "SEES": {
     "type": "ACTION",
-    "role": "relation"
+    "role": "relation",
+    "allow_unknown_subject": true
   },
   "HAS_PROPERTY": {
     "type": "DESCRIPTIVE",
     "role": "modifier",
     "symmetric": false,
     "transitive": false,
-    "traversable": true
+    "traversable": true,
+    "allow_unknown_subject": true
   }
 }
