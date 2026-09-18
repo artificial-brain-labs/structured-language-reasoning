@@ -34,11 +34,21 @@ class QueryEngine:
         self.planner = QueryPlanner(self.policy)
 
     def _resolve(self, word):
-        """Resolve the explicit surface identity without collapsing it early."""
+        """Resolve an existing user entity or ontology class without mutation."""
+        named = self.memory.find_named_entity(word) if word else None
+        if named is not None:
+            return named
         concept = self.lexicon.concept(word)
         if concept:
-            return self.memory.find_entity(concept)
-        return self.memory.find_named_entity(word)
+            return next(
+                (
+                    entity_id
+                    for entity_id, data in self.memory.entities.items()
+                    if data.get("concept") == concept and data.get("name") == concept
+                ),
+                None,
+            )
+        return None
 
     def _canonical_id(self, entity_id):
         return self.memory.canonical_entity(entity_id)
@@ -137,7 +147,14 @@ class QueryEngine:
                     "proof": proof,
                 }]
 
-        target_entity = self.memory.find_entity(target_concept)
+        target_entity = next(
+            (
+                entity_id
+                for entity_id, data in self.memory.entities.items()
+                if data.get("concept") == target_concept and data.get("name") == target_concept
+            ),
+            None,
+        )
         asserted_classifications = [
             memory
             for memory in self.memory.query(subject=subject, predicate="IS_A")
