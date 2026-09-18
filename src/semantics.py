@@ -132,8 +132,8 @@ class SemanticParser:
         attributes = self._operation_attributes(tree.subject_word, tree.object_word, tree)
         if subject is not None:
             attributes["subject_concept"] = subject.concept
-        if object_ is not None:
-            attributes["object_concept"] = object_.concept
+        if object_value is not None:
+            attributes["object_concept"] = object_.concept if object_ is not None else "UNKNOWN"
         return SemanticOperation(
             name=tree.operation,
             subject=subject.entity_id if subject else None,
