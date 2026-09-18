@@ -42,3 +42,18 @@ def test_property_query_uses_explicit_relation():
 def test_unknown_word_is_not_given_dictionary_meaning():
     slr = SLR()
     assert slr.lexicon.senses("zorb") == []
+
+
+def test_what_is_word_is_a_meaning_query():
+    slr = SLR()
+    parsed = slr.parser.parse("What is blue?")
+    assert parsed.question_type == "MEANING"
+    assert parsed.meaning == "QUERY_MEANING"
+
+
+def test_meaning_query_returns_dictionary_senses_without_type_inference():
+    slr = SLR()
+    answer = slr.process("What is blue?")
+    assert "dictionary meanings" in answer.lower()
+    assert "blue.color" in answer.lower()
+    assert "blue.sadness" in answer.lower()
