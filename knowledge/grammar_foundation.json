@@ -233,6 +233,7 @@
       ],
       "meaning": "QUERY_CLASSIFICATION",
       "question_type": "CLASSIFICATION",
+      "relation": "IS_A",
       "legacy_rule": "question_classification_aux_np_np",
       "roles": {
         "subject": [
