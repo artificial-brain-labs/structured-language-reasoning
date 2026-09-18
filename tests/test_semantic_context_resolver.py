@@ -167,3 +167,11 @@ def test_ontology_branch_keeps_both_bat_senses_when_target_is_thing():
     # itself therefore remains the authoritative structure for this branch.
     assert slr.ontology.is_a("BAT_ANIMAL", "THING")
     assert slr.ontology.is_a("BAT_EQUIPMENT", "THING")
+
+
+def test_process_resolves_ambiguous_bat_from_existing_ontology():
+    slr = SLR()
+    answer = slr.process("bat is animal")
+
+    assert "which meaning" not in answer.lower()
+    assert slr.clarification.pending is None
