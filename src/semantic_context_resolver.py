@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import re
+from .ambiguity import AmbiguityResult
 
 
 @dataclass(frozen=True)
@@ -106,15 +107,10 @@ class SemanticContextResolver:
             evidence.append("same_grammar_rule")
         return evidence
 
-    def resolve(self, word, current_context, candidates=None):
-        """Return a uniquely supported sense, or None when ambiguity remains.
-
-        Explicit structural constraints are evaluated before learned context.
-        In particular, an IS_A statement can constrain a lexical sense through
-        the existing ontology without requiring a prior clarification.
-        """
+    def resolve_result(self, word, current_context, candidates=None):
+        """Return structured resolution status without collapsing ambiguity."""
         if not word:
-            return None
+            return AmbiguityResult("UNKNOWN", reason="No lexical word was supplied.")
 
         allowed = set(candidates or ())
         dictionary_senses = {
@@ -128,15 +124,12 @@ class SemanticContextResolver:
                 if sense_id in allowed
             }
         if not dictionary_senses:
-            return None
+            return AmbiguityResult("UNKNOWN", reason="No candidate dictionary senses remain.")
 
         current_fields = self._fields(current_context)
         current_relation = str(current_fields.get("relation") or "").upper()
         target_word = current_fields.get("object")
 
-        # First apply an explicit ontology constraint. This is not a heuristic:
-        # the sentence itself names a target class, and Ontology.is_a() defines
-        # whether each candidate concept belongs to that class.
         if (
             self.ontology is not None
             and self.lexicon is not None
@@ -150,6 +143,8 @@ class SemanticContextResolver:
                 for sense in target_senses
                 if sense.concept and self.ontology.class_exists(sense.concept)
             }
+            if not target_concepts and self.ontology.class_exists(str(target_word).upper()):
+                target_concepts = {str(target_word).upper()}
             if len(target_concepts) == 1:
                 target = next(iter(target_concepts))
                 compatible = [
@@ -159,13 +154,26 @@ class SemanticContextResolver:
                     and self.ontology.is_a(sense.concept, target)
                 ]
                 if len(compatible) == 1:
-                    return compatible[0]
-                # Zero or multiple compatible senses means the ontology has
-                # not established a unique interpretation.
-                return None
+                    selected = dictionary_senses[compatible[0]]
+                    return AmbiguityResult(
+                        "RESOLVED",
+                        candidates=[selected],
+                        selected=selected,
+                        reason="Ontology compatibility uniquely selects one sense.",
+                    )
+                if len(compatible) > 1:
+                    return AmbiguityResult(
+                        "AMBIGUOUS",
+                        candidates=[dictionary_senses[item] for item in compatible],
+                        reason="Multiple dictionary senses satisfy the explicit ontology constraint.",
+                    )
+                return AmbiguityResult(
+                    "UNKNOWN",
+                    reason="No dictionary sense satisfies the explicit ontology constraint.",
+                )
 
         if self.contextual_memory is None:
-            return None
+            return AmbiguityResult("UNKNOWN", reason="No contextual meaning memory is available.")
 
         matches = []
         for resolution in self.contextual_memory.find(word):
@@ -175,6 +183,15 @@ class SemanticContextResolver:
             evidence = self._structured_evidence(
                 word, current_context, resolution.semantic_context
             )
+
+            learned_fields = self._fields(resolution.semantic_context)
+            if (
+                current_fields.get("relation")
+                and learned_fields.get("relation")
+                and current_fields["relation"] != learned_fields["relation"]
+            ):
+                continue
+
             score = len(evidence) * 3
 
             current_tokens = self._tokens(getattr(current_context, "text", ""))
@@ -196,11 +213,26 @@ class SemanticContextResolver:
                 ))
 
         if not matches:
-            return None
+            return AmbiguityResult("UNKNOWN", reason="No contextual evidence supports a candidate.")
 
         best_score = max(item.score for item in matches)
         best = [item for item in matches if item.score == best_score]
         sense_ids = {item.sense_id for item in best}
         if len(sense_ids) != 1:
-            return None
-        return next(iter(sense_ids))
+            return AmbiguityResult(
+                "AMBIGUOUS",
+                candidates=[dictionary_senses[item] for item in sense_ids],
+                reason="Competing contextual evidence remains tied.",
+            )
+        selected_id = next(iter(sense_ids))
+        selected = dictionary_senses[selected_id]
+        return AmbiguityResult(
+            "RESOLVED",
+            candidates=[selected],
+            selected=selected,
+            reason="Context uniquely supports one sense.",
+        )
+
+    def resolve(self, word, current_context, candidates=None):
+        result = self.resolve_result(word, current_context, candidates)
+        return result.selected.sense_id if result.status == "RESOLVED" and result.selected else None
