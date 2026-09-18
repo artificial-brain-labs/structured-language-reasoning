@@ -12,7 +12,18 @@ class Lexicon:
 
     def concept(self, word):
         entry = self.get(word)
-        return entry.get("concept") if entry else None
+        if not entry:
+            return None
+
+        # A multi-sense lexical entry has no single safe concept. Returning
+        # its legacy top-level concept would collapse ambiguity before the
+        # ambiguity/context layers have had a chance to resolve it.
+        senses = entry.get("senses")
+        if senses:
+            concepts = {sense.get("concept") for sense in senses if sense.get("concept")}
+            return next(iter(concepts)) if len(concepts) == 1 else None
+
+        return entry.get("concept")
 
     def pos(self, word):
         entry = self.get(word)
