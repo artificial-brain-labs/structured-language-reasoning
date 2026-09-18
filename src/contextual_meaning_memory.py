@@ -30,6 +30,9 @@ class ContextualMeaningMemory:
     }
 
     def __init__(self, lexicon=None):
+        if lexicon is None:
+            from .lexicon import Lexicon
+            lexicon = Lexicon()
         self.lexicon = lexicon
         self.resolutions = []
 
