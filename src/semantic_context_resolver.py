@@ -107,13 +107,67 @@ class SemanticContextResolver:
         return evidence
 
     def resolve(self, word, current_context, candidates=None):
-        """Return a unique learned sense, or None when evidence is insufficient/tied."""
-        if self.contextual_memory is None or not word:
+        """Return a uniquely supported sense, or None when ambiguity remains.
+
+        Explicit structural constraints are evaluated before learned context.
+        In particular, an IS_A statement can constrain a lexical sense through
+        the existing ontology without requiring a prior clarification.
+        """
+        if not word:
             return None
 
         allowed = set(candidates or ())
-        matches = []
+        dictionary_senses = {
+            sense.sense_id: sense
+            for sense in (self.lexicon.senses(word) if self.lexicon is not None else [])
+        }
+        if allowed:
+            dictionary_senses = {
+                sense_id: sense
+                for sense_id, sense in dictionary_senses.items()
+                if sense_id in allowed
+            }
+        if not dictionary_senses:
+            return None
 
+        current_fields = self._fields(current_context)
+        current_relation = str(current_fields.get("relation") or "").upper()
+        target_word = current_fields.get("object")
+
+        # First apply an explicit ontology constraint. This is not a heuristic:
+        # the sentence itself names a target class, and Ontology.is_a() defines
+        # whether each candidate concept belongs to that class.
+        if (
+            self.ontology is not None
+            and self.lexicon is not None
+            and current_relation == "IS_A"
+            and self._role(word, current_context) == {"subject"}
+            and target_word
+        ):
+            target_senses = self.lexicon.senses(target_word)
+            target_concepts = {
+                sense.concept
+                for sense in target_senses
+                if sense.concept and self.ontology.class_exists(sense.concept)
+            }
+            if len(target_concepts) == 1:
+                target = next(iter(target_concepts))
+                compatible = [
+                    sense_id
+                    for sense_id, sense in dictionary_senses.items()
+                    if sense.concept
+                    and self.ontology.is_a(sense.concept, target)
+                ]
+                if len(compatible) == 1:
+                    return compatible[0]
+                # Zero or multiple compatible senses means the ontology has
+                # not established a unique interpretation.
+                return None
+
+        if self.contextual_memory is None:
+            return None
+
+        matches = []
         for resolution in self.contextual_memory.find(word):
             if allowed and resolution.selected_sense_id not in allowed:
                 continue
@@ -129,48 +183,12 @@ class SemanticContextResolver:
             evidence.extend(f"context_word:{value}" for value in sorted(direct))
             score += len(direct)
 
-            sense = self._sense(resolution.selected_sense_id)
-            current_concepts = set(getattr(current_context, "concepts", ()) or ())
-            current_relation = str(
-                (getattr(current_context, "features", {}) or {}).get("relation", "") or ""
-            ).upper()
-            target_word = getattr(current_context, "object", None)
-
-            # First use the existing ontology for explicit classification
-            # context. A sense is compatible when its concept belongs to the
-            # class explicitly named by the current sentence.
-            if (
-                self.ontology is not None
-                and sense is not None
-                and current_relation == "IS_A"
-                and self._role(word, current_context) == {"subject"}
-                and target_word
-                and self.lexicon is not None
-            ):
-                target_senses = self.lexicon.senses(target_word)
-                target_concepts = {
-                    candidate.concept
-                    for candidate in target_senses
-                    if candidate.concept and self.ontology.class_exists(candidate.concept)
-                }
-                if len(target_concepts) == 1:
-                    target = next(iter(target_concepts))
-                    if self.ontology.is_a(sense.get("concept"), target):
-                        evidence.append(f"ontology_is_a:{target}")
-                        score += 10
-                    else:
-                        # Explicit ontology incompatibility eliminates this
-                        # candidate instead of merely lowering its score.
-                        continue
-            else:
-                # Keep the existing contextual evidence for sentence patterns
-                # that are not yet represented by ontology constraints.
-                anchors = self._definition_anchors(resolution.selected_sense_id)
-                semantic_words = current_tokens & anchors
-                evidence.extend(
-                    f"sense_definition:{value}" for value in sorted(semantic_words)
-                )
-                score += len(semantic_words)
+            anchors = self._definition_anchors(resolution.selected_sense_id)
+            semantic_words = current_tokens & anchors
+            evidence.extend(
+                f"sense_definition:{value}" for value in sorted(semantic_words)
+            )
+            score += len(semantic_words)
 
             if score:
                 matches.append(SemanticContextMatch(
@@ -186,3 +204,4 @@ class SemanticContextResolver:
         if len(sense_ids) != 1:
             return None
         return next(iter(sense_ids))
+\n
