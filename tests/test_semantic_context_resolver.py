@@ -56,3 +56,31 @@ def test_clarification_learning_can_store_structured_context():
     )
     assert resolution.semantic_context is context
     assert resolution.semantic_context.features["relation"] == "SEES"
+
+
+def test_end_to_end_clarification_then_related_context_resolution():
+    slr = SLR()
+
+    first = slr.process("Tom sees bat")
+    assert "which meaning" in first.lower()
+    assert slr.clarification.pending is not None
+    assert slr.clarification.pending.kind == "lexical_meaning"
+
+    resolved = slr.process("bat.animal")
+    assert "stored" in resolved.lower() or "understood" in resolved.lower()
+    assert slr.clarification.pending is None
+
+    later = slr.process("Tom sees bat")
+    assert "which meaning" not in later.lower()
+
+
+def test_end_to_end_learned_sense_does_not_leak_to_unrelated_relation():
+    slr = SLR()
+
+    slr.process("Tom sees bat")
+    slr.process("bat.animal")
+
+    unrelated = slr.process("Tom eats bat")
+    assert "which meaning" in unrelated.lower()
+    assert slr.clarification.pending is not None
+    assert slr.clarification.pending.word == "bat"
