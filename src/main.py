@@ -46,7 +46,11 @@ class SLR:
         self.semantic_context_resolver = SemanticContextResolver(
             self.contextual_meaning, self.lexicon, self.ontology
         )
-        self.semantic_parser = SemanticParser(\n            self.lexicon,\n            contextual_memory=self.contextual_meaning,\n            semantic_context_resolver=self.semantic_context_resolver,\n        )
+        self.semantic_parser = SemanticParser(
+            self.lexicon,
+            contextual_memory=self.contextual_meaning,
+            semantic_context_resolver=self.semantic_context_resolver,
+        )
 
         self.relationships = UserRelationshipMemory(
             owner_user_id=self.user_profile.user_id,
