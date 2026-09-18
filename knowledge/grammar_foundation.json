@@ -410,6 +410,31 @@
           "head"
         ]
       }
+    },
+    {
+      "name": "statement_transitive_pronoun_verb_np",
+      "lhs": "STATEMENT",
+      "rhs": [
+        "PRONOUN",
+        "VERB",
+        "NP"
+      ],
+      "meaning": "SUBJECT_VERB_OBJECT",
+      "operation": "ASSERT_RELATION",
+      "roles": {
+        "subject": [
+          0,
+          "head"
+        ],
+        "verb": [
+          1,
+          "head"
+        ],
+        "object": [
+          2,
+          "head"
+        ]
+      }
     }
   ]
 }
