@@ -115,8 +115,8 @@ class SLR:
         """Return the first unresolved lexical ambiguity in this sentence."""
         checked = set()
         property_value = (
-            parsed.operation == "ASSERT_RELATION"
-            and parsed.relation == "HAS_PROPERTY"
+            ((parsed.operation == "ASSERT_RELATION" and parsed.relation == "HAS_PROPERTY")
+            or parsed.question_type == "PROPERTY")
             and parsed.object_word is not None
         )
         for word in (parsed.subject_word, parsed.verb_word, parsed.object_word, *(parsed.tokens or ())):
