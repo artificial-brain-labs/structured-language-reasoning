@@ -24,6 +24,11 @@
       "result_kind": "property",
       "handler": "_property",
       "unknown_result": "unknown"
+    },
+    "MEANING": {
+      "result_kind": "lexical_meaning",
+      "handler": "_meaning",
+      "unknown_result": "unknown"
     }
   }
 }
