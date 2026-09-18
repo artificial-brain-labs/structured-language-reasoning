@@ -9,6 +9,7 @@ class MeaningCandidate:
     pos: str | None
     definition: str | None = None
     evidence: tuple = ()
+    semantic_profile: dict = field(default_factory=dict)
 
 
 @dataclass
