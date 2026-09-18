@@ -33,8 +33,7 @@
   },
   "SEES": {
     "type": "ACTION",
-    "role": "relation",
-    "allow_unknown_subject": true
+    "role": "relation"
   },
   "HAS_PROPERTY": {
     "type": "DESCRIPTIVE",
