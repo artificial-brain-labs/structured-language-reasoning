@@ -67,9 +67,6 @@ class SemanticParser:
         concept = self._concept(word) or "UNKNOWN"
         selected_sense = None
 
-        # Use the same ambiguity resolver that admitted the statement. This
-        # prevents the semantic layer from independently collapsing a
-        # multi-sense word using the legacy top-level concept.
         if len(senses) > 1 and self.semantic_context_resolver is not None:
             selected_sense = self.semantic_context_resolver.resolve(
                 word,
@@ -126,14 +123,14 @@ class SemanticParser:
             return mapping["object"]
         return object_.entity_id if object_ else None
 
-    def _build_operation(self, tree, subject, predicate, object_value):
+    def _build_operation(self, tree, subject, predicate, object_value, object_entity=None):
         if not tree.operation:
             return None
         attributes = self._operation_attributes(tree.subject_word, tree.object_word, tree)
         if subject is not None:
             attributes["subject_concept"] = subject.concept
         if object_value is not None:
-            attributes["object_concept"] = object_.concept if object_ is not None else "UNKNOWN"
+            attributes["object_concept"] = object_entity.concept if object_entity is not None else "UNKNOWN"
         return SemanticOperation(
             name=tree.operation,
             subject=subject.entity_id if subject else None,
@@ -159,5 +156,5 @@ class SemanticParser:
         if object_:
             meaning.entities.append(object_)
         meaning.facts.append(Fact(subject=subject.entity_id if subject else "", predicate=predicate, object=fact_object))
-        meaning.operation = self._build_operation(tree, subject, predicate, fact_object)
+        meaning.operation = self._build_operation(tree, subject, predicate, fact_object, object_entity=object_)
         return meaning
