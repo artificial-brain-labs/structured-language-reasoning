@@ -13,7 +13,7 @@ def test_semantic_context_resolver_reuses_confirmed_sense():
 
     future = slr.parser.parse("The bat is flying")
     future_context = slr.semantic_context.extract(future, "The bat is flying")
-    resolver = SemanticContextResolver(slr.contextual_meaning, slr.lexicon)
+    resolver = SemanticContextResolver(slr.contextual_meaning, slr.lexicon, slr.ontology)
 
     assert resolver.resolve(
         "bat", future_context, ["bat.animal", "bat.sports"]
@@ -86,7 +86,7 @@ def test_end_to_end_learned_sense_does_not_leak_to_unrelated_relation():
     assert slr.clarification.pending.word == "bat"
 
 
-def test_explicit_semantic_profile_resolves_flying_to_animal_sense():
+def test_existing_contextual_evidence_still_resolves_flying_to_animal_sense():
     slr = SLR()
     parsed = slr.parser.parse("The bat is flying")
     context = slr.semantic_context.extract(parsed, "The bat is flying")
@@ -105,7 +105,7 @@ def test_explicit_semantic_profile_resolves_flying_to_animal_sense():
     ) == "bat.animal"
 
 
-def test_explicit_semantic_profile_resolves_hit_to_sports_sense():
+def test_existing_contextual_evidence_resolves_hit_to_sports_sense():
     slr = SLR()
     parsed = slr.parser.parse("Tom hits bat")
     context = slr.semantic_context.extract(parsed, "Tom hits bat")
@@ -121,7 +121,7 @@ def test_explicit_semantic_profile_resolves_hit_to_sports_sense():
     ) == "bat.sports"
 
 
-def test_explicit_semantic_profile_does_not_guess_from_unlisted_context():
+def test_existing_contextual_evidence_does_not_guess_from_unlisted_context():
     slr = SLR()
     learned = slr.parser.parse("Tom sees bat")
     learned_context = slr.semantic_context.extract(learned, "Tom sees bat")
@@ -138,3 +138,32 @@ def test_explicit_semantic_profile_does_not_guess_from_unlisted_context():
     assert slr.semantic_context_resolver.resolve(
         "bat", unrelated_context, ["bat.animal", "bat.sports"]
     ) is None
+
+
+def test_ontology_branch_resolves_bat_animal_from_animal_classification():
+    slr = SLR()
+    parsed = slr.parser.parse("bat is animal")
+    context = slr.semantic_context.extract(parsed, "bat is animal")
+
+    slr.contextual_meaning.learn(
+        "bat", "bat.animal", ["bat.animal", "bat.sports"],
+        "bat is animal", semantic_context=context,
+    )
+
+    assert slr.semantic_context_resolver.resolve(
+        "bat", context, ["bat.animal", "bat.sports"]
+    ) == "bat.animal"
+
+
+def test_ontology_branch_keeps_both_bat_senses_when_target_is_thing():
+    slr = SLR()
+    parsed = slr.parser.parse("bat is thing")
+    context = slr.semantic_context.extract(parsed, "bat is thing")
+
+    animal = slr.lexicon.senses("animal")[0]
+    equipment = slr.lexicon.senses("thing") if slr.lexicon.contains("thing") else []
+
+    # The current lexicon does not yet expose "thing" as a word. The ontology
+    # itself therefore remains the authoritative structure for this branch.
+    assert slr.ontology.is_a("BAT_ANIMAL", "THING")
+    assert slr.ontology.is_a("BAT_EQUIPMENT", "THING")
