@@ -93,7 +93,15 @@ class QueryEngine:
                     and self.reasoner.ontology.class_exists(target)
                     and self.reasoner.ontology.is_a(sense.concept, target)
                 ):
-                    resolved_entity = self.memory.find_entity(sense.concept)
+                    resolved_entity = next(
+                        (
+                            entity_id
+                            for entity_id, data in self.memory.entities.items()
+                            if data.get("concept") == sense.concept
+                            and data.get("name") == sense.concept
+                        ),
+                        None,
+                    )
                     if resolved_entity is not None:
                         subject = resolved_entity
                     else:
