@@ -6,12 +6,13 @@ from .query_planner import QueryPlanner
 
 
 class QueryEngine:
-    def __init__(self, memory, lexicon, reasoner=None, policy_path=None, graph=None, relationship_memory=None):
+    def __init__(self, memory, lexicon, reasoner=None, policy_path=None, graph=None, relationship_memory=None, semantic_context_resolver=None):
         self.memory = memory
         self.lexicon = lexicon
         self.reasoner = reasoner
         self.graph = graph
         self.relationship_memory = relationship_memory
+        self.semantic_context_resolver = semantic_context_resolver
         self.identity_predicates = {
             predicate
             for predicate, schema in getattr(self.memory.relations, "schemas", {}).items()
@@ -61,24 +62,29 @@ class QueryEngine:
             )
             if selected is not None:
                 sense = next((item for item in senses if item.sense_id == selected), None)
-                if sense is not None:
-                    target = target_concept
-                    if target and sense.concept and self.reasoner is not None and self.reasoner.ontology.class_exists(target):
-                        if self.reasoner.ontology.is_a(sense.concept, target):
-                            # Resolve the lexical sense to a temporary semantic
-                            # concept for this query; do not create or mutate memory.
-                            subject = self.memory.find_entity(sense.concept) or subject
-                            if subject is None:
-                                return [{
-                                    "entity": sense.concept,
-                                    "predicate": "IS_A",
-                                    "object": target,
-                                    "status": "DERIVED",
-                                    "source": "ONTOLOGY",
-                                    "support": [sense.sense_id],
-                                }]
-            elif subject is not None and self.memory.entities.get(subject, {}).get("concept") == "UNKNOWN":
-                return []
+                target = target_concept
+                if (
+                    sense is not None
+                    and target
+                    and sense.concept
+                    and self.reasoner is not None
+                    and self.reasoner.ontology.class_exists(target)
+                    and self.reasoner.ontology.is_a(sense.concept, target)
+                ):
+                    resolved_entity = self.memory.find_entity(sense.concept)
+                    if resolved_entity is not None:
+                        subject = resolved_entity
+                    else:
+                        # The dictionary sense is sufficient for this query.
+                        # Do not manufacture a memory entity merely to answer it.
+                        return [{
+                            "entity": sense.concept,
+                            "predicate": "IS_A",
+                            "object": target,
+                            "status": "DERIVED",
+                            "source": "ONTOLOGY",
+                            "support": [sense.sense_id],
+                        }]
 
         if subject is None or target_concept is None:
             return []
