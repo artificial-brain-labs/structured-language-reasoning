@@ -78,7 +78,8 @@ class QueryEngine:
                         # The dictionary sense is sufficient for this query.
                         # Do not manufacture a memory entity merely to answer it.
                         return [{
-                            "entity": sense.concept,
+                            "kind": "LEXICAL_CLASSIFICATION",
+                            "sense_concept": sense.concept,
                             "predicate": "IS_A",
                             "object": target,
                             "status": "DERIVED",
