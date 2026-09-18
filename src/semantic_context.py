@@ -47,8 +47,13 @@ class SemanticContextExtractor:
             features["grammar_rule"] = parsed.rule
         if parsed.operation:
             features["operation"] = parsed.operation
-        if parsed.relation:
-            features["relation"] = parsed.relation
+        relation = parsed.relation
+        if relation is None and parsed.question_type == "CLASSIFICATION":
+            relation = "IS_A"
+        if relation is None and parsed.verb_word:
+            relation = self.lexicon.relation(parsed.verb_word) if self.lexicon is not None else None
+        if relation:
+            features["relation"] = relation
 
         return SemanticContext(
             text=text or " ".join(tokens),
