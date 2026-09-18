@@ -140,7 +140,7 @@ class OperationEngine:
         operation.object = self._resolve_object(operation, parsed, policy)
         result = self.executor.execute(operation, source="USER")
         relation_schema = self.memory.relations.get(operation.predicate) or {}
-        if result is not None and self._should_clarify_unknown_subject(policy, relation_schema, subject_concept):
+        if result is not None and self._should_clarify_unknown_subject(operation, policy, relation_schema, subject_concept):
             return StatementResult(result=result, clarification=self._request_clarification(operation, parsed), operation=operation)
         return StatementResult(result=result, operation=operation)
 
