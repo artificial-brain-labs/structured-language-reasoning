@@ -32,6 +32,10 @@
     "PROPERTY": {
       "unknown_result": "unknown",
       "success": "Yes."
+    },
+    "MEANING": {
+      "unknown_result": "unknown",
+      "success": ""
     }
   }
 }
