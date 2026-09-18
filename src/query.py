@@ -204,6 +204,28 @@ class QueryEngine:
 
         return []
 
+    def _meaning(self, parsed):
+        """Return dictionary senses only; do not convert meaning into type."""
+        word = parsed.subject_word
+        if not word:
+            return []
+        senses = self.lexicon.senses(word)
+        if not senses:
+            return []
+        return [{
+            "kind": "LEXICAL_MEANING",
+            "word": word,
+            "senses": [
+                {
+                    "id": sense.sense_id,
+                    "concept": sense.concept,
+                    "definition": sense.definition,
+                    "pos": sense.pos,
+                }
+                for sense in senses
+            ],
+        }]
+
     def _property(self, parsed):
         subject = self._resolve(parsed.subject_word)
         value = self._resolve(parsed.object_word)
