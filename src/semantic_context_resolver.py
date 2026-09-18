@@ -65,11 +65,25 @@ class SemanticContextResolver:
         learned_fields = self._fields(learned)
         evidence = []
 
-        if self._role(word, current) & self._role(word, learned):
+        shared_roles = self._role(word, current) & self._role(word, learned)
+        same_relation = (
+            current_fields.get("relation")
+            and current_fields["relation"] == learned_fields.get("relation")
+        )
+        same_operation = (
+            current_fields.get("operation")
+            and current_fields["operation"] == learned_fields.get("operation")
+        )
+
+        # A grammatical role alone is not semantic evidence. Otherwise a
+        # learned sense for "bat" as an object could leak into an unrelated
+        # relation such as "eat bat". Role evidence is admitted only when
+        # the surrounding structured relation or operation also agrees.
+        if shared_roles and (same_relation or same_operation):
             evidence.append("same_role")
-        if current_fields.get("relation") and current_fields["relation"] == learned_fields.get("relation"):
+        if same_relation:
             evidence.append("same_relation")
-        if current_fields.get("operation") and current_fields["operation"] == learned_fields.get("operation"):
+        if same_operation:
             evidence.append("same_operation")
 
         shared = current_fields.get("concepts", set()) & learned_fields.get("concepts", set())
