@@ -137,11 +137,11 @@ class OperationEngine:
     def _fact(self, operation, parsed):
         policy = self._policy(operation)
         subject_concept = self._resolve_subject(operation, parsed)
-        relation_schema = self.memory.relations.get(operation.predicate) or {}
-        if self._should_clarify_unknown_subject(operation, policy, relation_schema, subject_concept):
-            return StatementResult(clarification=self._request_clarification(operation, parsed), operation=operation)
         operation.object = self._resolve_object(operation, parsed, policy)
         result = self.executor.execute(operation, source="USER")
+        relation_schema = self.memory.relations.get(operation.predicate) or {}
+        if result is not None and self._should_clarify_unknown_subject(operation, policy, relation_schema, subject_concept):
+            return StatementResult(result=result, clarification=self._request_clarification(operation, parsed), operation=operation)
         return StatementResult(result=result, operation=operation)
 
     def _user_relationship(self, operation, parsed):
