@@ -377,6 +377,23 @@
           "head"
         ]
       }
+    },
+    {
+      "name": "question_meaning_question_aux_np",
+      "lhs": "QUESTION",
+      "rhs": [
+        "QUESTION",
+        "AUX",
+        "NP"
+      ],
+      "meaning": "QUERY_MEANING",
+      "question_type": "MEANING",
+      "roles": {
+        "subject": [
+          2,
+          "head"
+        ]
+      }
     }
   ]
 }
