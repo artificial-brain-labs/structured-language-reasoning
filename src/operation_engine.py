@@ -49,7 +49,16 @@ class OperationEngine:
             if explicit_types:
                 return explicit_types[0]
             return self.resolver.concept(operation.subject)
-        operation.subject = self.resolver.resolve_canonical(self._surface(parsed, "subject"))
+
+        # Preserve a sense selected by the semantic layer instead of asking the
+        # lexical resolver to collapse the same ambiguity a second time.
+        selected_concept = operation.attributes.get("subject_concept")
+        surface = self._surface(parsed, "subject")
+        if selected_concept and selected_concept != "UNKNOWN" and surface:
+            operation.subject = self.memory.create_entity(selected_concept, name=surface)
+        else:
+            operation.subject = self.resolver.resolve_canonical(surface)
+
         explicit_types = self.reasoner.explicit_types(operation.subject)
         if explicit_types:
             return explicit_types[0]
