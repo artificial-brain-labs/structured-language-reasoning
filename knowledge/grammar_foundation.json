@@ -31,81 +31,55 @@
     {
       "name": "np_determiner_noun",
       "lhs": "NP",
-      "rhs": [
-        "DETERMINER",
-        "NOUN"
-      ],
+      "rhs": ["DETERMINER", "NOUN"],
       "head": 1
     },
     {
       "name": "np_determiner_entity",
       "lhs": "NP",
-      "rhs": [
-        "DETERMINER",
-        "ENTITY"
-      ],
+      "rhs": ["DETERMINER", "ENTITY"],
       "head": 1
     },
     {
       "name": "np_noun",
       "lhs": "NP",
-      "rhs": [
-        "NOUN"
-      ],
+      "rhs": ["NOUN"],
       "head": 0
     },
     {
       "name": "np_entity",
       "lhs": "NP",
-      "rhs": [
-        "ENTITY"
-      ],
+      "rhs": ["ENTITY"],
       "head": 0
     },
     {
       "name": "adjp_adjective",
       "lhs": "ADJP",
-      "rhs": [
-        "ADJECTIVE"
-      ],
+      "rhs": ["ADJECTIVE"],
       "head": 0
     },
     {
       "name": "adjp_adjective_adjp",
       "lhs": "ADJP",
-      "rhs": [
-        "ADJECTIVE",
-        "ADJP"
-      ],
+      "rhs": ["ADJECTIVE", "ADJP"],
       "head": 1
     },
     {
       "name": "np_determiner_adjp_noun",
       "lhs": "NP",
-      "rhs": [
-        "DETERMINER",
-        "ADJP",
-        "NOUN"
-      ],
+      "rhs": ["DETERMINER", "ADJP", "NOUN"],
       "head": 2
     },
     {
       "name": "np_adjp_noun",
       "lhs": "NP",
-      "rhs": [
-        "ADJP",
-        "NOUN"
-      ],
+      "rhs": ["ADJP", "NOUN"],
       "head": 1
     },
     {
       "name": "statement_state_np_aux_state",
       "lhs": "STATEMENT",
-      "rhs": [
-        "NP",
-        "AUX",
-        "STATE"
-      ],
+      "rhs": ["NP", "AUX", "STATE"],
       "meaning": "SUBJECT_STATE",
       "operation": "ASSERT_STATE",
       "semantic_features": {
@@ -113,270 +87,164 @@
       },
       "legacy_rule": "simple_present_progressive",
       "roles": {
-        "subject": [
-          0,
-          "head"
-        ],
-        "verb": [
-          2,
-          "head"
-        ]
+        "subject": [0, "head"],
+        "verb": [2, "head"]
       }
     },
     {
       "name": "statement_transitive_np_verb_np",
       "lhs": "STATEMENT",
-      "rhs": [
-        "NP",
-        "VERB",
-        "NP"
-      ],
+      "rhs": ["NP", "VERB", "NP"],
       "meaning": "SUBJECT_VERB_OBJECT",
       "operation": "ASSERT_RELATION",
       "roles": {
-        "subject": [
-          0,
-          "head"
-        ],
-        "verb": [
-          1,
-          "head"
-        ],
-        "object": [
-          2,
-          "head"
-        ]
+        "subject": [0, "head"],
+        "verb": [1, "head"],
+        "object": [2, "head"]
       }
     },
     {
       "name": "statement_type_entity_aux_np",
       "lhs": "STATEMENT",
-      "rhs": [
-        "ENTITY",
-        "AUX",
-        "NP"
-      ],
+      "rhs": ["ENTITY", "AUX", "NP"],
       "meaning": "TYPE_ASSIGNMENT",
       "operation": "ASSERT_CLASSIFICATION",
       "relation": "IS_A",
       "roles": {
-        "subject": [
-          0,
-          "head"
-        ],
-        "object": [
-          2,
-          "head"
-        ]
+        "subject": [0, "head"],
+        "object": [2, "head"]
       },
       "constraints": {
         "head_categories": {
-          "2": [
-            "NOUN"
-          ]
+          "2": ["NOUN"]
+        }
+      }
+    },
+    {
+      "name": "statement_type_np_aux_np",
+      "lhs": "STATEMENT",
+      "rhs": ["NP", "AUX", "NP"],
+      "meaning": "TYPE_ASSIGNMENT",
+      "operation": "ASSERT_CLASSIFICATION",
+      "relation": "IS_A",
+      "roles": {
+        "subject": [0, "head"],
+        "object": [2, "head"]
+      },
+      "constraints": {
+        "head_categories": {
+          "2": ["NOUN"]
         }
       }
     },
     {
       "name": "statement_entity_relation",
       "lhs": "STATEMENT",
-      "rhs": [
-        "ENTITY",
-        "AUX",
-        "ENTITY"
-      ],
+      "rhs": ["ENTITY", "AUX", "ENTITY"],
       "meaning": "SUBJECT_RELATION",
       "operation": "ASSERT_RELATION",
       "relation": "SAME_AS",
       "roles": {
-        "subject": [
-          0,
-          "head"
-        ],
-        "object": [
-          2,
-          "head"
-        ]
+        "subject": [0, "head"],
+        "object": [2, "head"]
       },
       "constraints": {
         "head_categories": {
-          "2": [
-            "ENTITY"
-          ]
+          "2": ["ENTITY"]
         }
       }
     },
     {
       "name": "question_type_question_aux_np",
       "lhs": "QUESTION",
-      "rhs": [
-        "QUESTION",
-        "AUX",
-        "NP"
-      ],
+      "rhs": ["QUESTION", "AUX", "NP"],
       "meaning": "QUERY_TYPE",
       "question_type": "TYPE",
       "roles": {
-        "subject": [
-          2,
-          "head"
-        ]
+        "subject": [2, "head"]
       }
     },
     {
       "name": "question_classification_aux_np_np",
       "lhs": "QUESTION",
-      "rhs": [
-        "AUX",
-        "NP",
-        "NP"
-      ],
+      "rhs": ["AUX", "NP", "NP"],
       "meaning": "QUERY_CLASSIFICATION",
       "question_type": "CLASSIFICATION",
       "relation": "IS_A",
       "legacy_rule": "question_classification_aux_np_np",
       "roles": {
-        "subject": [
-          1,
-          "head"
-        ],
-        "object": [
-          2,
-          "head"
-        ]
+        "subject": [1, "head"],
+        "object": [2, "head"]
       }
     },
     {
       "name": "question_object_question_aux_np_verb",
       "lhs": "QUESTION",
-      "rhs": [
-        "QUESTION",
-        "AUX",
-        "NP",
-        "VERB"
-      ],
+      "rhs": ["QUESTION", "AUX", "NP", "VERB"],
       "meaning": "QUERY_OBJECT",
       "question_type": "OBJECT",
       "roles": {
-        "subject": [
-          2,
-          "head"
-        ],
-        "verb": [
-          3,
-          "head"
-        ]
+        "subject": [2, "head"],
+        "verb": [3, "head"]
       }
     },
     {
       "name": "question_subject_question_verb_np",
       "lhs": "QUESTION",
-      "rhs": [
-        "QUESTION",
-        "VERB",
-        "NP"
-      ],
+      "rhs": ["QUESTION", "VERB", "NP"],
       "meaning": "QUERY_SUBJECT",
+      "question_type": "SUBJECT",
       "roles": {
-        "verb": [
-          1,
-          "head"
-        ],
-        "object": [
-          2,
-          "head"
-        ]
+        "verb": [1, "head"],
+        "object": [2, "head"]
       },
       "question_type": "SUBJECT"
     },
     {
       "name": "statement_property_entity_aux_adjective",
       "lhs": "STATEMENT",
-      "rhs": [
-        "ENTITY",
-        "AUX",
-        "ADJECTIVE"
-      ],
+      "rhs": ["ENTITY", "AUX", "ADJECTIVE"],
       "meaning": "PROPERTY_ASSIGNMENT",
       "operation": "ASSERT_RELATION",
       "relation": "HAS_PROPERTY",
       "roles": {
-        "subject": [
-          0,
-          "head"
-        ],
-        "verb": [
-          2,
-          "head"
-        ],
-        "object": [
-          2,
-          "head"
-        ]
+        "subject": [0, "head"],
+        "verb": [2, "head"],
+        "object": [2, "head"]
       }
     },
     {
       "name": "statement_property_np_aux_adjective",
       "lhs": "STATEMENT",
-      "rhs": [
-        "NP",
-        "AUX",
-        "ADJECTIVE"
-      ],
+      "rhs": ["NP", "AUX", "ADJECTIVE"],
       "meaning": "PROPERTY_ASSIGNMENT",
       "operation": "ASSERT_RELATION",
       "relation": "HAS_PROPERTY",
       "roles": {
-        "subject": [
-          0,
-          "head"
-        ],
-        "verb": [
-          2,
-          "head"
-        ],
-        "object": [
-          2,
-          "head"
-        ]
+        "subject": [0, "head"],
+        "verb": [2, "head"],
+        "object": [2, "head"]
       }
     },
     {
       "name": "question_property_aux_np_adjective",
       "lhs": "QUESTION",
-      "rhs": [
-        "AUX",
-        "NP",
-        "ADJECTIVE"
-      ],
+      "rhs": ["AUX", "NP", "ADJECTIVE"],
       "meaning": "QUERY_PROPERTY",
       "question_type": "PROPERTY",
       "roles": {
-        "subject": [
-          1,
-          "head"
-        ],
-        "object": [
-          2,
-          "head"
-        ]
+        "subject": [1, "head"],
+        "object": [2, "head"]
       }
     },
     {
       "name": "question_meaning_question_aux_adjective",
       "lhs": "QUESTION",
-      "rhs": [
-        "QUESTION",
-        "AUX",
-        "ADJECTIVE"
-      ],
+      "rhs": ["QUESTION", "AUX", "ADJECTIVE"],
       "meaning": "QUERY_MEANING",
       "question_type": "MEANING",
       "roles": {
-        "subject": [
-          2,
-          "head"
-        ]
+        "subject": [2, "head"]
       }
     }
   ]
