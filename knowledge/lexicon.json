@@ -229,19 +229,13 @@
         "id": "bat.animal",
         "pos": "NOUN",
         "concept": "BAT_ANIMAL",
-        "definition": "A flying mammal.",
-        "semantic_profile": {
-          "compatible_concepts": ["FLY", "MAMMAL"]
-        }
+        "definition": "A flying mammal."
       },
       {
         "id": "bat.sports",
         "pos": "NOUN",
         "concept": "BAT_EQUIPMENT",
-        "definition": "Sports equipment used to hit a ball.",
-        "semantic_profile": {
-          "compatible_concepts": ["HIT"]
-        }
+        "definition": "Sports equipment used to hit a ball."
       }
     ]
   }
