@@ -30,7 +30,7 @@ class SemanticComposer:
                 "category": node.category,
                 "token": token,
                 "concept": self.lexicon.concept(token),
-                "pos": node.category,
+                "pos": self.lexicon.pos(token),
                 "relation": self.lexicon.relation(token),
                 "senses": [
                     {
