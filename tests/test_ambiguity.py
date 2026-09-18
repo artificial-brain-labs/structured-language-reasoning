@@ -72,3 +72,38 @@ def test_ontology_resolves_first_time_ambiguous_classification_without_learning(
     entity = slr.user_memory.find_named_entity("bat")
     assert entity is not None
     assert slr.user_memory.entities[entity]["concept"] == "BAT_ANIMAL"
+
+
+def test_query_resolves_ambiguous_bat_as_animal_from_ontology():
+    slr = SLR()
+    answer = slr.process("Is bat an animal?")
+    assert answer.startswith("Yes.")
+    assert "BAT_ANIMAL -> ANIMAL" in answer
+    assert slr.user_memory.find_named_entity("bat") is None
+
+
+def test_query_resolves_ambiguous_bat_as_object_from_ontology():
+    slr = SLR()
+    answer = slr.process("Is bat an object?")
+    assert answer.startswith("Yes.")
+    assert "BAT_EQUIPMENT -> OBJECT" in answer
+    assert slr.user_memory.find_named_entity("bat") is None
+
+
+def test_query_keeps_bat_ambiguous_when_both_senses_fit_thing():
+    slr = SLR()
+    answer = slr.process("Is bat a thing?")
+    assert "multiple dictionary meanings" in answer.lower()
+    assert "bat.animal" in answer.lower()
+    assert "bat.sports" in answer.lower()
+
+
+def test_query_does_not_guess_bat_as_dog():
+    slr = SLR()
+    assert slr.process("Is bat a dog?") == "I don't know."
+
+
+def test_query_reuses_explicit_property_for_ambiguous_blue():
+    slr = SLR()
+    slr.process("zorb is blue")
+    assert slr.process("Is zorb blue?").lower().startswith("yes")
