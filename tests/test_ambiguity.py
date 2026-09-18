@@ -57,3 +57,18 @@ def test_meaning_query_returns_dictionary_senses_without_type_inference():
     assert "dictionary meanings" in answer.lower()
     assert "blue.color" in answer.lower()
     assert "blue.sadness" in answer.lower()
+
+
+def test_ambiguous_lexicon_entry_has_no_single_concept():
+    slr = SLR()
+    assert slr.lexicon.concept("bat") is None
+
+
+def test_ontology_resolves_first_time_ambiguous_classification_without_learning():
+    slr = SLR()
+    answer = slr.process("bat is animal")
+    assert "which meaning" not in answer.lower()
+    assert slr.clarification.pending is None
+    entity = slr.user_memory.find_named_entity("bat")
+    assert entity is not None
+    assert slr.user_memory.entities[entity]["concept"] == "BAT_ANIMAL"
