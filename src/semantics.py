@@ -44,11 +44,12 @@ class SemanticMappings:
 
 
 class SemanticParser:
-    def __init__(self, lexicon=None, mappings=None, contextual_memory=None):
+    def __init__(self, lexicon=None, mappings=None, contextual_memory=None, semantic_context_resolver=None):
         self.lexicon = lexicon
         self.mappings = mappings or SemanticMappings()
         self.entity_counter = 0
         self.contextual_memory = contextual_memory
+        self.semantic_context_resolver = semantic_context_resolver
 
     def _concept(self, word):
         return self.lexicon.concept(word) if self.lexicon else None
@@ -62,15 +63,29 @@ class SemanticParser:
         return f"{base}_{self.entity_counter:03d}"
 
     def _entity(self, word, context=None):
+        senses = self.lexicon.senses(word) if self.lexicon is not None else []
         concept = self._concept(word) or "UNKNOWN"
         selected_sense = None
-        if self.contextual_memory is not None and context is not None:
-            selected_sense = self.contextual_memory.preferred_sense(word, context)
+
+        # Use the same ambiguity resolver that admitted the statement. This
+        # prevents the semantic layer from independently collapsing a
+        # multi-sense word using the legacy top-level concept.
+        if len(senses) > 1 and self.semantic_context_resolver is not None:
+            selected_sense = self.semantic_context_resolver.resolve(
+                word,
+                context,
+                [sense.sense_id for sense in senses],
+            )
+
+        if selected_sense is None and len(senses) == 1:
+            selected_sense = senses[0].sense_id
+
         if selected_sense:
-            for sense in self.lexicon.senses(word):
+            for sense in senses:
                 if sense.sense_id == selected_sense:
                     concept = sense.concept or concept
                     break
+
         return Entity(self._new_entity_id(concept, word), concept)
 
     def _operation_attributes(self, subject_word=None, object_word=None, tree=None):
