@@ -18,9 +18,10 @@ class SemanticContextResolver:
     equally supported senses.
     """
 
-    def __init__(self, contextual_memory=None, lexicon=None):
+    def __init__(self, contextual_memory=None, lexicon=None, ontology=None):
         self.contextual_memory = contextual_memory
         self.lexicon = lexicon
+        self.ontology = ontology
 
     def _tokens(self, text):
         stopwords = getattr(self.contextual_memory, "STOPWORDS", set())
@@ -129,39 +130,41 @@ class SemanticContextResolver:
             score += len(direct)
 
             sense = self._sense(resolution.selected_sense_id)
-            profile = (sense or {}).get("semantic_profile") or {}
             current_concepts = set(getattr(current_context, "concepts", ()) or ())
             current_relation = str(
                 (getattr(current_context, "features", {}) or {}).get("relation", "") or ""
-            ).lower()
+            ).upper()
+            target_word = getattr(current_context, "object", None)
 
-            compatible_concepts = set(profile.get("compatible_concepts", ()))
-            compatible_relations = {
-                str(value).lower()
-                for value in profile.get("compatible_relations", ())
-            }
-
-            if profile:
-                # Explicit semantic profiles are data, not probabilities.
-                # They may support or exclude a sense, but never manufacture
-                # a fact that is absent from the current structured context.
-                concept_matches = current_concepts & compatible_concepts
-                relation_matches = (
-                    {current_relation} & compatible_relations
-                    if current_relation else set()
-                )
-                evidence.extend(
-                    f"compatible_concept:{value}"
-                    for value in sorted(concept_matches)
-                )
-                evidence.extend(
-                    f"compatible_relation:{value}"
-                    for value in sorted(relation_matches)
-                )
-                score += len(concept_matches) + len(relation_matches)
+            # First use the existing ontology for explicit classification
+            # context. A sense is compatible when its concept belongs to the
+            # class explicitly named by the current sentence.
+            if (
+                self.ontology is not None
+                and sense is not None
+                and current_relation == "IS_A"
+                and self._role(word, current_context) == {"subject"}
+                and target_word
+                and self.lexicon is not None
+            ):
+                target_senses = self.lexicon.senses(target_word)
+                target_concepts = {
+                    candidate.concept
+                    for candidate in target_senses
+                    if candidate.concept and self.ontology.class_exists(candidate.concept)
+                }
+                if len(target_concepts) == 1:
+                    target = next(iter(target_concepts))
+                    if self.ontology.is_a(sense.get("concept"), target):
+                        evidence.append(f"ontology_is_a:{target}")
+                        score += 10
+                    else:
+                        # Explicit ontology incompatibility eliminates this
+                        # candidate instead of merely lowering its score.
+                        continue
             else:
-                # Legacy senses without explicit profiles retain the old
-                # definition-anchor mechanism until their data is migrated.
+                # Keep the existing contextual evidence for sentence patterns
+                # that are not yet represented by ontology constraints.
                 anchors = self._definition_anchors(resolution.selected_sense_id)
                 semantic_words = current_tokens & anchors
                 evidence.extend(
