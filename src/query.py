@@ -42,10 +42,44 @@ class QueryEngine:
     def _canonical_id(self, entity_id):
         return self.memory.canonical_entity(entity_id)
 
-    def _classification(self, parsed):
-        """Return graph-backed asserted or derived type evidence."""
+    def _classification(self, parsed, semantic_context=None):
+        """Return graph-backed asserted or derived type evidence.
+
+        An ambiguous lexical subject is resolved only when the query's
+        explicit target class uniquely constrains one dictionary sense.
+        The query never writes that interpretation into memory.
+        """
         subject = self._resolve(parsed.subject_word)
         target_concept = self.lexicon.concept(parsed.object_word)
+
+        senses = self.lexicon.senses(parsed.subject_word) if parsed.subject_word else []
+        if len(senses) > 1 and self.semantic_context_resolver is not None:
+            selected = self.semantic_context_resolver.resolve(
+                parsed.subject_word,
+                semantic_context,
+                [sense.sense_id for sense in senses],
+            )
+            if selected is not None:
+                sense = next((item for item in senses if item.sense_id == selected), None)
+                if sense is not None:
+                    target = target_concept
+                    if target and sense.concept and self.reasoner is not None and self.reasoner.ontology.class_exists(target):
+                        if self.reasoner.ontology.is_a(sense.concept, target):
+                            # Resolve the lexical sense to a temporary semantic
+                            # concept for this query; do not create or mutate memory.
+                            subject = self.memory.find_entity(sense.concept) or subject
+                            if subject is None:
+                                return [{
+                                    "entity": sense.concept,
+                                    "predicate": "IS_A",
+                                    "object": target,
+                                    "status": "DERIVED",
+                                    "source": "ONTOLOGY",
+                                    "support": [sense.sense_id],
+                                }]
+            elif subject is not None and self.memory.entities.get(subject, {}).get("concept") == "UNKNOWN":
+                return []
+
         if subject is None or target_concept is None:
             return []
 
@@ -276,7 +310,7 @@ class QueryEngine:
                 return entry.get("relation") or concept
         return concept
 
-    def answer(self, parsed):
+    def answer(self, parsed, semantic_context=None):
         plan = self.planner.plan(parsed)
         if plan is None:
             return []
@@ -286,4 +320,6 @@ class QueryEngine:
         handler = getattr(self, handler_name, None)
         if handler is None:
             return []
+        if handler_name == "_classification":
+            return handler(parsed, semantic_context=semantic_context)
         return handler(parsed)
