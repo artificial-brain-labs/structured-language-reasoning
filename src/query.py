@@ -52,14 +52,36 @@ class QueryEngine:
         """
         subject = self._resolve(parsed.subject_word)
         target_concept = self.lexicon.concept(parsed.object_word)
+        if (
+            target_concept is None
+            and self.reasoner is not None
+            and parsed.object_word
+            and self.reasoner.ontology.class_exists(parsed.object_word.upper())
+        ):
+            target_concept = parsed.object_word.upper()
 
         senses = self.lexicon.senses(parsed.subject_word) if parsed.subject_word else []
         if len(senses) > 1 and self.semantic_context_resolver is not None:
-            selected = self.semantic_context_resolver.resolve(
+            resolution = self.semantic_context_resolver.resolve_result(
                 parsed.subject_word,
                 semantic_context,
                 [sense.sense_id for sense in senses],
             )
+            if resolution.status == "AMBIGUOUS":
+                return [{
+                    "kind": "LEXICAL_AMBIGUITY",
+                    "word": parsed.subject_word,
+                    "senses": [
+                        {
+                            "id": item.sense_id,
+                            "concept": item.concept,
+                            "definition": item.definition,
+                            "pos": item.pos,
+                        }
+                        for item in resolution.candidates
+                    ],
+                }]
+            selected = resolution.selected.sense_id if resolution.selected else None
             if selected is not None:
                 sense = next((item for item in senses if item.sense_id == selected), None)
                 target = target_concept
