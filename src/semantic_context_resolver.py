@@ -204,4 +204,3 @@ class SemanticContextResolver:
         if len(sense_ids) != 1:
             return None
         return next(iter(sense_ids))
-\n
