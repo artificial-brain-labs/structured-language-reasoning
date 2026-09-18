@@ -173,7 +173,7 @@ class SemanticContextResolver:
                 )
 
         if self.contextual_memory is None:
-            return AmbiguityResult("UNKNOWN", reason="No contextual meaning memory is available.")
+            return AmbiguityResult("AMBIGUOUS", candidates=list(dictionary_senses.values()), reason="No contextual evidence is available to select one sense.")
 
         matches = []
         for resolution in self.contextual_memory.find(word):
@@ -213,7 +213,7 @@ class SemanticContextResolver:
                 ))
 
         if not matches:
-            return AmbiguityResult("UNKNOWN", reason="No contextual evidence supports a candidate.")
+            return AmbiguityResult("AMBIGUOUS", candidates=list(dictionary_senses.values()), reason="No contextual evidence uniquely supports one sense.")
 
         best_score = max(item.score for item in matches)
         best = [item for item in matches if item.score == best_score]
