@@ -54,7 +54,11 @@ class OperationEngine:
         surface = self._surface(parsed, "subject")
         if selected_concept and selected_concept != "UNKNOWN" and surface:
             if selected_concept in self.reasoner.ontology.classes:
-                operation.subject = self.memory.find_entity(selected_concept)
+                senses = self.lexicon.senses(surface) if hasattr(self.lexicon, "senses") else []
+                if len(senses) > 1:
+                    operation.subject = self.memory.create_entity(selected_concept, name=surface)
+                else:
+                    operation.subject = self.memory.find_entity(selected_concept)
             else:
                 existing = self.memory.find_named_entity(surface)
                 if existing is not None and self.memory.entities[existing].get("concept") == selected_concept:
@@ -69,8 +73,10 @@ class OperationEngine:
             return explicit_types[0]
         return self.resolver.concept(operation.subject)
 
-    def _should_clarify_unknown_subject(self, policy, relation_schema, subject_concept):
+    def _should_clarify_unknown_subject(self, operation, policy, relation_schema, subject_concept):
         if subject_concept != "UNKNOWN":
+            return False
+        if operation.attributes.get("explicitly_confirmed_context"):
             return False
         if not policy.get("clarify_unknown_subject", False):
             return False
@@ -118,7 +124,7 @@ class OperationEngine:
         policy = self._policy(operation)
         subject_concept = self._resolve_subject(operation, parsed)
         relation_schema = self.memory.relations.get(operation.predicate) or {}
-        if self._should_clarify_unknown_subject(policy, relation_schema, subject_concept):
+        if self._should_clarify_unknown_subject(operation, policy, relation_schema, subject_concept):
             return StatementResult(clarification=self._request_clarification(operation, parsed), operation=operation)
         operation.object = self._resolve_object(operation, parsed, policy)
         if operation.object is None:
