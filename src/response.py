@@ -74,7 +74,7 @@ class ResponseGenerator:
             for sense in senses:
                 definition = sense.get("definition") or sense.get("concept") or "unknown meaning"
                 descriptions.append(f'{sense.get("id", "sense")}: {definition}')
-            return f"{first.get('word')} has these dictionary meanings: " + "; ".join(descriptions)
+            return f"{first.get('word')} has multiple dictionary meanings: " + "; ".join(descriptions)
         if isinstance(first, dict) and first.get("relation"):
             # Relationship knowledge is not an ontology classification. It is
             # returned separately so the response does not turn FRIEND/KNOWS
