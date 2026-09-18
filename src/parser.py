@@ -91,11 +91,7 @@ class Parser:
         if self.compositional is None:
             return None
 
-        first_categories = (
-            self.lexicon.pos_candidates(tokens[0])
-            if self.lexicon is not None and hasattr(self.lexicon, "pos_candidates")
-            else [self._category(tokens[0])]
-        )
+        first_categories = self.compositional.lexical_categories(tokens[0])
         start_by_category = self.compositional.grammar.get("start_symbol_by_first_category", {})
         start_symbols = []
         for category in first_categories:
