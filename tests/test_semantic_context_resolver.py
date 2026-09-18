@@ -84,3 +84,57 @@ def test_end_to_end_learned_sense_does_not_leak_to_unrelated_relation():
     assert "which meaning" in unrelated.lower()
     assert slr.clarification.pending is not None
     assert slr.clarification.pending.word == "bat"
+
+
+def test_explicit_semantic_profile_resolves_flying_to_animal_sense():
+    slr = SLR()
+    parsed = slr.parser.parse("The bat is flying")
+    context = slr.semantic_context.extract(parsed, "The bat is flying")
+
+    slr.contextual_meaning.learn(
+        "bat", "bat.animal", ["bat.animal", "bat.sports"],
+        "Tom sees bat",
+        semantic_context=slr.semantic_context.extract(
+            slr.parser.parse("Tom sees bat"), "Tom sees bat"
+        ),
+    )
+
+    assert "FLY" in context.concepts
+    assert slr.semantic_context_resolver.resolve(
+        "bat", context, ["bat.animal", "bat.sports"]
+    ) == "bat.animal"
+
+
+def test_explicit_semantic_profile_resolves_hit_to_sports_sense():
+    slr = SLR()
+    parsed = slr.parser.parse("Tom hits bat")
+    context = slr.semantic_context.extract(parsed, "Tom hits bat")
+
+    slr.contextual_meaning.learn(
+        "bat", "bat.sports", ["bat.animal", "bat.sports"],
+        "Tom hits bat", semantic_context=context,
+    )
+
+    assert "HIT" in context.concepts
+    assert slr.semantic_context_resolver.resolve(
+        "bat", context, ["bat.animal", "bat.sports"]
+    ) == "bat.sports"
+
+
+def test_explicit_semantic_profile_does_not_guess_from_unlisted_context():
+    slr = SLR()
+    learned = slr.parser.parse("Tom sees bat")
+    learned_context = slr.semantic_context.extract(learned, "Tom sees bat")
+
+    slr.contextual_meaning.learn(
+        "bat", "bat.animal", ["bat.animal", "bat.sports"],
+        "Tom sees bat", semantic_context=learned_context,
+    )
+
+    unrelated = slr.parser.parse("Tom eats bat")
+    unrelated_context = slr.semantic_context.extract(unrelated, "Tom eats bat")
+
+    assert "EAT" in unrelated_context.concepts
+    assert slr.semantic_context_resolver.resolve(
+        "bat", unrelated_context, ["bat.animal", "bat.sports"]
+    ) is None
