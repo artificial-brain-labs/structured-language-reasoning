@@ -62,6 +62,34 @@
       }
     },
     "TREE": {"parent": "PLANT", "properties": {}},
-    "GARDEN": {"parent": "THING", "properties": {}}
+    "GARDEN": {"parent": "THING", "properties": {}},
+    "NON_LIVING_THING": {
+      "parent": "THING",
+      "properties": {
+        "alive": false,
+        "can_die": false,
+        "grows_or_develops": false
+      }
+    },
+    "OBJECT": {
+      "parent": "NON_LIVING_THING",
+      "properties": {}
+    },
+    "EQUIPMENT": {
+      "parent": "OBJECT",
+      "properties": {}
+    },
+    "SPORTS_EQUIPMENT": {
+      "parent": "EQUIPMENT",
+      "properties": {}
+    },
+    "BAT_ANIMAL": {
+      "parent": "MAMMAL",
+      "properties": {}
+    },
+    "BAT_EQUIPMENT": {
+      "parent": "SPORTS_EQUIPMENT",
+      "properties": {}
+    }
   }
 }
