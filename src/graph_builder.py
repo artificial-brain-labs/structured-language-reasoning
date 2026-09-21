@@ -25,7 +25,7 @@ class SemanticGraphBuilder:
             graph.add_node(GraphNode(entity_id, node_type, data.get("name", entity_id), concept))
 
         for index, item in enumerate(memory.memories, 1):
-            subject_id = self._ensure_value_node(graph, memory, item.subject)
+            subject_id = self._ensure_subject_node(graph, memory, item.subject)
             object_id = self._ensure_value_node(graph, memory, item.object)
             attributes = {
                 "created_at": item.created_at,
@@ -76,6 +76,24 @@ class SemanticGraphBuilder:
                     "support": list(record.support),
                 })
         return matches
+
+    def _ensure_subject_node(self, graph, memory, value):
+        if value in graph.nodes:
+            return value
+        if memory is not None and value in memory.entities:
+            data = memory.entities[value]
+            graph.add_node(
+                GraphNode(
+                    value,
+                    "ENTITY",
+                    data.get("name", value),
+                    data.get("concept", "UNKNOWN"),
+                )
+            )
+            return value
+        node_id = f"entity:{value}"
+        graph.add_node(GraphNode(node_id, "ENTITY", str(value), "UNKNOWN"))
+        return node_id
 
     def _ensure_value_node(self, graph, memory, value):
         if value in graph.nodes:
