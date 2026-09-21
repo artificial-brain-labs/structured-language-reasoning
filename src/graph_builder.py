@@ -44,7 +44,7 @@ class SemanticGraphBuilder:
                 continue
             object_id = self._ensure_value_node(graph, memory, item.get("object"))
             graph.add_edge(GraphEdge(
-                edge_id=f"derived_{index:04d}", subject=subject_id,
+                edge_id=item.get("edge_id", f"derived_{index:04d}"), subject=subject_id,
                 predicate=item["predicate"], object=object_id, status="DERIVED",
                 source=item.get("source", "INFERENCE"), confidence=item.get("confidence", 1.0),
                 support=tuple(self._support_ids(item.get("support", []))),
