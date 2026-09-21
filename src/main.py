@@ -234,6 +234,9 @@ class SLR:
         accepted_meanings = self.clarification_policy.accepted_meanings("entity_identity")
         if parsed.meaning not in accepted_meanings:
             return None
+        # A clarification response is still explicit user communication.
+        # Preserve it in the evidence ledger before applying its classification.
+        self._record_observation(text, parsed)
         pending_entity = request.entity_id
         pending_name = self.user_memory.entities[pending_entity]["name"]
         if parsed.subject_word.lower() != pending_name.lower():
