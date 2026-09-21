@@ -125,7 +125,7 @@ class SemanticGraphQuery:
         return {"subject": edge.subject, "predicate": edge.predicate,
                 "object": self._node_concept(edge.object) or edge.object,
                 "status": edge.status, "source": edge.source,
-                "support": list(edge.support), "rule": edge.attributes.get("rule")}
+                "support": list(edge.support) or [edge.edge_id], "rule": edge.attributes.get("rule")}
 
     def _proof(self, subject_id, target_concept, path):
         return {"subject": subject_id, "target": target_concept, "status": "PROVEN", "path": path}
