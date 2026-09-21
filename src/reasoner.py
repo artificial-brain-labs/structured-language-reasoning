@@ -97,6 +97,38 @@ class Reasoner:
     def infer_is_a(self, entity_id):
         """Compatibility facade over the canonical graph reasoning kernel."""
         graph = self.graph_builder.build(self.memory)
+        reasoning_graph = graph
+
+        # Legacy callers may ask for the ontology ancestors of a class handle
+        # without first asserting an entity classification. Represent that
+        # existing class identity as a temporary seed edge and send it through
+        # the same canonical reasoning kernel. The seed is never persisted.
+        entity = self.memory.entities.get(entity_id)
+        concept = entity.get("concept") if entity else None
+        if (
+            not any(edge.subject == entity_id and edge.predicate == "IS_A"
+                    for edge in graph.asserted_edges())
+            and concept
+            and self.ontology.class_exists(concept)
+        ):
+            concept_node = next(
+                (node.node_id for node in graph.nodes.values()
+                 if node.node_type == "CLASS" and node.concept == concept),
+                None,
+            )
+            if concept_node is not None:
+                from .semantic_graph import GraphEdge
+                reasoning_graph.add_edge(
+                    GraphEdge(
+                        edge_id=f"compatibility_seed:{entity_id}",
+                        subject=entity_id,
+                        predicate="IS_A",
+                        object=concept_node,
+                        status="ASSERTED",
+                        source="SYSTEM",
+                    )
+                )
+
         return [
             {
                 "entity": edge.subject,
@@ -107,7 +139,7 @@ class Reasoner:
                 "support": list(edge.support),
                 "rule": edge.attributes.get("rule"),
             }
-            for edge in self.graph_reasoner.reason(graph).edges
+            for edge in self.graph_reasoner.reason(reasoning_graph).edges
             if edge.subject == entity_id
         ]
     def derive(self):
