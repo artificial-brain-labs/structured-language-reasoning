@@ -104,6 +104,12 @@ class SLR:
 
         derived = []
         for edge in reasoning.edges:
+            self.user_memory.record_derivation(
+                subject=edge.subject,
+                predicate=edge.predicate,
+                object=edge.object,
+                support=edge.support,
+            )
             derived.append({
                 "edge_id": edge.edge_id,
                 "subject": edge.subject,
