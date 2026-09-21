@@ -39,7 +39,7 @@ def test_reasoner_derives_ontology_ancestors_without_persisting_them(tmp_path):
         "concept:thing",
     }
     assert all(edge.status == "DERIVED" for edge in result.edges)
-    assert all(edge.source == "REASONER" for edge in result.edges)
+    assert all(edge.source == "ONTOLOGY" for edge in result.edges)
     assert graph.derived_edges() == []
 
 
