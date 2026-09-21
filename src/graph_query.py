@@ -113,9 +113,10 @@ class SemanticGraphQuery:
                     current = parent
                 if concepts[-1] != target_concept:
                     continue
+                root_support = list(edge.support) or [edge.edge_id]
                 for child, parent in zip(concepts, concepts[1:]):
                     path.append({"subject": child, "predicate": edge.predicate, "object": parent,
-                                 "status": "DERIVED", "source": "ONTOLOGY", "support": [child],
+                                 "status": "DERIVED", "source": "ONTOLOGY", "support": root_support,
                                  "rule": "ONTOLOGY_PARENT"})
                 return self._proof(subject_id, target_concept, path)
         return None
