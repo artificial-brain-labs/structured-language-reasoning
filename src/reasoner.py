@@ -1,4 +1,6 @@
 from .inference_rules import InferenceRules
+from .graph_builder import SemanticGraphBuilder
+from .graph_reasoner import SemanticGraphReasoner
 
 
 class Reasoner:
@@ -6,6 +8,12 @@ class Reasoner:
         self.ontology = ontology
         self.memory = memory
         self.inference_rules = inference_rules or InferenceRules()
+        self.graph_reasoner = SemanticGraphReasoner(
+            ontology,
+            getattr(memory.relations, "schemas", {}),
+            self.inference_rules,
+        )
+        self.graph_builder = SemanticGraphBuilder(ontology)
 
     def relation_name_for_role(self, role):
         """Resolve a relation role using explicit declarative priority.
@@ -87,71 +95,33 @@ class Reasoner:
         return True
 
     def infer_is_a(self, entity_id):
-        """Return ontology-derived classifications without storing them."""
-        if entity_id not in self.memory.entities:
-            return []
-        concepts = self.explicit_types(entity_id)
-        if not concepts:
-            cached = self.memory.entities[entity_id]["concept"]
-            if cached != "UNKNOWN":
-                concepts = [cached]
-
-        relation_name = self.relation_name_for_role("canonical_taxonomic")
-        if not relation_name:
-            return []
-
-        results = []
-        for concept in concepts:
-            for ancestor in self.ontology.ancestors(concept):
-                results.append({
-                    "entity": entity_id,
-                    "predicate": relation_name,
-                    "object": ancestor,
-                    "status": "DERIVED",
-                    "source": "ONTOLOGY",
-                    "support": [concept],
-                })
-        return results
-
+        """Compatibility facade over the canonical graph reasoning kernel."""
+        graph = self.graph_builder.build(self.memory)
+        return [
+            {
+                "entity": edge.subject,
+                "predicate": edge.predicate,
+                "object": graph.nodes[edge.object].concept,
+                "status": edge.status,
+                "source": edge.source,
+                "support": list(edge.support),
+                "rule": edge.attributes.get("rule"),
+            }
+            for edge in self.graph_reasoner.reason(graph).edges
+            if edge.subject == entity_id
+        ]
     def derive(self):
-        """Compute declarative inference results without mutating memory.
-
-        Derived facts are returned separately from asserted memory. No rule
-        invents facts: every result is supported by an explicit rule and
-        existing knowledge.
-        """
-        derived = []
-        for rule in self.inference_rules.enabled():
-            rule_type = rule.get("type")
-            relation = rule.get("relation")
-            target = (rule.get("derive") or {}).get("predicate")
-            if rule_type != "TRANSITIVE" or not relation or not target:
-                continue
-
-            edges = [
-                memory for memory in self.memory.memories
-                if memory.status == "ASSERTED" and memory.predicate == relation
-            ]
-            for first in edges:
-                for second in edges:
-                    if first.object != second.subject:
-                        continue
-                    if first.subject == second.object:
-                        continue
-                    candidate = {
-                        "subject": first.subject,
-                        "predicate": target,
-                        "object": second.object,
-                        "status": "DERIVED",
-                        "source": "INFERENCE",
-                        "support": [first, second],
-                        "rule": rule.get("name"),
-                    }
-                    if not any(
-                        item["subject"] == candidate["subject"]
-                        and item["predicate"] == candidate["predicate"]
-                        and item["object"] == candidate["object"]
-                        for item in derived
-                    ):
-                        derived.append(candidate)
-        return derived
+        """Compatibility facade over the canonical graph reasoning kernel."""
+        graph = self.graph_builder.build(self.memory)
+        return [
+            {
+                "subject": edge.subject,
+                "predicate": edge.predicate,
+                "object": edge.object,
+                "status": edge.status,
+                "source": edge.source,
+                "support": list(edge.support),
+                "rule": edge.attributes.get("rule"),
+            }
+            for edge in self.graph_reasoner.reason(graph).edges
+        ]
