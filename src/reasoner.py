@@ -117,7 +117,7 @@ class Reasoner:
             {
                 "subject": edge.subject,
                 "predicate": edge.predicate,
-                "object": edge.object,
+                "object": (graph.nodes[edge.object].concept if edge.object in graph.nodes and graph.nodes[edge.object].node_type == "CLASS" else edge.object),
                 "status": edge.status,
                 "source": edge.source,
                 "support": list(edge.support),
