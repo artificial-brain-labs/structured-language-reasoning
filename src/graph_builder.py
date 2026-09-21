@@ -25,6 +25,7 @@ class SemanticGraphBuilder:
             graph.add_node(GraphNode(entity_id, node_type, data.get("name", entity_id), concept))
 
         for index, item in enumerate(memory.memories, 1):
+            subject_id = self._ensure_value_node(graph, memory, item.subject)
             object_id = self._ensure_value_node(graph, memory, item.object)
             attributes = {
                 "created_at": item.created_at,
@@ -32,7 +33,7 @@ class SemanticGraphBuilder:
                 "evidence": self._evidence_for_memory(memory, item),
             }
             graph.add_edge(GraphEdge(
-                edge_id=f"asserted_{index:04d}", subject=item.subject,
+                edge_id=f"asserted_{index:04d}", subject=subject_id,
                 predicate=item.predicate, object=object_id, status=item.status,
                 source=item.source, confidence=item.confidence,
                 support=tuple(item.support), attributes=attributes,
