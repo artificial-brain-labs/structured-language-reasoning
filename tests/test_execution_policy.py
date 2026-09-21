@@ -84,7 +84,7 @@ def test_derived_knowledge_has_provenance_and_is_not_stored():
 
     assert animal["status"] == "DERIVED"
     assert animal["source"] == "ONTOLOGY"
-    assert animal["support"] == ["CAT"]
+    assert animal["support"] == ["asserted_0001"]
     assert not any(
         item.subject == tom
         and item.predicate == "IS_A"
