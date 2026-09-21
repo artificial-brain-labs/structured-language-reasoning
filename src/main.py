@@ -21,6 +21,7 @@ from .clarification_manager import ClarificationManager
 from .clarification_policy import ClarificationPolicy
 from .operation_engine import OperationEngine
 from .semantic_graph import SemanticGraph
+from .graph_reasoner import SemanticGraphReasoner
 from .graph_builder import SemanticGraphBuilder
 from .tcm import TransientCommunicationMemory
 from .contextual_meaning_memory import ContextualMeaningMemory
@@ -80,6 +81,7 @@ class SLR:
 
         # The graph builder requires the same ontology data used by the reasoner.
         self.graph_builder = SemanticGraphBuilder(self.ontology)
+        self.graph_reasoner = SemanticGraphReasoner(self.ontology, self.user_memory.relations.schemas)
         self.graph = SemanticGraph()
         self._refresh_graph()
 
@@ -95,22 +97,29 @@ class SLR:
         self.response_policy = ResponsePolicy(self.executor.definitions)
 
     def _refresh_graph(self):
-        derived = list(self.reasoner.derive())
-        for entity_id in self.user_memory.entities:
-            inferred = self.reasoner.infer_is_a(entity_id)
-            derived.extend(inferred)
-            for item in inferred:
-                self.user_memory.record_derivation(
-                    subject=item["entity"],
-                    predicate=item["predicate"],
-                    object=item["object"],
-                    support=item.get("support", ()),
-                )
+        # Reasoning starts from an asserted-only graph. Derived edges produced
+        # by the canonical reasoner are projected only after that pass.
+        asserted_graph = self.graph_builder.build(self.user_memory)
+        reasoning = self.graph_reasoner.reason(asserted_graph)
+
+        derived = []
+        for edge in reasoning.edges:
+            derived.append({
+                "edge_id": edge.edge_id,
+                "subject": edge.subject,
+                "predicate": edge.predicate,
+                "object": edge.object,
+                "status": edge.status,
+                "source": edge.source,
+                "confidence": edge.confidence,
+                "support": list(edge.support),
+                "rule": edge.attributes.get("rule"),
+            })
+
         self.graph = self.graph_builder.build(self.user_memory, derived=derived)
         if hasattr(self, "query"):
             self.query.graph = self.graph
             self.query.graph_query.graph = self.graph
-
     def _lexical_ambiguity(self, parsed, original_text, semantic_context=None):
         """Return the first unresolved lexical ambiguity in this sentence."""
         checked = set()
