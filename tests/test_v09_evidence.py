@@ -177,3 +177,18 @@ def test_derived_evidence_is_deduplicated_without_becoming_assertion():
         and record.object == item["object"]
         for record in slr.user_memory.evidence.records
     )
+
+def test_entity_clarification_response_is_preserved_as_observation():
+    slr = SLR()
+
+    slr.process("Tom is sleeping.")
+    slr.process("Tom is my cat.")
+
+    observations = [
+        record
+        for record in slr.user_memory.evidence.records
+        if record.kind == EvidenceKind.OBSERVATION
+    ]
+    assert observations
+    assert observations[-1].content == "Tom is my cat."
+    assert observations[-1].confirmed is False
