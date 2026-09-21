@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from .inference_rules import InferenceRules
 from .relations import RelationSchema
 from .semantic_graph import GraphEdge, SemanticGraph
 
@@ -19,9 +20,10 @@ class SemanticGraphReasoner:
     Only ASSERTED classification edges may serve as evidence for derivation.
     """
 
-    def __init__(self, ontology, relation_schemas=None):
+    def __init__(self, ontology, relation_schemas=None, inference_rules=None):
         self.ontology = ontology
         self.relation_schemas = relation_schemas or RelationSchema().schemas
+        self.inference_rules = inference_rules or InferenceRules()
 
     def _relation_for_role(self, role):
         candidates = [
@@ -36,26 +38,60 @@ class SemanticGraphReasoner:
         return matches[0] if len(matches) == 1 else None
 
     def reason(self, graph: SemanticGraph) -> ReasoningResult:
+        """Derive only from asserted graph evidence and declared knowledge.
+
+        Ontology inheritance is derived from asserted taxonomic edges. Other
+        transitive derivations are driven by the declarative inference-rule
+        registry. Derived edges never become evidence during the same pass.
+        """
         derived = []
         taxonomic_relation = self._relation_for_role("canonical_taxonomic")
-        if not taxonomic_relation:
-            return ReasoningResult(())
 
-        for edge in graph.asserted_edges():
-            if edge.predicate != taxonomic_relation:
-                continue
-            subject = graph.nodes.get(edge.subject)
-            concept_node = graph.nodes.get(edge.object)
-            if not subject or not concept_node:
-                continue
-            concept = concept_node.concept
-            if not self.ontology.class_exists(concept):
-                continue
-            for ancestor in self.ontology.ancestors(concept):
-                target_id = self._concept_node(graph, ancestor)
-                if target_id is None:
+        if taxonomic_relation:
+            for edge in graph.asserted_edges():
+                if edge.predicate != taxonomic_relation:
                     continue
-                derived.append(self._edge(edge, target_id, ancestor, len(derived) + 1, taxonomic_relation))
+                concept_node = graph.nodes.get(edge.object)
+                if concept_node is None or not self.ontology.class_exists(concept_node.concept):
+                    continue
+                for ancestor in self.ontology.ancestors(concept_node.concept):
+                    target_id = self._concept_node(graph, ancestor)
+                    if target_id is None:
+                        continue
+                    derived.append(
+                        self._edge(
+                            edge, target_id, ancestor, len(derived) + 1,
+                            taxonomic_relation, support=(edge.edge_id,),
+                            rule="ONTOLOGY_PARENT",
+                        )
+                    )
+
+        for rule in self.inference_rules.enabled():
+            if rule.get("type") != "TRANSITIVE":
+                continue
+            relation = rule.get("relation")
+            target = (rule.get("derive") or {}).get("predicate")
+            if not relation or not target:
+                continue
+            asserted = [edge for edge in graph.asserted_edges() if edge.predicate == relation]
+            for first in asserted:
+                for second in asserted:
+                    if first.object != second.subject or first.subject == second.object:
+                        continue
+                    derived.append(
+                        GraphEdge(
+                            edge_id=f"derived:{len(derived) + 1:04d}",
+                            subject=first.subject,
+                            predicate=target,
+                            object=second.object,
+                            status="DERIVED",
+                            source="INFERENCE",
+                            confidence=1.0,
+                            support=(first.edge_id, second.edge_id),
+                            attributes={"rule": rule.get("name")},
+                        )
+                    )
+
         return ReasoningResult(tuple(self._deduplicate(derived)))
 
     def _concept_node(self, graph, concept):
@@ -64,17 +100,21 @@ class SemanticGraphReasoner:
                 return node.node_id
         return None
 
-    def _edge(self, support_edge, target_id, ancestor, index, taxonomic_relation):
+    def _edge(self, support_edge, target_id, ancestor, index, taxonomic_relation, support=(), rule=None):
         return GraphEdge(
             edge_id=f"derived:{index:04d}",
             subject=support_edge.subject,
             predicate=taxonomic_relation,
             object=target_id,
             status="DERIVED",
-            source="REASONER",
+            source="ONTOLOGY",
             confidence=1.0,
-            support=(support_edge.edge_id,),
-            attributes={"reason": "ontology_ancestor", "concept": ancestor},
+            support=tuple(support) or (support_edge.edge_id,),
+            attributes={
+                "reason": "ontology_ancestor",
+                "concept": ancestor,
+                "rule": rule or "ONTOLOGY_PARENT",
+            },
         )
 
     def _deduplicate(self, edges):
