@@ -1,7 +1,7 @@
 # Change 0002 — Canonical Reasoning Compatibility Boundary
 
 ## Status
-Implementation in progress
+Implementation in progress — compatibility validation exposed two remaining boundary defects
 
 ## Date
 2026-09-22
@@ -12,6 +12,12 @@ Architecture / Reasoning / Compatibility / Provenance
 ## Problem
 Change 0001 established SemanticGraphReasoner as the authoritative reasoning kernel and changed ontology inheritance into a canonical proof chain: CAT -> FELINE -> MAMMAL -> ANIMAL.
 The synchronized test suite exposed compatibility regressions because legacy reasoning APIs and some consumers still assumed the earlier direct-ancestor projection. Identity explanations also exposed an entity-node representation problem: an entity such as Tom has concept UNKNOWN, but its display name must remain Tom rather than rendering UNKNOWN.
+
+After the first Change 0002 implementation, the complete suite reached 243 passing tests with two remaining failures:
+1. The canonical explanation regression test compared human-readable proof labels directly with graph node IDs.
+2. The legacy Reasoner.derive() projection returned ontology class concepts where the legacy API requires the underlying memory entity IDs for explicitly represented class entities.
+
+These are compatibility-boundary representation defects, not reasons to change the canonical reasoning model.
 
 ## Existing Architecture
 Canonical reasoning is:
@@ -31,11 +37,14 @@ Preserve the canonical graph representation and adapt compatibility consumers to
 6. Canonical derived graph edges remain the source of truth for proof paths and provenance.
 7. Tests whose expectations require the obsolete direct Tom -> ANIMAL derived edge must be migrated to assert the canonical chain rather than reintroducing duplicate direct derivations.
 8. Unknown raw subjects remain representable in the graph without inventing their identity or concept.
+9. Explanation validation must compare proof labels through the graph's node-label representation rather than treating display labels as graph IDs.
+10. Reasoner.derive() must preserve legacy entity IDs for graph nodes that correspond to memory entities, including class entities such as the explicit MAMMAL and ANIMAL entities used by legacy callers.
 
 ## Rationale
 The compatibility boundary allows existing callers to continue receiving stable semantic results while preserving a single reasoning implementation.
 Reintroducing direct ancestor edges solely for legacy consumers would create two competing representations of the same inference and weaken provenance auditing.
 Display-name handling is likewise presentation/identity mapping, not reasoning.
+The final two fixes keep representation translation at the compatibility boundary rather than altering canonical graph semantics.
 
 ## Required Invariants
 - No derived fact becomes asserted user memory.
@@ -46,6 +55,8 @@ Display-name handling is likewise presentation/identity mapping, not reasoning.
 - Unknown concepts remain unknown; no name-based type inference is introduced.
 - Graph-local adapter IDs do not replace memory-level entity identity.
 - Canonical proof chains remain traversable by query and explanation layers.
+- Explanation labels are presentation values and are never mistaken for canonical graph IDs.
+- Legacy derive() preserves memory entity IDs when the graph node originated from a memory entity.
 
 ## Implementation Plan
 1. Inspect legacy Reasoner return expectations and canonical graph identity boundaries.
@@ -54,23 +65,16 @@ Display-name handling is likewise presentation/identity mapping, not reasoning.
 4. Correct identity-proof display to use entity names where appropriate.
 5. Migrate obsolete tests from direct-ancestor expectations to canonical proof-chain expectations where the architecture has intentionally changed.
 6. Preserve the unknown-subject graph boundary and compatibility behavior for manually inserted unknown subjects.
-7. Run the complete test suite.
-8. Update this document with final validation and commit references.
+7. Validate explanation paths against graph node labels rather than graph IDs.
+8. Preserve memory entity IDs in Reasoner.derive() output while retaining canonical graph reasoning.
+9. Run the complete test suite.
+10. Update this document with final validation and commit references.
 
 ## Testing Plan
 Cover entity classification compatibility, class-handle compatibility, the canonical CAT -> FELINE -> MAMMAL -> ANIMAL chain, provenance and non-persistence of derived knowledge, identity explanation using entity names, unknown graph subjects, legacy derive() output, and asserted versus derived separation.
 
 ## Validation
-
-Implementation is complete. Full pytest -q execution is pending in the project Codespace.
-
-The implementation:
-- projects canonical ontology derivations through the legacy Reasoner compatibility surface;
-- preserves canonical derived edges and provenance;
-- maps graph-local unknown-subject IDs back to their legacy subject representation;
-- preserves entity display names in identity/classification explanations;
-- updates graph tests to validate the canonical CAT -> FELINE -> MAMMAL -> ANIMAL chain rather than requiring obsolete direct Tom -> ANIMAL edges.
-
+The first implementation pass reached 243 passing tests with two remaining failures. Those failures are documented above and are being resolved at the compatibility boundary.
 
 ## Relationship to Change 0001
 Change 0001 defines the canonical reasoning representation.
