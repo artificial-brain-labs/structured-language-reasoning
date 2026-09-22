@@ -25,13 +25,20 @@ def test_ontology_reasoning_appears_as_derived_graph_edge_only():
 
     tom = slr.user_memory.find_named_entity("Tom")
     derived = [
-        edge for edge in slr.graph.edges_from(tom, "IS_A")
+        edge for edge in slr.graph.edges.values()
         if edge.status == "DERIVED"
-        and slr.graph.nodes[edge.object].concept == "ANIMAL"
+        and edge.predicate == "IS_A"
     ]
 
-    assert len(derived) == 1
-    assert derived[0].source == "ONTOLOGY"
+    concepts = [
+        (slr.graph.nodes[edge.subject].concept, slr.graph.nodes[edge.object].concept)
+        for edge in derived
+    ]
+
+    assert ("CAT", "FELINE") in concepts
+    assert ("FELINE", "MAMMAL") in concepts
+    assert ("MAMMAL", "ANIMAL") in concepts
+    assert all(edge.source == "ONTOLOGY" for edge in derived)
     assert not any(
         memory.subject == tom
         and memory.predicate == "IS_A"
