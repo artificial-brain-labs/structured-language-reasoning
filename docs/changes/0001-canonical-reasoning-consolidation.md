@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented — validation pending local test execution
+Implemented — validation passed
 
 ## Date
 
@@ -27,7 +27,7 @@ This creates two risks:
 
 The intended V1.x flow is:
 
-```text
+```
 Asserted User Knowledge
         ↓
    Semantic Graph
@@ -49,7 +49,7 @@ Query and explanation components must consume the asserted/derived graph produce
 
 Target architecture:
 
-```text
+```
                  ┌── Query
                  │
 Asserted Graph → Graph Reasoner → Derived Graph
@@ -119,6 +119,7 @@ Implemented the first consolidation pass:
 - Each derived step retains support pointing to the original asserted graph evidence.
 - `SemanticGraphQuery.explain_classification()` now traverses and formats those actual canonical graph edges instead of independently walking `Ontology.parent()`.
 - Added regression coverage proving the canonical derived chain and that explanation steps correspond to graph edges.
+- The Change 0002 compatibility boundary preserves legacy Reasoner behavior without introducing a second reasoning implementation.
 
 ## Implementation Plan
 
@@ -143,19 +144,18 @@ Tests must cover:
 
 ## Validation
 
-Repository-level test execution could not be run from the available environment because the Codespace repository is not mounted in the current runtime. The changes therefore remain **validation pending** until `pytest -q` is run in the project Codespace.
+Validated in the project Codespace on 2026-09-22:
 
-Expected relevant commits:
+```
+pytest -q
+245 passed
+```
 
-- `f11dc89` — canonical ontology proof chain
-- `a22e837` — explanation consumes canonical graph edges
-- `bc552bd` — canonical reasoning regression tests
+The completed validation covers the canonical ontology proof chain, provenance, graph-based explanations, transitive configured inference, unknown entities, legacy compatibility behavior, and asserted-versus-derived separation.
 
 ## Future Considerations
 
 The canonical reasoner now represents ontology inheritance as a multi-step graph chain so proof structure is itself canonical. A future change should preserve this property. Alternative provenance paths should remain representable when multiple independent derivations support the same graph fact.
-
-Alternative provenance paths should also remain representable when multiple independent derivations support the same graph fact.
 
 ## Historical Note
 
