@@ -54,17 +54,19 @@ class SemanticGraphReasoner:
                 concept_node = graph.nodes.get(edge.object)
                 if concept_node is None or not self.ontology.class_exists(concept_node.concept):
                     continue
+                current_id = edge.object
                 for ancestor in self.ontology.ancestors(concept_node.concept):
                     target_id = self._concept_node(graph, ancestor)
                     if target_id is None:
                         continue
                     derived.append(
                         self._edge(
-                            edge, target_id, ancestor, len(derived) + 1,
+                            edge, current_id, target_id, ancestor, len(derived) + 1,
                             taxonomic_relation, support=(edge.edge_id,),
                             rule="ONTOLOGY_PARENT",
                         )
                     )
+                    current_id = target_id
 
         for rule in self.inference_rules.enabled():
             if rule.get("type") != "TRANSITIVE":
@@ -100,10 +102,10 @@ class SemanticGraphReasoner:
                 return node.node_id
         return None
 
-    def _edge(self, support_edge, target_id, ancestor, index, taxonomic_relation, support=(), rule=None):
+    def _edge(self, support_edge, subject_id, target_id, ancestor, index, taxonomic_relation, support=(), rule=None):
         return GraphEdge(
             edge_id=f"derived:{index:04d}",
-            subject=support_edge.subject,
+            subject=subject_id,
             predicate=taxonomic_relation,
             object=target_id,
             status="DERIVED",
