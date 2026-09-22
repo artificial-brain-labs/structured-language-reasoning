@@ -62,7 +62,6 @@ class SemanticGraphQuery:
                 if not self._is_identity(edge.predicate) or neighbor in visited:
                     continue
                 visited.add(neighbor)
-                results.append((neighbor, path + [edge])) if False else None
                 queue.append((neighbor, path + [edge]))
         return results
 
