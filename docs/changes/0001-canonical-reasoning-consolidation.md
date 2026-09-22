@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Implemented — validation pending local test execution
 
 ## Date
 
@@ -104,11 +104,21 @@ After implementation:
 
 1. `SemanticGraphReasoner` remains the authoritative V1.x graph reasoning mechanism.
 2. Query results must be based on canonical asserted/derived graph state.
-3. Explanations must trace canonical derived evidence.
-4. Derived knowledge must remain distinct from asserted knowledge.
-5. Derived edges must retain provenance/support.
-6. No guessing or implicit assertion promotion may be introduced.
-7. Legacy reasoning APIs must not create a competing reasoning source of truth.
+3. Ontology derivations must form their proof chain in the canonical derived graph.
+4. Explanations must trace canonical derived evidence.
+5. Derived knowledge must remain distinct from asserted knowledge.
+6. Derived edges must retain provenance/support.
+7. No guessing or implicit assertion promotion may be introduced.
+8. Legacy reasoning APIs must not create a competing reasoning source of truth.
+
+## Implementation
+
+Implemented the first consolidation pass:
+
+- `SemanticGraphReasoner` now emits ontology inheritance as a canonical chain of derived graph edges (`CAT -> FELINE -> MAMMAL -> ANIMAL`) rather than unrelated direct ancestor edges from the original entity.
+- Each derived step retains support pointing to the original asserted graph evidence.
+- `SemanticGraphQuery.explain_classification()` now traverses and formats those actual canonical graph edges instead of independently walking `Ontology.parent()`.
+- Added regression coverage proving the canonical derived chain and that explanation steps correspond to graph edges.
 
 ## Implementation Plan
 
@@ -133,15 +143,17 @@ Tests must cover:
 
 ## Validation
 
-Pending implementation and test execution.
+Repository-level test execution could not be run from the available environment because the Codespace repository is not mounted in the current runtime. The changes therefore remain **validation pending** until `pytest -q` is run in the project Codespace.
 
-## Commits
+Expected relevant commits:
 
-Pending implementation.
+- `f11dc89` — canonical ontology proof chain
+- `a22e837` — explanation consumes canonical graph edges
+- `bc552bd` — canonical reasoning regression tests
 
 ## Future Considerations
 
-The canonical reasoner currently derives ontology ancestors directly from an asserted classification. If proof representation requires a multi-step conceptual path, the representation should be designed so that proof structure remains canonical rather than reconstructed independently by consumers.
+The canonical reasoner now represents ontology inheritance as a multi-step graph chain so proof structure is itself canonical. A future change should preserve this property. Alternative provenance paths should remain representable when multiple independent derivations support the same graph fact.
 
 Alternative provenance paths should also remain representable when multiple independent derivations support the same graph fact.
 
