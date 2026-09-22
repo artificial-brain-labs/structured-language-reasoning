@@ -87,38 +87,33 @@ class SemanticGraphQuery:
         return None
 
     def explain_classification(self, subject_id, target_concept):
+        """Explain classification using only canonical graph edges.
+
+        The query layer formats the derivation already produced by
+        SemanticGraphReasoner. It does not independently traverse ontology
+        parents or manufacture derived proof steps.
+        """
         if subject_id not in self.graph.nodes:
             return None
         for entity_id, identity_path in self._identity_paths(subject_id):
-            for edge, neighbor in self._neighbors(entity_id, classification_only=True):
-                if not self._is_taxonomic(edge.predicate) or edge.status != "ASSERTED":
-                    continue
-                source_concept = self._node_concept(neighbor)
-                if source_concept is None or source_concept == "UNKNOWN":
-                    continue
-                path = list(identity_path) + [self._proof_edge(edge)]
-                if source_concept == target_concept:
-                    return self._proof(subject_id, target_concept, path)
-                if self.ontology is None or not self.ontology.is_a(source_concept, target_concept):
-                    continue
-                concepts = [source_concept]
-                current = source_concept
-                seen = {current}
-                while current != target_concept:
-                    parent = self.ontology.parent(current)
-                    if parent is None or parent in seen:
-                        break
-                    concepts.append(parent)
-                    seen.add(parent)
-                    current = parent
-                if concepts[-1] != target_concept:
-                    continue
-                root_support = list(edge.support) or [edge.edge_id]
-                for child, parent in zip(concepts, concepts[1:]):
-                    path.append({"subject": child, "predicate": edge.predicate, "object": parent,
-                                 "status": "DERIVED", "source": "ONTOLOGY", "support": root_support,
-                                 "rule": "ONTOLOGY_PARENT"})
-                return self._proof(subject_id, target_concept, path)
+            queue = [(entity_id, list(identity_path))]
+            visited = {entity_id}
+            while queue:
+                current, path = queue.pop(0)
+                for edge, neighbor in self._neighbors(current, classification_only=True):
+                    if edge in path:
+                        continue
+                    next_path = path + [edge]
+                    if self._is_taxonomic(edge.predicate) and self._node_concept(neighbor) == target_concept:
+                        return self._proof(
+                            subject_id,
+                            target_concept,
+                            [self._proof_edge(item) for item in next_path],
+                        )
+                    if neighbor not in visited:
+                        visited.add(neighbor)
+                        queue.append((neighbor, next_path))
+
         return None
 
     def _proof_edge(self, edge):
