@@ -11,6 +11,14 @@ class SemanticGraphQuery:
         node = self.graph.nodes.get(node_id)
         return node.concept if node else None
 
+    def _node_label(self, node_id):
+        node = self.graph.nodes.get(node_id)
+        if node is None:
+            return node_id
+        if node.node_type == "ENTITY":
+            return node.name
+        return node.concept or node.name or node_id
+
     def _schema(self, predicate):
         return self.relation_schemas.get(predicate) or {}
 
@@ -25,7 +33,6 @@ class SemanticGraphQuery:
         return bool(self._schema(predicate).get("traversable"))
 
     def _neighbors(self, subject_id, classification_only=False):
-        """Return schema-permitted traversal edges, including symmetric reverse traversal."""
         results = []
         for edge in self.graph.edges_from(subject_id):
             if edge.status == "CONFLICTED" or not self._traversable(edge.predicate):
@@ -55,6 +62,7 @@ class SemanticGraphQuery:
                 if not self._is_identity(edge.predicate) or neighbor in visited:
                     continue
                 visited.add(neighbor)
+                results.append((neighbor, path + [edge])) if False else None
                 queue.append((neighbor, path + [edge]))
         return results
 
@@ -87,12 +95,7 @@ class SemanticGraphQuery:
         return None
 
     def explain_classification(self, subject_id, target_concept):
-        """Explain classification using only canonical graph edges.
-
-        The query layer formats the derivation already produced by
-        SemanticGraphReasoner. It does not independently traverse ontology
-        parents or manufacture derived proof steps.
-        """
+        """Explain classification using only canonical graph edges."""
         if subject_id not in self.graph.nodes:
             return None
         for entity_id, identity_path in self._identity_paths(subject_id):
@@ -113,17 +116,16 @@ class SemanticGraphQuery:
                     if neighbor not in visited:
                         visited.add(neighbor)
                         queue.append((neighbor, next_path))
-
         return None
 
     def _proof_edge(self, edge):
-        return {"subject": edge.subject, "predicate": edge.predicate,
-                "object": self._node_concept(edge.object) or edge.object,
-                "status": edge.status, "source": edge.source,
-                "support": list(edge.support) or [edge.edge_id], "rule": edge.attributes.get("rule")}
+        return {"subject": self._node_label(edge.subject), "predicate": edge.predicate,
+                "object": self._node_label(edge.object), "status": edge.status,
+                "source": edge.source, "support": list(edge.support) or [edge.edge_id],
+                "rule": edge.attributes.get("rule")}
 
     def _proof(self, subject_id, target_concept, path):
-        return {"subject": subject_id, "target": target_concept, "status": "PROVEN", "path": path}
+        return {"subject": self._node_label(subject_id), "target": target_concept, "status": "PROVEN", "path": path}
 
     def objects(self, subject_id, predicate):
         return [edge.object for edge in self.graph.edges_from(subject_id, predicate) if edge.status != "CONFLICTED"]
