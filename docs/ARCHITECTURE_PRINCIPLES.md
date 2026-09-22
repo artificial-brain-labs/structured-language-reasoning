@@ -137,6 +137,29 @@ Legacy graph/inference modules, where retained for compatibility, must be facade
 
 Every asserted user-memory edge projected into the semantic graph should be traceable to the corresponding evidence record when user evidence is available. Derived edges must identify their supporting graph evidence and derivation mechanism.
 
+## 16. Change Documentation and Historical Traceability
+
+Every meaningful architecture, behavior, semantic, reasoning, memory, governance, knowledge-representation, or externally observable system change must have a corresponding change document under `docs/changes/`.
+
+A change document must record, as applicable:
+
+- problem;
+- existing architecture;
+- decision;
+- rationale;
+- alternatives considered;
+- architectural impact;
+- implementation;
+- invariants;
+- tests;
+- validation;
+- associated commits;
+- future considerations.
+
+Change documentation is part of the development process, not an optional release note. Before modifying an established area of the system, developers should consult relevant historical change documents so that previous architectural decisions and constraints are preserved.
+
+A bug fix that exposes an architectural issue should also be documented when it changes or clarifies system behavior or architectural invariants.
+
 ## Compliance Gate
 
 Before a release is frozen, the implementation must pass the architecture-principle regression tests in `tests/test_architecture_principles.py` together with the complete existing test suite and the epistemic-state tests.
