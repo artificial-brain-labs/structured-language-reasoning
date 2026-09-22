@@ -154,21 +154,25 @@ class Reasoner:
             return node.name
         return subject_id
 
+    def _legacy_object(self, graph, object_id):
+        """Project graph objects without losing memory-level entity identity."""
+        if object_id in self.memory.entities:
+            return object_id
+        node = graph.nodes.get(object_id)
+        if node is None:
+            return object_id
+        return node.concept or node.name or object_id
+
     def derive(self):
         """Compatibility projection over canonical graph reasoning."""
         graph = self.graph_builder.build(self.memory)
         reasoning = self.graph_reasoner.reason(graph)
         results = []
         for edge in reasoning.edges:
-            object_value = (
-                graph.nodes[edge.object].concept
-                if edge.object in graph.nodes and graph.nodes[edge.object].node_type == "CLASS"
-                else edge.object
-            )
             results.append({
                 "subject": self._legacy_subject(graph, edge.subject),
                 "predicate": edge.predicate,
-                "object": object_value,
+                "object": self._legacy_object(graph, edge.object),
                 "status": edge.status,
                 "source": edge.source,
                 "support": list(edge.support),
