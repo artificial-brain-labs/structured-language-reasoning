@@ -61,7 +61,16 @@ Display-name handling is likewise presentation/identity mapping, not reasoning.
 Cover entity classification compatibility, class-handle compatibility, the canonical CAT -> FELINE -> MAMMAL -> ANIMAL chain, provenance and non-persistence of derived knowledge, identity explanation using entity names, unknown graph subjects, legacy derive() output, and asserted versus derived separation.
 
 ## Validation
-Pending implementation and full pytest -q execution.
+
+Implementation is complete. Full pytest -q execution is pending in the project Codespace.
+
+The implementation:
+- projects canonical ontology derivations through the legacy Reasoner compatibility surface;
+- preserves canonical derived edges and provenance;
+- maps graph-local unknown-subject IDs back to their legacy subject representation;
+- preserves entity display names in identity/classification explanations;
+- updates graph tests to validate the canonical CAT -> FELINE -> MAMMAL -> ANIMAL chain rather than requiring obsolete direct Tom -> ANIMAL edges.
+
 
 ## Relationship to Change 0001
 Change 0001 defines the canonical reasoning representation.
