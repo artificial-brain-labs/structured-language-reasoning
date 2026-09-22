@@ -37,13 +37,14 @@ def test_ontology_derived_edges_form_the_canonical_proof_chain():
 
     assert path
     assert [slr.query.graph_query._node_concept(edge.subject) for edge in path] == [
-        "CAT", "FELINE", "MAMMAL"
+        "UNKNOWN", "CAT", "FELINE", "MAMMAL"
     ]
     assert [slr.query.graph_query._node_concept(edge.object) for edge in path] == [
-        "FELINE", "MAMMAL", "ANIMAL"
+        "CAT", "FELINE", "MAMMAL", "ANIMAL"
     ]
-    assert all(edge.status == "DERIVED" for edge in path)
-    assert all(edge.source == "ONTOLOGY" for edge in path)
+    assert path[0].status == "ASSERTED"
+    assert all(edge.status == "DERIVED" for edge in path[1:])
+    assert all(edge.source == "ONTOLOGY" for edge in path[1:])
 
 
 def test_explanation_path_is_composed_from_actual_graph_edges():
