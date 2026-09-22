@@ -1,7 +1,7 @@
 # Change 0002 — Canonical Reasoning Compatibility Boundary
 
 ## Status
-Implementation in progress — compatibility validation exposed two remaining boundary defects
+Implemented — validation passed
 
 ## Date
 2026-09-22
@@ -17,7 +17,7 @@ After the first Change 0002 implementation, the complete suite reached 243 passi
 1. The canonical explanation regression test compared human-readable proof labels directly with graph node IDs.
 2. The legacy Reasoner.derive() projection returned ontology class concepts where the legacy API requires the underlying memory entity IDs for explicitly represented class entities.
 
-These are compatibility-boundary representation defects, not reasons to change the canonical reasoning model.
+These were compatibility-boundary representation defects, not reasons to change the canonical reasoning model.
 
 ## Existing Architecture
 Canonical reasoning is:
@@ -58,23 +58,38 @@ The final two fixes keep representation translation at the compatibility boundar
 - Explanation labels are presentation values and are never mistaken for canonical graph IDs.
 - Legacy derive() preserves memory entity IDs when the graph node originated from a memory entity.
 
-## Implementation Plan
-1. Inspect legacy Reasoner return expectations and canonical graph identity boundaries.
-2. Adapt compatibility projections to traverse canonical derivations from an entity's asserted classification.
-3. Preserve compatibility behavior for direct class-handle queries using the existing temporary compatibility seed.
-4. Correct identity-proof display to use entity names where appropriate.
-5. Migrate obsolete tests from direct-ancestor expectations to canonical proof-chain expectations where the architecture has intentionally changed.
-6. Preserve the unknown-subject graph boundary and compatibility behavior for manually inserted unknown subjects.
-7. Validate explanation paths against graph node labels rather than graph IDs.
-8. Preserve memory entity IDs in Reasoner.derive() output while retaining canonical graph reasoning.
-9. Run the complete test suite.
-10. Update this document with final validation and commit references.
+## Implementation
+Implemented the compatibility boundary as a projection over canonical graph reasoning:
 
-## Testing Plan
-Cover entity classification compatibility, class-handle compatibility, the canonical CAT -> FELINE -> MAMMAL -> ANIMAL chain, provenance and non-persistence of derived knowledge, identity explanation using entity names, unknown graph subjects, legacy derive() output, and asserted versus derived separation.
+- Legacy `Reasoner.infer_is_a()` projects canonical ontology derivations without performing independent inference.
+- Legacy `Reasoner.derive()` projects canonical derived edges back into the legacy representation.
+- Graph-local unknown-subject IDs are translated back to legacy subject representation.
+- Memory entity IDs are preserved when canonical graph objects correspond to memory entities.
+- Explanation rendering preserves entity names instead of exposing UNKNOWN as an identity label.
+- Explanation regression validation compares graph-edge labels through the graph's canonical node-label mapping.
+- The canonical graph reasoner remains the sole source of derivation.
+
+## Testing
+The final Codespace validation covers:
+
+- entity classification compatibility;
+- class-handle compatibility;
+- canonical CAT -> FELINE -> MAMMAL -> ANIMAL reasoning;
+- provenance and non-persistence of derived knowledge;
+- identity explanation using entity names;
+- unknown graph subjects;
+- legacy derive() output;
+- asserted versus derived separation.
 
 ## Validation
-The first implementation pass reached 243 passing tests with two remaining failures. Those failures are documented above and are being resolved at the compatibility boundary.
+Validated in the project Codespace on 2026-09-22:
+
+```
+pytest -q
+245 passed
+```
+
+Final result: **245 passed, 0 failed**.
 
 ## Relationship to Change 0001
 Change 0001 defines the canonical reasoning representation.
