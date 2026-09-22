@@ -56,19 +56,16 @@ def test_explanation_path_is_composed_from_actual_graph_edges():
 
     assert proof is not None
     assert len(proof["path"]) == 4
-    graph_edges = {edge.edge_id: edge for edge in slr.graph.edges.values()}
+
     for item in proof["path"]:
         if item["status"] == "ASSERTED":
             continue
         matches = [
-            edge for edge in graph_edges.values()
-            if edge.subject == item["subject"]
+            edge for edge in slr.graph.edges.values()
+            if edge.status == "DERIVED"
             and edge.predicate == item["predicate"]
-            and edge.object == next(
-                (node_id for node_id, node in slr.graph.nodes.items() if node.concept == item["object"]),
-                item["object"],
-            )
-            and edge.status == "DERIVED"
+            and slr.query.graph_query._node_label(edge.subject) == item["subject"]
+            and slr.query.graph_query._node_label(edge.object) == item["object"]
         ]
         assert matches
         assert item["support"] == list(matches[0].support)
