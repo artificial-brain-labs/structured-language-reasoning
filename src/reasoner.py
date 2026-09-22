@@ -16,11 +16,7 @@ class Reasoner:
         self.graph_builder = SemanticGraphBuilder(ontology)
 
     def relation_name_for_role(self, role):
-        """Resolve a relation role using explicit declarative priority.
-
-        A unique highest-priority declaration wins. Ties remain unresolved
-        rather than being decided by dictionary insertion order.
-        """
+        """Resolve a relation role using explicit declarative priority."""
         candidates = [
             (schema.get("priority", 0), name)
             for name, schema in self.memory.relations.schemas.items()
@@ -28,16 +24,12 @@ class Reasoner:
         ]
         if not candidates:
             return None
-
         highest = max(priority for priority, _ in candidates)
         matches = [name for priority, name in candidates if priority == highest]
         return matches[0] if len(matches) == 1 else None
 
     def explicit_types(self, entity_id):
-        """Return directly asserted user classifications for an entity.
-
-        These are explicit IS_A relations, not inferred classifications.
-        """
+        """Return directly asserted user classifications for an entity."""
         if entity_id not in self.memory.entities:
             return []
         types = []
@@ -62,11 +54,9 @@ class Reasoner:
         schema = self.memory.relations.get(predicate)
         if not schema:
             return False
-
         subject_concepts = self.known_types(subject_entity)
         object_concepts = self.known_types(object_entity)
 
-        # If an entity has no explicit type, do not guess one from its name.
         if not subject_concepts:
             subject_concept = self.memory.entities[subject_entity]["concept"]
             if subject_concept != "UNKNOWN":
@@ -79,81 +69,109 @@ class Reasoner:
 
         required_subject = schema.get("subject_type")
         required_object = schema.get("object_type")
-
         if required_subject and not any(self.ontology.is_a(concept, required_subject) for concept in subject_concepts):
             return False
-
-        # An explicit relation may refer to an entity whose type is not yet
-        # known. That is not permission to guess the type; it is an explicit
-        # observation whose object classification remains UNKNOWN. Whether
-        # such observations are accepted is declared by the relation schema.
         if required_object and not object_concepts:
             return schema.get("allow_unknown_object", False)
-
         if required_object and not any(self.ontology.is_a(concept, required_object) for concept in object_concepts):
             return False
         return True
 
-    def infer_is_a(self, entity_id):
-        """Compatibility facade over the canonical graph reasoning kernel."""
-        graph = self.graph_builder.build(self.memory)
-        reasoning_graph = graph
-
-        # Legacy callers may ask for the ontology ancestors of a class handle
-        # without first asserting an entity classification. Represent that
-        # existing class identity as a temporary seed edge and send it through
-        # the same canonical reasoning kernel. The seed is never persisted.
+    def _compatibility_seed(self, graph, entity_id):
+        """Return a temporary class seed for legacy class-handle queries."""
         entity = self.memory.entities.get(entity_id)
         concept = entity.get("concept") if entity else None
-        if (
-            not any(edge.subject == entity_id and edge.predicate == "IS_A"
-                    for edge in graph.asserted_edges())
-            and concept
-            and self.ontology.class_exists(concept)
-        ):
-            concept_node = next(
-                (node.node_id for node in graph.nodes.values()
-                 if node.node_type == "CLASS" and node.concept == concept),
-                None,
-            )
-            if concept_node is not None:
-                from .semantic_graph import GraphEdge
-                reasoning_graph.add_edge(
-                    GraphEdge(
-                        edge_id=f"compatibility_seed:{entity_id}",
-                        subject=entity_id,
-                        predicate="IS_A",
-                        object=concept_node,
-                        status="ASSERTED",
-                        source="SYSTEM",
-                    )
-                )
+        if not concept or not self.ontology.class_exists(concept):
+            return
 
-        return [
-            {
-                "entity": edge.subject,
+        if any(edge.subject == entity_id and edge.predicate == "IS_A" for edge in graph.asserted_edges()):
+            return
+
+        concept_node = next(
+            (node.node_id for node in graph.nodes.values()
+             if node.node_type == "CLASS" and node.concept == concept),
+            None,
+        )
+        if concept_node is None:
+            return
+
+        from .semantic_graph import GraphEdge
+        graph.add_edge(
+            GraphEdge(
+                edge_id=f"compatibility_seed:{entity_id}",
+                subject=entity_id,
+                predicate="IS_A",
+                object=concept_node,
+                status="ASSERTED",
+                source="SYSTEM",
+            )
+        )
+
+    def _canonical_result_for_entity(self, graph, entity_id):
+        """Project canonical class-chain derivations onto a legacy entity API.
+
+        This translates representation only. It does not perform inference.
+        """
+        asserted_types = self.explicit_types(entity_id)
+        if asserted_types:
+            starting_concepts = set(asserted_types)
+        else:
+            entity = self.memory.entities.get(entity_id, {})
+            concept = entity.get("concept")
+            starting_concepts = {concept} if concept and self.ontology.class_exists(concept) else set()
+
+        reasoning = self.graph_reasoner.reason(graph)
+        results = []
+        for edge in reasoning.edges:
+            subject_concept = graph.nodes.get(edge.subject).concept if edge.subject in graph.nodes else None
+            if subject_concept not in starting_concepts and not any(
+                self.ontology.is_a(concept, subject_concept) for concept in starting_concepts
+            ):
+                continue
+            object_concept = graph.nodes.get(edge.object).concept if edge.object in graph.nodes else edge.object
+            results.append({
+                "entity": entity_id,
                 "predicate": edge.predicate,
-                "object": graph.nodes[edge.object].concept,
+                "object": object_concept,
                 "status": edge.status,
                 "source": edge.source,
                 "support": list(edge.support),
                 "rule": edge.attributes.get("rule"),
-            }
-            for edge in self.graph_reasoner.reason(reasoning_graph).edges
-            if edge.subject == entity_id
-        ]
-    def derive(self):
-        """Compatibility facade over the canonical graph reasoning kernel."""
+            })
+        return results
+
+    def infer_is_a(self, entity_id):
+        """Compatibility projection over the canonical graph reasoning kernel."""
         graph = self.graph_builder.build(self.memory)
-        return [
-            {
-                "subject": edge.subject,
+        self._compatibility_seed(graph, entity_id)
+        return self._canonical_result_for_entity(graph, entity_id)
+
+    def _legacy_subject(self, graph, subject_id):
+        node = graph.nodes.get(subject_id)
+        if node is None:
+            return subject_id
+        if node.node_type == "ENTITY":
+            return node.name
+        return subject_id
+
+    def derive(self):
+        """Compatibility projection over canonical graph reasoning."""
+        graph = self.graph_builder.build(self.memory)
+        reasoning = self.graph_reasoner.reason(graph)
+        results = []
+        for edge in reasoning.edges:
+            object_value = (
+                graph.nodes[edge.object].concept
+                if edge.object in graph.nodes and graph.nodes[edge.object].node_type == "CLASS"
+                else edge.object
+            )
+            results.append({
+                "subject": self._legacy_subject(graph, edge.subject),
                 "predicate": edge.predicate,
-                "object": (graph.nodes[edge.object].concept if edge.object in graph.nodes and graph.nodes[edge.object].node_type == "CLASS" else edge.object),
+                "object": object_value,
                 "status": edge.status,
                 "source": edge.source,
                 "support": list(edge.support),
                 "rule": edge.attributes.get("rule"),
-            }
-            for edge in self.graph_reasoner.reason(graph).edges
-        ]
+            })
+        return results
