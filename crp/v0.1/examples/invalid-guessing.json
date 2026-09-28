@@ -1,0 +1,43 @@
+{
+  "crp_version": "0.1",
+  "interaction_id": "INT-INVALID-001",
+  "timestamp": "2026-09-28T14:54:00+05:30",
+  "source": {"type": "user", "identifier": null},
+  "observation": {
+    "raw_input": "John cancelled the meeting.",
+    "status": "explicit",
+    "facts": [
+      {"fact_id": "FACT-001", "claim": "John cancelled the meeting.", "status": "explicit"}
+    ]
+  },
+  "interpretation": {
+    "entities": [
+      {"entity_id": "PERSON-JOHN", "type": "person", "name": "John"}
+    ],
+    "events": [
+      {"event_id": "EVENT-001", "type": "meeting_cancellation", "actor": "PERSON-JOHN", "target": null}
+    ],
+    "relationships": []
+  },
+  "inferences": [],
+  "uncertainty": {"unknowns": [], "ambiguities": []},
+  "cognitive_updates": [
+    {
+      "update_id": "UPDATE-001",
+      "target_type": "belief",
+      "operation": "create",
+      "target_id": null,
+      "evidence": []
+    }
+  ],
+  "governance": {
+    "status": "pending",
+    "constraints_checked": [],
+    "reason": null
+  },
+  "provenance": {
+    "source_interaction": "INT-INVALID-001",
+    "interpreter": "foundation-model",
+    "schema_version": "0.1"
+  }
+}
