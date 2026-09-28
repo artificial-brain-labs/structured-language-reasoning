@@ -5,128 +5,407 @@
   "description": "CRP v0.1 candidate representation of an interaction and its possible cognitive consequences.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["crp_version","interaction_id","timestamp","source","observation","interpretation","inferences","uncertainty","cognitive_updates","governance","provenance"],
+  "required": [
+    "crp_version",
+    "interaction_id",
+    "timestamp",
+    "source",
+    "observation",
+    "interpretation",
+    "inferences",
+    "uncertainty",
+    "cognitive_updates",
+    "governance",
+    "provenance"
+  ],
   "properties": {
-    "crp_version": {"const": "0.1"},
-    "interaction_id": {"type": "string", "minLength": 1},
-    "timestamp": {"type": "string", "format": "date-time"},
-    "source": {"$ref": "#/$defs/source"},
-    "observation": {"$ref": "#/$defs/observation"},
-    "interpretation": {"$ref": "#/$defs/interpretation"},
-    "inferences": {"type": "array", "items": {"$ref": "#/$defs/inference"}},
-    "uncertainty": {"$ref": "#/$defs/uncertainty"},
-    "cognitive_updates": {"type": "array", "items": {"$ref": "#/$defs/cognitive_update"}},
-    "governance": {"$ref": "#/$defs/governance"},
-    "provenance": {"$ref": "#/$defs/provenance"}
-  },
-  "$defs": {
+    "crp_version": {
+      "const": "0.1"
+    },
+    "interaction_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
     "source": {
-      "type": "object", "additionalProperties": false,
-      "required": ["type","identifier"],
-      "properties": {
-        "type": {"type": "string", "enum": ["user","system","environment","agent","sensor","external_document"]},
-        "identifier": {"type": ["string","null"]}
-      }
+      "$ref": "#/$defs/source"
     },
     "observation": {
-      "type": "object", "additionalProperties": false,
-      "required": ["raw_input","status","facts"],
-      "properties": {
-        "raw_input": {"type": "string"},
-        "status": {"type": "string", "enum": ["explicit","observed","unknown"]},
-        "facts": {"type": "array", "items": {"$ref": "#/$defs/fact"}}
-      }
-    },
-    "fact": {
-      "type": "object", "additionalProperties": false,
-      "required": ["fact_id","claim","status"],
-      "properties": {
-        "fact_id": {"type": "string", "minLength": 1},
-        "claim": {"type": "string", "minLength": 1},
-        "status": {"type": "string", "enum": ["explicit","observed"]}
-      }
+      "$ref": "#/$defs/observation"
     },
     "interpretation": {
-      "type": "object", "additionalProperties": false,
-      "required": ["entities","events","relationships"],
-      "properties": {
-        "entities": {"type": "array", "items": {"$ref": "#/$defs/entity"}},
-        "events": {"type": "array", "items": {"$ref": "#/$defs/event"}},
-        "relationships": {"type": "array", "items": {"$ref": "#/$defs/relationship"}}
-      }
+      "$ref": "#/$defs/interpretation"
     },
-    "entity": {
-      "type": "object", "additionalProperties": false,
-      "required": ["entity_id","type","name"],
-      "properties": {
-        "entity_id": {"type": "string", "minLength": 1},
-        "type": {"type": "string", "minLength": 1},
-        "name": {"type": "string", "minLength": 1}
-      }
-    },
-    "event": {
-      "type": "object", "additionalProperties": false,
-      "required": ["event_id","type","actor","target"],
-      "properties": {
-        "event_id": {"type": "string", "minLength": 1},
-        "type": {"type": "string", "minLength": 1},
-        "actor": {"type": ["string","null"]},
-        "target": {"type": ["string","null"]}
-      }
-    },
-    "relationship": {
-      "type": "object", "additionalProperties": false,
-      "required": ["subject","target","type"],
-      "properties": {
-        "subject": {"type": "string", "minLength": 1},
-        "target": {"type": "string", "minLength": 1},
-        "type": {"type": "string", "minLength": 1}
-      }
-    },
-    "inference": {
-      "type": "object", "additionalProperties": false,
-      "required": ["claim","basis","status"],
-      "properties": {
-        "claim": {"type": "string", "minLength": 1},
-        "basis": {"type": "array", "items": {"type": "string"}},
-        "status": {"type": "string", "enum": ["hypothesis","possible","probable"]}
+    "inferences": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/inference"
       }
     },
     "uncertainty": {
-      "type": "object", "additionalProperties": false,
-      "required": ["unknowns","ambiguities"],
-      "properties": {
-        "unknowns": {"type": "array", "items": {"type": "string"}},
-        "ambiguities": {"type": "array", "items": {"type": "string"}}
-      }
+      "$ref": "#/$defs/uncertainty"
     },
-    "cognitive_update": {
-      "type": "object", "additionalProperties": false,
-      "required": ["update_id","target_type","operation","target_id","evidence"],
-      "properties": {
-        "update_id": {"type": "string", "minLength": 1},
-        "target_type": {"type": "string", "enum": ["belief","concept","relationship","goal","dimension"]},
-        "operation": {"type": "string", "enum": ["create","modify","reinforce","weaken","remove"]},
-        "target_id": {"type": ["string","null"]},
-        "evidence": {"type": "array", "items": {"type": "string"}}
+    "cognitive_updates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/cognitive_update"
       }
     },
     "governance": {
-      "type": "object", "additionalProperties": false,
-      "required": ["status","constraints_checked","reason"],
+      "$ref": "#/$defs/governance"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "identifier"
+      ],
       "properties": {
-        "status": {"type": "string", "enum": ["pending","approved","rejected","requires_review"]},
-        "constraints_checked": {"type": "array", "items": {"type": "string"}},
-        "reason": {"type": ["string","null"]}
+        "type": {
+          "type": "string",
+          "enum": [
+            "user",
+            "system",
+            "environment",
+            "agent",
+            "sensor",
+            "external_document"
+          ]
+        },
+        "identifier": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_input",
+        "status",
+        "facts"
+      ],
+      "properties": {
+        "raw_input": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "explicit",
+            "observed",
+            "unknown"
+          ]
+        },
+        "facts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fact"
+          }
+        }
+      }
+    },
+    "fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fact_id",
+        "claim",
+        "status"
+      ],
+      "properties": {
+        "fact_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "claim": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "explicit",
+            "observed"
+          ]
+        }
+      }
+    },
+    "interpretation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entities",
+        "events",
+        "relationships"
+      ],
+      "properties": {
+        "entities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entity"
+          }
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/event"
+          }
+        },
+        "relationships": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/relationship"
+          }
+        }
+      }
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entity_id",
+        "type",
+        "name"
+      ],
+      "properties": {
+        "entity_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "type",
+        "actor",
+        "target"
+      ],
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "target": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject",
+        "target",
+        "type"
+      ],
+      "properties": {
+        "subject": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "inference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim",
+        "basis",
+        "status"
+      ],
+      "properties": {
+        "claim": {
+          "type": "string",
+          "minLength": 1
+        },
+        "basis": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "hypothesis",
+            "possible",
+            "probable"
+          ]
+        }
+      }
+    },
+    "uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unknowns",
+        "ambiguities"
+      ],
+      "properties": {
+        "unknowns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ambiguities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "cognitive_update": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "update_id",
+        "target_type",
+        "operation",
+        "target_id",
+        "evidence"
+      ],
+      "properties": {
+        "update_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_type": {
+          "type": "string",
+          "enum": [
+            "belief",
+            "concept",
+            "relationship",
+            "goal",
+            "dimension"
+          ]
+        },
+        "operation": {
+          "type": "string",
+          "enum": [
+            "create",
+            "modify",
+            "reinforce",
+            "weaken",
+            "remove"
+          ]
+        },
+        "target_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "constraints_checked",
+        "reason"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "approved",
+            "rejected",
+            "requires_review"
+          ]
+        },
+        "constraints_checked": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       }
     },
     "provenance": {
-      "type": "object", "additionalProperties": false,
-      "required": ["source_interaction","interpreter","schema_version"],
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_interaction",
+        "interpreter",
+        "schema_version"
+      ],
       "properties": {
-        "source_interaction": {"type": "string", "minLength": 1},
-        "interpreter": {"type": ["string","null"]},
-        "schema_version": {"type": "string", "const": "0.1"}
+        "source_interaction": {
+          "type": "string",
+          "minLength": 1
+        },
+        "interpreter": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "schema_version": {
+          "type": "string",
+          "const": "0.1"
+        }
       }
     }
   }
