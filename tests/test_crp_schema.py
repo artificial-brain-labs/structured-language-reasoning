@@ -31,3 +31,15 @@ def test_schema_rejects_undeclared_cognitive_fields():
 
     errors = list(validator.iter_errors(event))
     assert errors
+
+
+def test_schema_rejects_cognitive_update_without_evidence():
+    schema = load_json(SCHEMA_PATH)
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+
+    errors = list(validator.iter_errors(load_json(INVALID_PATH)))
+    assert any(
+        error.validator == "minItems"
+        and error.absolute_path[-1:] == ["evidence"]
+        for error in errors
+    )
