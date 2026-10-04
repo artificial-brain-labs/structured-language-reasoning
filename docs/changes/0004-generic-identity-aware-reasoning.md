@@ -1,4 +1,4 @@
-# Change 0004 — Generic Identity-Aware Relation Queries and Reasoning Subject Preservation
+# Change 0004 — Generic Identity-Aware Relation Queries and Canonical Ontology Proof Chains
 
 ## Status
 
@@ -8,29 +8,38 @@ Implemented on `v1.0-development`.
 
 Two regressions exposed architectural boundary issues:
 
-1. Ontology inheritance derivation used the current concept node as the subject of each derived edge, rather than preserving the original asserted entity.
+1. Ontology inheritance needed to remain a canonical concept-to-concept proof chain rather than producing redundant entity-to-ancestor edges.
 2. Relation queries canonicalized identities inside `QueryEngine`, making identity resolution a query-handler concern rather than a generic graph traversal capability.
 
 ## Decision
 
-### Reasoning
+### Canonical ontology reasoning
 
-Ontology inheritance preserves the original asserted subject across every derived taxonomic edge.
-
-For:
+For an asserted classification:
 
 `Tom IS_A CAT`
 
 and ontology:
 
-`CAT IS_A FELINE IS_A MAMMAL`
+`CAT IS_A FELINE IS_A MAMMAL IS_A ANIMAL`
 
-the derived relations remain attached to `Tom`:
+the semantic graph contains the asserted edge:
 
-`Tom IS_A FELINE`
-`Tom IS_A MAMMAL`
+`Tom -> CAT`
 
-The derivation support continues to reference the original asserted evidence.
+followed by derived ontology edges:
+
+`CAT -> FELINE -> MAMMAL -> ANIMAL`
+
+Each derived edge points to the immediately following ontology concept. Its support references the original asserted evidence. This preserves a transparent proof chain and avoids materializing redundant direct classifications such as `Tom IS_A ANIMAL`.
+
+The canonical graph therefore distinguishes:
+
+- user evidence: entity -> asserted concept
+- ontology reasoning: concept -> parent concept
+- query explanation: traversal across both layers
+
+This is the representation used by the canonical graph reasoner and proof engine.
 
 ### Query traversal
 
@@ -38,7 +47,7 @@ Identity resolution is handled by `SemanticGraphQuery` as a generic graph capabi
 
 Relation queries traverse explicit identity paths before evaluating the requested predicate. This applies generically to object and subject queries and does not encode particular words, entities, or sentence forms.
 
-`Dom SAME_AS Tom`
+`Dom SAME_AS Tom`  
 `Tom EATS Rat`
 
 therefore permits:
@@ -56,11 +65,13 @@ without requiring `QueryEngine` to special-case identity.
 - Derived knowledge remains non-asserted.
 - Semantic graph remains the canonical reasoning representation.
 - Query traversal remains read-only.
+- Proof paths remain composed from actual graph edges.
 
 ## Regression coverage
 
-Added tests for:
+Added or corrected tests for:
 
-- preservation of the original reasoning subject during ontology derivation;
+- canonical ontology concept-chain derivation;
 - generic object-query grammar;
-- identity-aware relation querying.
+- identity-aware relation querying;
+- proof-chain provenance and asserted-versus-derived status.
