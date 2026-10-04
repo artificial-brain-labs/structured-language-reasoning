@@ -43,3 +43,5 @@ from .operators import (
     ReprReframe,
     default_operators,
 )
+
+from .integration import SRSTObservationValidator
