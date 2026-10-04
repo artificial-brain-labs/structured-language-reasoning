@@ -253,6 +253,9 @@
         "allowed_roles": [
           "subject",
           "object"
+        ],
+        "required_evidence": [
+          "PRIOR_MENTION"
         ]
       }
     }
