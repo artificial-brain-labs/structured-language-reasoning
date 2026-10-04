@@ -31,3 +31,23 @@ def test_malformed_query_is_not_guessed():
     slr = SLR()
     answer = slr.process("Is Tom is mammal?")
     assert "could not parse" in answer.lower()
+
+def test_object_query_with_entity_subject():
+    slr = SLR()
+    parsed = slr.parser.parse("What Tom eats")
+
+    assert parsed.parse_status == "DETERMINED"
+    assert parsed.question_type == "OBJECT"
+    assert parsed.subject_word == "tom"
+    assert parsed.verb_word == "eats"
+
+
+def test_object_query_follows_identity_alias():
+    slr = SLR()
+    slr.process("Tom is a cat.")
+    slr.process("Tom eats rat.")
+    slr.process("Dom is Tom.")
+
+    answer = slr.process("What Dom eats")
+    assert answer == "The Dom eats the rat."
+
