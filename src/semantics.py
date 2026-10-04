@@ -31,6 +31,7 @@ class SemanticRepresentation:
     entities: list[Entity] = field(default_factory=list)
     facts: list[Fact] = field(default_factory=list)
     operation: SemanticOperation | None = None
+    operations: list[SemanticOperation] = field(default_factory=list)
 
 
 class SemanticMappings:
@@ -138,10 +139,10 @@ class SemanticParser:
             return mapping["object"]
         return object_.entity_id if object_ else None
 
-    def _build_operation(self, tree, subject, predicate, object_value, object_entity=None):
+    def _build_operation(self, tree, subject, predicate, object_value, object_entity=None, object_word=None):
         if not tree.operation:
             return None
-        attributes = self._operation_attributes(tree.subject_word, tree.object_word, tree)
+        attributes = self._operation_attributes(tree.subject_word, object_word or tree.object_word, tree)
         if subject is not None:
             attributes["subject_concept"] = subject.concept
         if object_value is not None:
@@ -154,12 +155,33 @@ class SemanticParser:
             attributes=attributes,
         )
 
+    def _coordination_members(self, structure, role):
+        roles = structure.get("roles", {}) if isinstance(structure, dict) else {}
+        value = roles.get(role)
+        if not isinstance(value, dict):
+            return ()
+        return tuple(value.get("members", ()))
+
+    def _collect_coordination(self, structure):
+        if not isinstance(structure, dict):
+            return ()
+        production = structure.get("production")
+        if production == "np_coordination":
+            members = structure.get("children", [])
+            return tuple(
+                child.get("head", child).get("token")
+                for child in members
+                if isinstance(child, dict) and child.get("category") == "NP"
+            )
+        return ()
+
     def parse(self, tree, context=None):
         meaning = SemanticRepresentation()
         mapping = self.mappings.get(tree.meaning)
         if mapping is None:
             return meaning
         subject = self._entity(tree.subject_word, context=context) if tree.subject_word else None
+        object_words = tree.object_words or ((tree.object_word,) if tree.object_word else ())
         object_ = self._entity(tree.object_word, context=context) if tree.object_word else None
         predicate = self._predicate(tree, mapping)
         if predicate is None:
@@ -172,4 +194,21 @@ class SemanticParser:
             meaning.entities.append(object_)
         meaning.facts.append(Fact(subject=subject.entity_id if subject else "", predicate=predicate, object=fact_object))
         meaning.operation = self._build_operation(tree, subject, predicate, fact_object, object_entity=object_)
+        meaning.operations = [meaning.operation] if meaning.operation is not None else []
+        if len(object_words) > 1:
+            meaning.operations = []
+            for object_word in object_words:
+                member = self._entity(object_word, context=context)
+                member_object = self._operation_object(mapping, member)
+                meaning.operations.append(
+                    self._build_operation(
+                        tree,
+                        subject,
+                        predicate,
+                        member_object,
+                        object_entity=member,
+                        object_word=object_word,
+                    )
+                )
+            meaning.operation = meaning.operations[0]
         return meaning
