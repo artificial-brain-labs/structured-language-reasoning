@@ -30,7 +30,7 @@ class Parser:
         self.lexicon = lexicon
         self.grammar_path = grammar_path
         self.compositional = (
-            CompositionalGrammarParser(lexicon)
+            CompositionalGrammarParser(lexicon, grammar_path)
             if lexicon is not None
             else None
         )
