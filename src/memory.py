@@ -118,11 +118,8 @@ class DynamicMemory:
 
     def opposite(self, predicate):
         """Return the opposite predicate."""
-        if predicate == "EATS":
-            return "NOT_EATS"
-
-        if predicate == "NOT_EATS":
-            return "EATS"
+        if predicate.startswith("NOT_"):
+            return predicate[4:]
 
         return f"NOT_{predicate}"
 

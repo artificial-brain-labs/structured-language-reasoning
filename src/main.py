@@ -5,6 +5,8 @@ from .memory import DynamicMemory
 from .reasoner import Reasoner
 from .query import QueryEngine
 from .response import ResponseGenerator
+from .reasoning.integration import SRSTObservationValidator
+from .reasoning.query_integration import SRSTQueryReasoner
 
 class SLR:
     def __init__(self):
@@ -15,12 +17,14 @@ class SLR:
         self.reasoner = Reasoner(self.ontology, self.memory)
         self.query = QueryEngine(self.memory, self.lexicon)
         self.response = ResponseGenerator(self.memory)
+        self.srst_validator = SRSTObservationValidator()
+        self.srst_query = SRSTQueryReasoner(self.memory, self.lexicon)
 
     def process(self, text):
         parsed = self.parser.parse(text)
 
         if parsed.question_type:
-            results = self.query.answer(parsed)
+            results, _ = self.srst_query.answer(parsed)
             return self.response.generate(parsed, results)
 
         if not parsed.subject_word or not parsed.verb_word or not parsed.object_word:
@@ -45,6 +49,16 @@ class SLR:
 
         if not self.reasoner.validate_relation(subject, predicate, object_id):
             return "I cannot add that memory because the relationship is inconsistent with my world model."
+
+        # SRST is invoked at the durable-memory boundary: only schema-valid
+        # observations that pass explicit semantic validation are persisted.
+        schema = self.reasoner.schemas.get(predicate)
+        if schema:
+            valid, _, _ = self.srst_validator.validate(
+                subject, predicate, object_id, source="USER"
+            )
+            if not valid:
+                return "I cannot add that memory because the observation could not be semantically validated."
 
         memory = self.memory.add_memory(subject, predicate, object_id)
 
