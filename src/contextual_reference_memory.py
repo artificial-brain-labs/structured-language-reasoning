@@ -59,7 +59,7 @@ class ContextualReferenceMemory:
         evidence_types = set(required_evidence)
         result = []
         seen = set()
-        for mention in reversed(self.mentions):
+        for mention in self.mentions:
             if roles and mention.role not in roles:
                 continue
             if required and not required.intersection(mention.concepts):
