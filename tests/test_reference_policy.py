@@ -56,3 +56,46 @@ def test_grammar_reference_role_requires_non_empty_modes():
     }]
     with pytest.raises(ReferencePolicyError, match="non-empty list"):
         validator.validate_grammar({})
+
+
+def test_agreement_contract_is_declarative_only():
+    validator = ReferencePolicyValidator()
+    assert "number" in validator.agreement_dimensions
+    assert "person" in validator.agreement_dimensions
+    assert "gender" in validator.agreement_dimensions
+
+
+def test_unsupported_agreement_dimension_is_rejected():
+    validator = ReferencePolicyValidator()
+    validator.modes["CONTEXTUAL"]["agreement"]["dimensions"] = ["unsupported"]
+    with pytest.raises(ReferencePolicyError, match="unsupported agreement dimension"):
+        validator.validate_lexicon({
+            "it": {
+                "pos": "PRONOUN",
+                "reference": {
+                    "mode": "CONTEXTUAL",
+                    "policy": {
+                        "allowed_roles": ["subject"],
+                        "required_evidence": ["PRIOR_MENTION"]
+                    }
+                }
+            }
+        })
+
+
+def test_non_declarative_agreement_enforcement_is_rejected():
+    validator = ReferencePolicyValidator()
+    validator.modes["CONTEXTUAL"]["agreement"]["enforcement"] = "HEURISTIC"
+    with pytest.raises(ReferencePolicyError, match="unsupported agreement enforcement"):
+        validator.validate_lexicon({
+            "it": {
+                "pos": "PRONOUN",
+                "reference": {
+                    "mode": "CONTEXTUAL",
+                    "policy": {
+                        "allowed_roles": ["subject"],
+                        "required_evidence": ["PRIOR_MENTION"]
+                    }
+                }
+            }
+        })
