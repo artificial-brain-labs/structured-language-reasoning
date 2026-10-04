@@ -45,7 +45,7 @@ This is the representation used by the canonical graph reasoner and proof engine
 
 Identity resolution is handled by `SemanticGraphQuery` as a generic graph capability.
 
-Relation queries traverse explicit identity paths before evaluating the requested predicate. This applies generically to object and subject queries and does not encode particular words, entities, or sentence forms.
+Relation queries traverse explicit identity and taxonomic classification paths before evaluating the requested predicate. This allows a relation asserted on a concept to be queried through an explicitly classified entity, without encoding particular words, entities, or sentence forms.
 
 `Dom SAME_AS Tom`  
 `Tom EATS Rat`
@@ -53,6 +53,10 @@ Relation queries traverse explicit identity paths before evaluating the requeste
 therefore permits:
 
 `objects(Dom, EATS) -> Rat`
+
+Likewise, when `Tom IS_A CAT` and `CAT EATS Rat` are explicit graph facts:
+
+`objects(Tom, EATS) -> Rat`
 
 without requiring `QueryEngine` to special-case identity.
 
