@@ -7,6 +7,7 @@ from pathlib import Path
 class Entity:
     entity_id: str
     concept: str
+    agreement: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -96,7 +97,8 @@ class SemanticParser:
                     concept = sense.concept or concept
                     break
 
-        return Entity(self._new_entity_id(concept, word), concept)
+        agreement = self.lexicon.agreement(word) if self.lexicon is not None else {}
+        return Entity(self._new_entity_id(concept, word), concept, agreement=agreement)
 
     def _operation_attributes(self, subject_word=None, object_word=None, tree=None):
         attributes = {}
