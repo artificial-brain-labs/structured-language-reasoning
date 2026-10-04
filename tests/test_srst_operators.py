@@ -68,7 +68,7 @@ def test_causal_infer_requires_explicit_causal_edge():
 def test_relational_traverse_does_not_consume_causal_edges():
     s = state()
     s.claims["c1"] = Claim(
-        "c1", "rain", "OCCURS", None,
+        "weather", "CONTAINS", "rain",
         status=ValidationStatus.OBSERVED,
         confidence=1.0,
     )
