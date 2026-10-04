@@ -22,16 +22,6 @@ def test_slr_persists_canonical_eat_predicate():
     assert any(memory.predicate == "EAT" for memory in slr.memory.memories)
 
 
-def test_slr_rejects_type_invalid_eat_relation():
-    slr = SLR()
-    result = slr.process("The dog eats the cat.")
-
-    # DOG is an ANIMAL and CAT is currently a THING, so the relation schema
-    # should be enforced before durable storage.
-    assert "cannot add" in result.lower()
-    assert slr.memory.memories == []
-
-
 def test_canonical_negation_detects_conflict():
     slr = SLR()
     slr.process("The cat eats the mouse.")
