@@ -34,6 +34,8 @@ __all__ = [
     "OperatorController",
     "QueryPath",
     "QueryPathStep",
+    "CausalPath",
+    "CausalPathStep",
 ]
 
 from .operators import (
@@ -49,3 +51,5 @@ from .operators import (
 from .integration import SRSTObservationValidator
 
 from .query_path import QueryPath, QueryPathStep
+
+from .causal_path import CausalPath, CausalPathStep
