@@ -78,6 +78,8 @@ class OperationEngine:
             return False
         if operation.attributes.get("explicitly_confirmed_context"):
             return False
+        if operation.attributes.get("reference_resolved"):
+            return False
         if not policy.get("clarify_unknown_subject", False):
             return False
         if relation_schema.get("allow_unknown_subject", False):
