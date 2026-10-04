@@ -15,7 +15,8 @@
     "ADJECTIVE",
     "PRONOUN",
     "DETERMINER",
-    "ENTITY"
+    "ENTITY",
+    "NEGATION"
   ],
   "phrase_categories": [
     "NP",
@@ -144,6 +145,34 @@
         ],
         "object": [
           2,
+          "head"
+        ]
+      }
+    },
+    {
+      "name": "statement_transitive_np_aux_negation_verb_np",
+      "lhs": "STATEMENT",
+      "rhs": [
+        "NP",
+        "AUX",
+        "NEGATION",
+        "VERB",
+        "NP"
+      ],
+      "meaning": "SUBJECT_VERB_OBJECT",
+      "operation": "ASSERT_RELATION",
+      "negated": true,
+      "roles": {
+        "subject": [
+          0,
+          "head"
+        ],
+        "verb": [
+          3,
+          "head"
+        ],
+        "object": [
+          4,
           "head"
         ]
       }
