@@ -21,6 +21,30 @@ class ReferencePolicyValidator:
         self.version = data.get("version")
         self.modes = data.get("reference_modes", {})
         self.grammar_productions = grammar.get("productions", [])
+        self.agreement_dimensions = self._agreement_dimensions()
+
+    def _agreement_dimensions(self):
+        dimensions = []
+        for mode in self.modes.values():
+            agreement = mode.get("agreement", {})
+            for dimension in agreement.get("dimensions", []):
+                if dimension not in dimensions:
+                    dimensions.append(dimension)
+        return tuple(dimensions)
+
+    def _validate_agreement(self, word, agreement, errors):
+        if not isinstance(agreement, dict):
+            errors.append(f"{word}: agreement must be an object")
+            return
+        dimensions = agreement.get("dimensions", [])
+        if not isinstance(dimensions, list):
+            errors.append(f"{word}: agreement dimensions must be a list")
+            return
+        unsupported = [dimension for dimension in dimensions if dimension not in self.agreement_dimensions]
+        errors.extend(f"{word}: unsupported agreement dimension {dimension!r}" for dimension in unsupported)
+        enforcement = agreement.get("enforcement", "DECLARATIVE_ONLY")
+        if enforcement != "DECLARATIVE_ONLY":
+            errors.append(f"{word}: unsupported agreement enforcement {enforcement!r}")
 
     def validate_lexicon(self, words):
         errors = []
@@ -40,6 +64,8 @@ class ReferencePolicyValidator:
                 if mode not in self.modes:
                     errors.append(f"{word}: unsupported reference mode {mode!r}")
                     continue
+                agreement = reference.get("agreement", self.modes[mode].get("agreement", {}))
+                self._validate_agreement(word, agreement, errors)
                 policy = reference.get("policy", {})
                 if not isinstance(policy, dict):
                     errors.append(f"{word}: reference policy must be an object")
