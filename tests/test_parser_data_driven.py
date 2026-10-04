@@ -44,4 +44,4 @@ def test_question_slots_are_read_from_grammar():
 def test_parser_uses_v1_grammar_foundation_as_authority():
     parser = Parser(Lexicon())
     assert parser.grammar_path == "knowledge/grammar_foundation.json"
-    assert parser.compositional.grammar["version"] == "1.3"
+    assert parser.compositional.grammar["version"] == "1.5"
