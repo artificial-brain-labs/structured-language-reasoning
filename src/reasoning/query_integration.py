@@ -136,3 +136,71 @@ class SRSTQueryReasoner:
         if state is None:
             return None
         return check_termination(state)
+
+
+    def answer_path(self, path):
+        """Answer an explicitly supplied relational path.
+
+        Only non-conflicted durable memories are copied into transient
+        reasoning state. The path itself determines which relation sequence
+        RELATIONAL_TRAVERSE may execute.
+        """
+        path.validate()
+
+        if not path.steps:
+            return path.start, self._path_state(path)
+
+        from .controller import OperatorController
+        from .operators import RelationalTraverse
+
+        state = self._path_state(path)
+
+        # The anchor is an explicit query context, not a world-model fact.
+        anchor_id = "query_anchor"
+        state.add_claim(
+            Claim(
+                id=anchor_id,
+                subject=path.start,
+                predicate="QUERY_ANCHOR",
+                object=path.start,
+                source="QUERY",
+                status=ValidationStatus.OBSERVED,
+                confidence=1.0,
+            )
+        )
+        state.proof.add_node(ProofNode(anchor_id, "query_anchor", anchor_id))
+
+        for memory in self.memory.memories:
+            if memory.status == "CONFLICTED":
+                continue
+            state.relations.append(
+                (memory.subject, memory.predicate, memory.object)
+            )
+
+        state, result = OperatorController(
+            [RelationalTraverse()]
+        ).reason(state, max_steps=len(path.steps))
+
+        if not result.terminated:
+            return None, state
+
+        final_claims = [
+            claim
+            for claim in state.claims.values()
+            if claim.status == ValidationStatus.DERIVED
+            and claim.object == path.target
+        ]
+
+        if not final_claims:
+            return None, state
+
+        return path.target, state
+
+    def _path_state(self, path):
+        return ReasoningState(
+            goal=Goal(
+                id="query_path",
+                target=f"PATH:{path.start}:{'->'.join(path.predicates)}",
+            ),
+            query_path=path,
+        )
