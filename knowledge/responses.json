@@ -8,7 +8,9 @@
     "identity_failure": "I could not store that identity.",
     "clarification_entity_identity": "Who is {entity_name}?",
     "classification_resumed_failure": "I could not validate the earlier statement with that classification.",
-    "classification_resumed_success": "I have also stored the earlier statement."
+    "classification_resumed_success": "I have also stored the earlier statement.",
+    "reference_unknown": "I could not resolve that reference.",
+    "reference_ambiguous": "I could not determine which entity that reference means."
   },
   "queries": {
     "TYPE": {
