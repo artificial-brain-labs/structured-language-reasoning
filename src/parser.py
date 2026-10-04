@@ -141,6 +141,7 @@ class Parser:
             meaning=production.get("meaning"),
             operation=production.get("operation"),
             relation=production.get("relation"),
+            negated=bool(production.get("negated", False)),
             tokens=tokens,
             parse_status="DETERMINED",
             parse_candidates=(self.compositional.derivation_signature(node),),
