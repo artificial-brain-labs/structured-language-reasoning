@@ -193,22 +193,26 @@ class SemanticParser:
         if object_:
             meaning.entities.append(object_)
         meaning.facts.append(Fact(subject=subject.entity_id if subject else "", predicate=predicate, object=fact_object))
-        meaning.operation = self._build_operation(tree, subject, predicate, fact_object, object_entity=object_)
-        meaning.operations = [meaning.operation] if meaning.operation is not None else []
-        if len(object_words) > 1:
-            meaning.operations = []
-            for object_word in object_words:
-                member = self._entity(object_word, context=context)
+        subject_words = tree.subject_words or ((tree.subject_word,) if tree.subject_word else ())
+        meaning.operations = []
+        object_values = object_words or (None,)
+        subject_values = subject_words or (None,)
+        for subject_word in subject_values:
+            subject_entity = self._entity(subject_word, context=context) if subject_word else subject
+            for object_word in object_values:
+                member = self._entity(object_word, context=context) if object_word else object_
                 member_object = self._operation_object(mapping, member)
-                meaning.operations.append(
-                    self._build_operation(
-                        tree,
-                        subject,
-                        predicate,
-                        member_object,
-                        object_entity=member,
-                        object_word=object_word,
-                    )
+                operation = self._build_operation(
+                    tree,
+                    subject_entity,
+                    predicate,
+                    member_object,
+                    object_entity=member,
+                    object_word=object_word,
                 )
-            meaning.operation = meaning.operations[0]
+                if operation is not None:
+                    if member is not None:
+                        operation.attributes["object_entity_id"] = member.entity_id
+                    meaning.operations.append(operation)
+        meaning.operation = meaning.operations[0] if meaning.operations else None
         return meaning
