@@ -17,7 +17,7 @@ class RelationalTraverse(CognitiveOperator):
             ):
                 continue
             for subject, predicate, object_ in state.relations:
-                if claim.object != subject:
+                if claim.object != subject or predicate == "CAUSES":
                     continue
                 claim_id = f"traverse_{claim.id}_{predicate}_{object_}"
                 if claim_id not in state.claims:
