@@ -28,7 +28,7 @@ def test_resolution_exposes_evidence_trace():
     assert resolution.status == "RESOLVED"
     assert resolution.evidence == ((
         slr.user_memory.find_named_entity("cat"),
-        ("PRIOR_MENTION", "ROLE"),
+        ("PRIOR_MENTION", "ROLE", "AGREEMENT_COMPATIBLE"),
     ),)
 
 
@@ -56,3 +56,67 @@ def test_unknown_candidate_agreement_does_not_count_as_mismatch():
 
     assert resolution.status == "RESOLVED"
     assert "AGREEMENT_COMPATIBLE" in resolution.evidence[0][1]
+
+
+def test_agreement_compatible_candidate_is_resolved():
+    from src.main import SLR
+
+    slr = SLR()
+    slr.contextual_reference_memory.add(
+        "person_001", "person", "subject",
+        agreement={"number": "SINGULAR", "person": "THIRD"},
+    )
+    resolution = slr.reference_resolver.resolve("it")
+    assert resolution.status == "RESOLVED"
+    assert resolution.reference == "person_001"
+
+
+def test_all_incompatible_candidates_produce_unknown():
+    from src.main import SLR
+
+    slr = SLR()
+    slr.contextual_reference_memory.add(
+        "plural_001", "people", "subject",
+        agreement={"number": "PLURAL"},
+    )
+    resolution = slr.reference_resolver.resolve("it")
+    assert resolution.status == "UNKNOWN"
+    assert resolution.reference is None
+
+
+def test_mixed_candidates_resolve_only_compatible_candidate():
+    from src.main import SLR
+
+    slr = SLR()
+    slr.contextual_reference_memory.add(
+        "plural_001", "people", "subject",
+        agreement={"number": "PLURAL"},
+    )
+    slr.contextual_reference_memory.add(
+        "singular_001", "person", "subject",
+        agreement={"number": "SINGULAR", "person": "THIRD"},
+    )
+    resolution = slr.reference_resolver.resolve("it")
+    assert resolution.status == "RESOLVED"
+    assert resolution.reference == "singular_001"
+    assert "AGREEMENT_INCOMPATIBLE" in resolution.evidence[0][1]
+
+
+def test_reference_policy_rejects_unknown_compatibility_rule():
+    from src.reference_policy import ReferencePolicyError, ReferencePolicyValidator
+
+    validator = ReferencePolicyValidator()
+    validator.modes["CONTEXTUAL"]["agreement"]["compatibility"] = {"number": "HEURISTIC"}
+    with pytest.raises(ReferencePolicyError, match="unsupported agreement compatibility rule"):
+        validator.validate_lexicon({
+            "it": {
+                "pos": "PRONOUN",
+                "reference": {
+                    "mode": "CONTEXTUAL",
+                    "policy": {
+                        "allowed_roles": ["subject"],
+                        "required_evidence": ["PRIOR_MENTION"],
+                    },
+                },
+            }
+        })
