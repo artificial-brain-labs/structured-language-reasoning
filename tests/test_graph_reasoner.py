@@ -43,12 +43,17 @@ def test_reasoner_derives_ontology_ancestors_without_persisting_them(tmp_path):
     assert graph.derived_edges() == []
 
 
-def test_reasoner_preserves_asserted_subject_when_deriving_ontology_ancestors(tmp_path):
+def test_reasoner_builds_canonical_ontology_chain(tmp_path):
     graph = build_cat_graph()
     result = SemanticGraphReasoner(ontology(tmp_path)).reason(graph)
 
-    assert result.edges
-    assert all(edge.subject == "entity:tom" for edge in result.edges)
+    assert [(edge.subject, edge.object) for edge in result.edges] == [
+        ("concept:cat", "concept:feline"),
+        ("concept:feline", "concept:mammal"),
+        ("concept:mammal", "concept:animal"),
+        ("concept:animal", "concept:living"),
+        ("concept:living", "concept:thing"),
+    ]
 
 
 def test_reasoner_never_changes_asserted_graph(tmp_path):
