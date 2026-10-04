@@ -32,6 +32,8 @@ class SemanticRepresentation:
     facts: list[Fact] = field(default_factory=list)
     operation: SemanticOperation | None = None
     operations: list[SemanticOperation] = field(default_factory=list)
+    reference_status: str | None = None
+    reference_reason: str | None = None
 
 
 class SemanticMappings:
@@ -60,6 +62,7 @@ class SemanticParser:
         self.contextual_memory = contextual_memory
         self.semantic_context_resolver = semantic_context_resolver
         self.reference_resolver = reference_resolver
+        self._reference_statuses = []
 
     def _concept(self, word):
         return self.lexicon.concept(word) if self.lexicon else None
@@ -75,6 +78,9 @@ class SemanticParser:
     def _entity(self, word, context=None):
         if self.reference_resolver is not None:
             reference = self.reference_resolver.resolve(word)
+            entry = self.lexicon.get(word) if self.lexicon is not None else None
+            if entry and entry.get("pos") == "PRONOUN":
+                self._reference_statuses.append(reference)
             if reference.status == "RESOLVED":
                 return Entity(reference.reference, self._concept(word) or "UNKNOWN")
 
@@ -177,6 +183,7 @@ class SemanticParser:
 
     def parse(self, tree, context=None):
         meaning = SemanticRepresentation()
+        self._reference_statuses = []
         mapping = self.mappings.get(tree.meaning)
         if mapping is None:
             return meaning
@@ -216,4 +223,12 @@ class SemanticParser:
                         operation.attributes["object_entity_id"] = member.entity_id
                     meaning.operations.append(operation)
         meaning.operation = meaning.operations[0] if meaning.operations else None
+        ambiguous = next((item for item in self._reference_statuses if item.status == "AMBIGUOUS"), None)
+        unknown = next((item for item in self._reference_statuses if item.status == "UNKNOWN"), None)
+        if ambiguous is not None:
+            meaning.reference_status = "AMBIGUOUS"
+            meaning.reference_reason = ambiguous.reason
+        elif unknown is not None:
+            meaning.reference_status = "UNKNOWN"
+            meaning.reference_reason = unknown.reason
         return meaning
