@@ -93,7 +93,10 @@ class OperationEngine:
         if mode == "literal":
             return operation.object
         if mode == "entity":
-            object_word = self._surface(parsed, "object")
+            explicit_entity_id = operation.attributes.get("object_entity_id")
+            if explicit_entity_id in self.memory.entities:
+                return self.memory.canonical_entity(explicit_entity_id)
+            object_word = operation.attributes.get("object_word") or self._surface(parsed, "object")
             selected_concept = operation.attributes.get("object_concept")
             if selected_concept and selected_concept != "UNKNOWN" and object_word:
                 if selected_concept in self.reasoner.ontology.classes:
