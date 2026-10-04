@@ -143,7 +143,7 @@
     },
     {
       "id": "pronoun",
-      "status": "PARTIAL",
+      "status": "FOUNDATION",
       "constructions": [
         "pronoun_subject_transitive",
         "pronoun_subject_state"
@@ -155,7 +155,8 @@
         "pronoun_subject_state": [
           "statement_state_np_aux_state"
         ]
-      }
+      },
+      "scope_note": "V1 grammar coverage is syntactic; contextual pronoun reference resolution belongs to the semantic context layer and is outside this grammar contract."
     },
     {
       "id": "coordination",
@@ -216,7 +217,8 @@
       "lexical-category support where applicable",
       "parser regression test",
       "semantic regression test where applicable",
-      "coverage status must match implemented grammar; unsupported constructions remain PLANNED or PARTIAL"
+      "coverage status must match implemented grammar; unsupported constructions remain PLANNED or PARTIAL",
+      "contextual reference resolution is not a grammar requirement"
     ],
     "out_of_scope_until_gate_passes": [
       "new reasoning operators",
