@@ -6,6 +6,7 @@ No query result is written back to durable memory.
 """
 
 from .proof import ProofEdge, ProofNode
+from .query_validation import validate_query_result
 from .state import Claim, Goal, GoalStatus, ReasoningState, ValidationStatus
 from .termination import check_termination
 
@@ -194,6 +195,12 @@ class SRSTQueryReasoner:
         if not final_claims:
             return None, state
 
+        if not any(
+            validate_query_result(state, claim.id)
+            for claim in final_claims
+        ):
+            return None, state
+
         return path.target, state
 
     def _path_state(self, path):
@@ -263,6 +270,12 @@ class SRSTQueryReasoner:
         ]
 
         if not final_claims:
+            return None, state
+
+        if not any(
+            validate_query_result(state, claim.id)
+            for claim in final_claims
+        ):
             return None, state
 
         return path.target, state
