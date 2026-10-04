@@ -26,7 +26,30 @@
         "adjective_noun",
         "determiner_adjective_noun",
         "multiple_adjectives"
-      ]
+      ],
+      "production_map": {
+        "bare_noun": [
+          "np_noun"
+        ],
+        "bare_entity": [
+          "np_entity"
+        ],
+        "determiner_noun": [
+          "np_determiner_noun"
+        ],
+        "determiner_entity": [
+          "np_determiner_entity"
+        ],
+        "adjective_noun": [
+          "np_adjp_noun"
+        ],
+        "determiner_adjective_noun": [
+          "np_determiner_adjp_noun"
+        ],
+        "multiple_adjectives": [
+          "adjp_adjective_adjp"
+        ]
+      }
     },
     {
       "id": "declarative",
@@ -38,7 +61,28 @@
         "classification",
         "identity_relation",
         "property_assignment"
-      ]
+      ],
+      "production_map": {
+        "simple_transitive": [
+          "statement_transitive_np_verb_np"
+        ],
+        "entity_transitive": [
+          "statement_transitive_np_verb_np"
+        ],
+        "state_assignment": [
+          "statement_state_np_aux_state"
+        ],
+        "classification": [
+          "statement_type_entity_aux_np",
+          "statement_type_np_aux_np"
+        ],
+        "identity_relation": [
+          "statement_entity_relation"
+        ],
+        "property_assignment": [
+          "statement_property_np_aux_adjective"
+        ]
+      }
     },
     {
       "id": "negation",
@@ -48,7 +92,21 @@
         "negated_state",
         "negated_classification",
         "negated_property"
-      ]
+      ],
+      "production_map": {
+        "negated_transitive": [
+          "statement_transitive_np_aux_negation_verb_np"
+        ],
+        "negated_state": [
+          "statement_state_np_aux_negation_state"
+        ],
+        "negated_classification": [
+          "statement_classification_np_aux_negation_np"
+        ],
+        "negated_property": [
+          "statement_property_np_aux_negation_adjective"
+        ]
+      }
     },
     {
       "id": "interrogative",
@@ -60,7 +118,28 @@
         "classification_question",
         "property_question",
         "meaning_question"
-      ]
+      ],
+      "production_map": {
+        "object_question": [
+          "question_object_question_aux_np_verb",
+          "question_object_question_np_verb"
+        ],
+        "subject_question": [
+          "question_subject_question_verb_np"
+        ],
+        "type_question": [
+          "question_type_question_aux_np"
+        ],
+        "classification_question": [
+          "question_classification_aux_np_np"
+        ],
+        "property_question": [
+          "question_property_aux_np_adjective"
+        ],
+        "meaning_question": [
+          "question_meaning_question_aux_adjective"
+        ]
+      }
     },
     {
       "id": "pronoun",
@@ -68,7 +147,15 @@
       "constructions": [
         "pronoun_subject_transitive",
         "pronoun_subject_state"
-      ]
+      ],
+      "production_map": {
+        "pronoun_subject_transitive": [
+          "statement_transitive_pronoun_verb_np"
+        ],
+        "pronoun_subject_state": [
+          "statement_state_np_aux_state"
+        ]
+      }
     },
     {
       "id": "coordination",
@@ -77,7 +164,8 @@
         "coordinated_noun_phrase",
         "coordinated_statement",
         "coordinated_adjective"
-      ]
+      ],
+      "production_map": {}
     },
     {
       "id": "tense_aspect",
@@ -88,7 +176,8 @@
         "future",
         "progressive",
         "perfect"
-      ]
+      ],
+      "production_map": {}
     },
     {
       "id": "prepositional_phrase",
@@ -98,7 +187,8 @@
         "locative_phrase",
         "instrumental_phrase",
         "recipient_phrase"
-      ]
+      ],
+      "production_map": {}
     },
     {
       "id": "complex_clause",
@@ -108,7 +198,8 @@
         "subordinate_clause",
         "conditional_clause",
         "causal_clause"
-      ]
+      ],
+      "production_map": {}
     }
   ],
   "v1_completion_gate": {
@@ -132,5 +223,10 @@
       "new reasoning heuristics",
       "sentence-specific parser exceptions"
     ]
+  },
+  "audit": {
+    "purpose": "Machine-readable linkage between declared V1 constructions and declarative grammar productions.",
+    "rule": "A FOUNDATION construction must resolve to one or more production names in grammar_foundation.json. PARTIAL constructions may expose only implemented production names.",
+    "source": "knowledge/grammar_foundation.json"
   }
 }
