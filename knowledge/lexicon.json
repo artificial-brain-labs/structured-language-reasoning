@@ -267,5 +267,9 @@
       "number": "SINGULAR",
       "person": "THIRD"
     }
+  },
+  "and": {
+    "concept": "AND",
+    "pos": "CONJUNCTION"
   }
 }
