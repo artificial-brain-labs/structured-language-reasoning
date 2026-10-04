@@ -1,4 +1,3 @@
-import json
 from dataclasses import dataclass
 from .tokenizer import tokenize
 from .compositional_parser import CompositionalGrammarParser
@@ -27,10 +26,9 @@ class ParsedSentence:
 
 
 class Parser:
-    def __init__(self, lexicon=None, grammar_path="knowledge/grammar.json"):
+    def __init__(self, lexicon=None, grammar_path="knowledge/grammar_foundation.json"):
         self.lexicon = lexicon
-        with open(grammar_path, "r", encoding="utf-8") as f:
-            self.grammar = json.load(f)
+        self.grammar_path = grammar_path
         self.compositional = (
             CompositionalGrammarParser(lexicon)
             if lexicon is not None
@@ -49,43 +47,6 @@ class Parser:
         if self.lexicon is None:
             return None
         return self.lexicon.concept(word)
-
-    def _category(self, word):
-        pos = self._pos(word)
-        if pos:
-            return pos
-        return "ENTITY"
-
-    def _matches_category(self, word, actual, expected):
-        if actual == expected:
-            return True
-        return self._concept(word) == expected
-
-    def _matches(self, tokens, pattern):
-        if len(tokens) != len(pattern):
-            return False
-        return all(
-            self._matches_category(token, self._category(token), expected)
-            for token, expected in zip(tokens, pattern)
-        )
-
-    def _grammar_rule(self, tokens):
-        for rule in self.grammar.get("rules", []):
-            if self._matches(tokens, rule.get("pattern", [])):
-                return rule
-        return None
-
-    def _slot_word(self, tokens, rule, slot):
-        index = rule.get("slots", {}).get(slot)
-        if not isinstance(index, int) or not 0 <= index < len(tokens):
-            return None
-        return tokens[index]
-
-    def _surface_slot_word(self, surface_tokens, rule, slot):
-        index = rule.get("slots", {}).get(slot)
-        if not isinstance(index, int) or not 0 <= index < len(surface_tokens):
-            return None
-        return surface_tokens[index]
 
     def _from_compositional(self, tokens, surface_tokens):
         if self.compositional is None:
@@ -159,25 +120,6 @@ class Parser:
         return self.parse_statement(tokens, surface_tokens=surface_tokens)
 
     def parse_statement(self, tokens, surface_tokens=None):
-        rule = self._grammar_rule(tokens)
-        if not rule:
-            return ParsedSentence(tokens=tokens, parse_status="UNPARSED")
-
+        """Parse through the authoritative V1 grammar foundation."""
         surface_tokens = surface_tokens if surface_tokens is not None else tokens
-        return ParsedSentence(
-            subject_word=self._slot_word(tokens, rule, "subject"),
-            verb_word=self._slot_word(tokens, rule, "verb"),
-            object_word=self._slot_word(tokens, rule, "object"),
-            subject_surface_word=self._surface_slot_word(surface_tokens, rule, "subject"),
-            verb_surface_word=self._surface_slot_word(surface_tokens, rule, "verb"),
-            object_surface_word=self._surface_slot_word(surface_tokens, rule, "object"),
-            question_type=rule.get("question_type"),
-            rule=rule.get("name"),
-            meaning=rule.get("meaning"),
-            operation=rule.get("operation"),
-            relation=rule.get("relation"),
-            relationship_target=rule.get("relationship_target"),
-            tokens=tokens,
-            parse_status="DETERMINED",
-            parse_candidates=(rule.get("name"),),
-        )
+        return self._from_compositional(list(tokens), list(surface_tokens))
