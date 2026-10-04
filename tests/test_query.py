@@ -51,3 +51,21 @@ def test_object_query_follows_identity_alias():
     answer = slr.process("What Dom eats")
     assert answer == "The Dom eats the rat."
 
+
+
+def test_object_query_inherits_relation_from_explicit_classification():
+    slr = SLR()
+    slr.process("Tom is a cat.")
+    slr.process("The cat eats the rat.")
+
+    answer = slr.process("What Tom eats")
+    assert answer == "The Tom eats the rat."
+
+
+def test_subject_query_inherits_relation_from_explicit_classification():
+    slr = SLR()
+    slr.process("Tom is a cat.")
+    slr.process("The cat eats the rat.")
+
+    answer = slr.process("Who eats the rat")
+    assert "cat" in answer.lower()
