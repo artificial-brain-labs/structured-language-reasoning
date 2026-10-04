@@ -269,6 +269,7 @@ class SLR:
                 failure = self.response_policy.render(resumed_operation, "failure")
                 return failure or self.response.system("execution_failure")
             self._refresh_graph()
+            self._record_contextual_references(resumed_parsed, execution)
             success_context = {}
             if resumed_parsed.subject_word:
                 entity = self.user_memory.canonical_entity(execution.result.subject)
@@ -312,6 +313,7 @@ class SLR:
         confirmation = self.response_policy.render(execution.operation, "success", confirmation_context)
         if original_operation is None or original_context is None:
             self._refresh_graph()
+            self._record_contextual_references(parsed, execution)
             return confirmation
         original_operation.subject = self.user_memory.canonical_entity(pending_entity)
         resumed = self.operation_engine.execute(original_operation, original_context)
@@ -320,6 +322,7 @@ class SLR:
             return self.response.system("classification_resumed_failure", confirmation_context)
         if resumed.clarification:
             return resumed.clarification
+        self._record_contextual_references(parsed, resumed)
         success = self.response.system("classification_resumed_success")
         return f"{confirmation} {success}" if confirmation and success else confirmation or success
 
