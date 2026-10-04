@@ -1,4 +1,5 @@
 from src.reasoning.controller import OperatorController
+from src.reasoning.evidence import EvidencePolicy
 from src.reasoning.operators import (
     Backtrack,
     CausalInfer,
@@ -165,3 +166,55 @@ def test_controller_executes_only_a_necessary_operator():
     assert s.representation == "graph"
     assert s.step == 1
     assert result.reason == "goal not satisfied"
+
+
+def test_monitor_rejects_insufficient_evidence():
+    s = state()
+    s.add_claim(
+        Claim(
+            "c_low", "cat", "EATS", "mouse",
+            status=ValidationStatus.UNKNOWN,
+        )
+    )
+    s.evidence["low"] = Evidence(
+        id="low",
+        source="weak",
+        content="uncertain report",
+        evidence_type="assertion",
+        reliability=0.4,
+        supports=["c_low"],
+    )
+
+    s, _ = Monitor(EvidencePolicy(minimum_reliability=0.8)).execute(s)
+
+    assert s.claims["c_low"].status == ValidationStatus.UNKNOWN
+
+
+def test_monitor_preserves_ambiguity_when_admissible_evidence_conflicts():
+    s = state()
+    s.add_claim(
+        Claim(
+            "c_conflict", "cat", "EATS", "mouse",
+            status=ValidationStatus.UNKNOWN,
+        )
+    )
+    s.evidence["support"] = Evidence(
+        id="support",
+        source="source_a",
+        content="cat eats mouse",
+        evidence_type="assertion",
+        reliability=0.9,
+        supports=["c_conflict"],
+    )
+    s.evidence["oppose"] = Evidence(
+        id="oppose",
+        source="source_b",
+        content="cat does not eat mouse",
+        evidence_type="assertion",
+        reliability=0.9,
+        contradicts=["c_conflict"],
+    )
+
+    s, _ = Monitor(EvidencePolicy(minimum_reliability=0.8)).execute(s)
+
+    assert s.claims["c_conflict"].status == ValidationStatus.AMBIGUOUS
