@@ -167,7 +167,8 @@
   },
   "i": {
     "concept": "SELF",
-    "pos": "PRONOUN"
+    "pos": "PRONOUN",
+    "referent": "USER"
   },
   "friend": {
     "concept": "FRIEND",
