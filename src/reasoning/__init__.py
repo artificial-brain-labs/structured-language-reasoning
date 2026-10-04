@@ -12,6 +12,7 @@ from .state import (
 from .transition import Transition
 from .proof import ProofEdge, ProofGraph, ProofNode
 from .validation import validate_state
+from .evidence import EvidencePolicy
 from .termination import TerminationResult, check_termination
 from .controller import CognitiveOperator, OperatorController
 
@@ -28,6 +29,7 @@ __all__ = [
     "ProofGraph",
     "ProofNode",
     "validate_state",
+    "EvidencePolicy",
     "TerminationResult",
     "check_termination",
     "CognitiveOperator",
