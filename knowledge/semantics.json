@@ -5,7 +5,11 @@
         "source": "lexicon",
         "feature": "concept"
       },
-      "object": "TRUE"
+      "object": "TRUE",
+      "negation": {
+        "prefix": "NOT_",
+        "source": "predicate"
+      }
     },
     "SUBJECT_VERB_OBJECT": {
       "predicate": {
@@ -22,6 +26,10 @@
       "predicate": {
         "source": "grammar",
         "field": "relation"
+      },
+      "negation": {
+        "prefix": "NOT_",
+        "source": "predicate"
       }
     },
     "SUBJECT_RELATION": {
@@ -40,6 +48,10 @@
       "predicate": {
         "source": "grammar",
         "field": "relation"
+      },
+      "negation": {
+        "prefix": "NOT_",
+        "source": "predicate"
       }
     }
   }
