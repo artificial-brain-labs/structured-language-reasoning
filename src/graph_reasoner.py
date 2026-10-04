@@ -61,7 +61,7 @@ class SemanticGraphReasoner:
                         continue
                     derived.append(
                         self._edge(
-                            edge, edge.subject, target_id, ancestor, len(derived) + 1,
+                            edge, current_id, target_id, ancestor, len(derived) + 1,
                             taxonomic_relation, support=(edge.edge_id,),
                             rule="ONTOLOGY_PARENT",
                         )
