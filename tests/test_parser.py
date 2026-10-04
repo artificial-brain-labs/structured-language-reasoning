@@ -15,8 +15,6 @@ def test_cat_sleeping():
 
     tree = parser.parse(words)
 
-    assert tree.rule == (
-        "simple_present_progressive"
-    )
+    assert tree.rule == "statement_state_np_aux_state"
 
     assert tree.meaning == "SUBJECT_STATE"
