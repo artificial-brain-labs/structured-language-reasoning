@@ -81,6 +81,9 @@ class ReasoningState:
     subgoals: list[Goal] = field(default_factory=list)
     representation: str = "default"
     step: int = 0
+    # Optional explicit query-path context. Kept transient and never persisted.
+    query_path: Any = None
+    query_path_index: int = 0
 
     def __post_init__(self) -> None:
         # Avoid a circular import at module load time while guaranteeing that
