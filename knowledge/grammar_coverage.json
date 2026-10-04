@@ -1,0 +1,135 @@
+{
+  "version": "1.0",
+  "name": "SLR English V1 Grammar Coverage",
+  "purpose": "Declarative coverage contract for the grammar foundation. This defines the supported language constructions before further reasoning features are expanded.",
+  "scope": {
+    "definition": "Complete means complete within the declared SLR V1 language subset, not complete coverage of natural English.",
+    "principles": [
+      "Grammar is data.",
+      "Lexicon supplies lexical categories and lexical meaning.",
+      "Grammar identifies compositional structure.",
+      "Semantic composition maps structure to meaning.",
+      "Ontology and relation schemas determine domain semantics.",
+      "Python implements generic parsing and composition mechanisms.",
+      "No sentence-specific grammar logic is permitted in Python."
+    ]
+  },
+  "construction_families": [
+    {
+      "id": "noun_phrase",
+      "status": "FOUNDATION",
+      "constructions": [
+        "bare_noun",
+        "bare_entity",
+        "determiner_noun",
+        "determiner_entity",
+        "adjective_noun",
+        "determiner_adjective_noun",
+        "multiple_adjectives"
+      ]
+    },
+    {
+      "id": "declarative",
+      "status": "FOUNDATION",
+      "constructions": [
+        "simple_transitive",
+        "entity_transitive",
+        "state_assignment",
+        "classification",
+        "identity_relation",
+        "property_assignment"
+      ]
+    },
+    {
+      "id": "negation",
+      "status": "FOUNDATION",
+      "constructions": [
+        "negated_transitive",
+        "negated_state",
+        "negated_classification",
+        "negated_property"
+      ]
+    },
+    {
+      "id": "interrogative",
+      "status": "FOUNDATION",
+      "constructions": [
+        "object_question",
+        "subject_question",
+        "type_question",
+        "classification_question",
+        "property_question",
+        "meaning_question"
+      ]
+    },
+    {
+      "id": "pronoun",
+      "status": "FOUNDATION",
+      "constructions": [
+        "pronoun_subject_transitive",
+        "pronoun_reference"
+      ]
+    },
+    {
+      "id": "coordination",
+      "status": "PLANNED",
+      "constructions": [
+        "coordinated_noun_phrase",
+        "coordinated_statement",
+        "coordinated_adjective"
+      ]
+    },
+    {
+      "id": "tense_aspect",
+      "status": "PLANNED",
+      "constructions": [
+        "present",
+        "past",
+        "future",
+        "progressive",
+        "perfect"
+      ]
+    },
+    {
+      "id": "prepositional_phrase",
+      "status": "PLANNED",
+      "constructions": [
+        "prepositional_modifier",
+        "locative_phrase",
+        "instrumental_phrase",
+        "recipient_phrase"
+      ]
+    },
+    {
+      "id": "complex_clause",
+      "status": "PLANNED",
+      "constructions": [
+        "relative_clause",
+        "subordinate_clause",
+        "conditional_clause",
+        "causal_clause"
+      ]
+    }
+  ],
+  "v1_completion_gate": {
+    "required_families": [
+      "noun_phrase",
+      "declarative",
+      "negation",
+      "interrogative",
+      "pronoun"
+    ],
+    "required_for_each_construction": [
+      "declarative grammar production",
+      "semantic mapping where applicable",
+      "lexical-category support where applicable",
+      "parser regression test",
+      "semantic regression test where applicable"
+    ],
+    "out_of_scope_until_gate_passes": [
+      "new reasoning operators",
+      "new reasoning heuristics",
+      "sentence-specific parser exceptions"
+    ]
+  }
+}
