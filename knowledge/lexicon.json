@@ -238,5 +238,9 @@
         "definition": "Sports equipment used to hit a ball."
       }
     ]
+  },
+  "am": {
+    "concept": "IS",
+    "pos": "AUX"
   }
 }
