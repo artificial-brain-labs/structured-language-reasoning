@@ -120,14 +120,29 @@ class CompositionalGrammarParser:
         return (node.production_name, children)
 
     def coordination_token_indices(self, node):
+        """Return all coordinated member head tokens recursively.
+
+        Coordination structure is declared by grammar metadata. Nested
+        coordination is flattened without knowing any particular conjunction
+        or lexical item.
+        """
         production = self.production_for(node)
         definition = production.get("coordination", {}) if production else {}
         members = definition.get("members", [])
-        return tuple(
-            self._head_token_index(node.children[int(index)])
-            for index in members
-            if 0 <= int(index) < len(node.children)
-        )
+        indices = []
+        for index in members:
+            index = int(index)
+            if not 0 <= index < len(node.children):
+                continue
+            child = node.children[index]
+            child_production = self.production_for(child)
+            if child_production and child_production.get("coordination"):
+                indices.extend(self.coordination_token_indices(child))
+                continue
+            token_index = self._head_token_index(child)
+            if token_index is not None:
+                indices.append(token_index)
+        return tuple(indices)
 
     def role_token_index(self, node, role):
         production = self.production_for(node)
