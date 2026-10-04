@@ -60,9 +60,13 @@ class Parser:
         start_by_category = self.compositional.grammar.get("start_symbol_by_first_category", {})
         start_symbols = []
         for category in first_categories:
-            symbol = start_by_category.get(category, "STATEMENT")
-            if symbol not in start_symbols:
-                start_symbols.append(symbol)
+            configured = start_by_category.get(category)
+            symbols = configured if isinstance(configured, list) else [configured or "STATEMENT"]
+            for symbol in symbols:
+                if symbol not in start_symbols:
+                    start_symbols.append(symbol)
+        if not start_symbols:
+            start_symbols.extend(self.compositional.grammar.get("default_start_symbols", ["STATEMENT"]))
         candidates = []
         for start_symbol in start_symbols:
             candidates.extend(self.compositional.parse(tokens, start_symbol=start_symbol))
@@ -144,7 +148,36 @@ class Parser:
         compositional = self._from_compositional(tokens, surface_tokens)
         if compositional is not None:
             return compositional
-        return self.parse_statement(tokens, surface_tokens=surface_tokens)
+        for start_symbol in self.compositional.grammar.get("default_start_symbols", ["STATEMENT"]):
+            if start_symbol == "STATEMENT":
+                continue
+            candidates = self.compositional.parse(tokens, start_symbol=start_symbol)
+            if len(candidates) > 1:
+                return ParsedSentence(
+                    tokens=tokens,
+                    parse_status="AMBIGUOUS",
+                    parse_candidates=tuple(
+                        self.compositional.derivation_signature(candidate)
+                        for candidate in candidates
+                    ),
+                )
+            if len(candidates) == 1:
+                node = candidates[0]
+                head_index = self.compositional._head_token_index(node)
+                head_word = tokens[head_index] if head_index is not None else None
+                return ParsedSentence(
+                    subject_word=head_word,
+                    subject_surface_word=surface_tokens[head_index] if head_index is not None else None,
+                    subject_words=(head_word,) if head_word is not None else (),
+                    tokens=tokens,
+                    parse_status="DETERMINED",
+                    parse_candidates=(self.compositional.derivation_signature(node),),
+                    semantic_structure=(
+                        self.semantic_composer.compose(node, tokens)
+                        if self.semantic_composer else None
+                    ),
+                )
+        return ParsedSentence(tokens=tokens, parse_status="UNPARSED")
 
     def parse_statement(self, tokens, surface_tokens=None):
         """Parse through the authoritative V1 grammar foundation."""
