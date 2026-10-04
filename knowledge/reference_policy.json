@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "reference_modes": {
     "CONTEXTUAL": {
       "required_policy_fields": [
@@ -13,10 +13,22 @@
       "evidence_values": [
         "PRIOR_MENTION",
         "ROLE"
-      ]
+      ],
+      "agreement": {
+        "dimensions": [
+          "number",
+          "person",
+          "gender"
+        ],
+        "enforcement": "DECLARATIVE_ONLY"
+      }
     },
     "ANCHOR": {
-      "required_policy_fields": []
+      "required_policy_fields": [],
+      "agreement": {
+        "dimensions": [],
+        "enforcement": "DECLARATIVE_ONLY"
+      }
     }
   }
 }
