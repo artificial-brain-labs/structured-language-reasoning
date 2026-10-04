@@ -28,6 +28,7 @@ from .contextual_meaning_memory import ContextualMeaningMemory
 from .semantic_context import SemanticContextExtractor
 from .semantic_context_resolver import SemanticContextResolver
 from .reference_resolver import ReferenceResolver
+from .contextual_reference_memory import ContextualReferenceMemory
 
 
 class SLR:
@@ -43,6 +44,7 @@ class SLR:
         self.memory = DynamicMemory()
         self.user_memory = UserMemory()
         self.tcm = TransientCommunicationMemory()
+        self.contextual_reference_memory = ContextualReferenceMemory()
         self.contextual_meaning = ContextualMeaningMemory(self.lexicon)
         self.semantic_context = SemanticContextExtractor(self.lexicon)
         self.semantic_context_resolver = SemanticContextResolver(
@@ -52,6 +54,7 @@ class SLR:
             self.lexicon,
             self.user_memory,
             runtime_sources={"USER_PROFILE": self.user_profile},
+            contextual_memory=self.contextual_reference_memory,
         )
         self.semantic_parser = SemanticParser(
             self.lexicon,
@@ -133,6 +136,27 @@ class SLR:
         if hasattr(self, "query"):
             self.query.graph = self.graph
             self.query.graph_query.graph = self.graph
+
+    def _record_contextual_references(self, parsed, execution):
+        if execution.result is None:
+            return
+        for role, entity_id, surface in (
+            ("subject", execution.result.subject, parsed.subject_word),
+            ("object", execution.result.object, parsed.object_word),
+        ):
+            if not entity_id or not surface:
+                continue
+            canonical = self.user_memory.canonical_entity(entity_id)
+            entity = self.user_memory.entities.get(canonical)
+            concepts = ()
+            if entity is not None and entity.get("concept"):
+                concepts = (entity["concept"],)
+            self.contextual_reference_memory.add(
+                canonical,
+                surface,
+                role,
+                concepts=concepts,
+            )
 
     def _lexical_ambiguity(self, parsed, original_text, semantic_context=None):
         """Return the first unresolved lexical ambiguity in this sentence."""
@@ -339,6 +363,7 @@ class SLR:
         if operation and operation.name == "ASSERT_USER_RELATIONSHIP":
             return self._relationship_response(execution)
         self._refresh_graph()
+        self._record_contextual_references(parsed, execution)
         success_context = {}
         if parsed.subject_word:
             entity = self.user_memory.canonical_entity(execution.result.subject)
