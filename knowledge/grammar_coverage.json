@@ -160,7 +160,7 @@
     },
     {
       "id": "coordination",
-      "status": "FOUNDATION",
+      "status": "PARTIAL",
       "constructions": [
         "coordinated_noun_phrase",
         "coordinated_statement",
@@ -236,7 +236,7 @@
     "rule": "A FOUNDATION construction must resolve to one or more production names in grammar_foundation.json. PARTIAL constructions may expose only implemented production names.",
     "source": "knowledge/grammar_foundation.json",
     "coordination": {
-      "status": "FOUNDATION",
+      "status": "PARTIAL",
       "production_map": {
         "coordinated_noun_phrase": [
           "np_coordination"
