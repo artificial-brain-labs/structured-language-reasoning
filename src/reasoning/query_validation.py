@@ -51,4 +51,11 @@ def validate_query_result(state: ReasoningState, claim_id: str) -> bool:
     if not state.proof or not state.proof.has_node(state.goal.id):
         return False
 
+    # Derived claims require explicit supporting evidence. This keeps
+    # derivation and evidentiary support as separate concepts.
+    claim = state.claims[claim_id]
+    if claim.status == ValidationStatus.DERIVED:
+        if not any(claim_id in evidence.supports for evidence in state.evidence.values()):
+            return False
+
     return not state.unresolved_conflicts()
