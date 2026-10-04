@@ -44,12 +44,20 @@ class SemanticMappings:
 
 
 class SemanticParser:
-    def __init__(self, lexicon=None, mappings=None, contextual_memory=None, semantic_context_resolver=None):
+    def __init__(
+        self,
+        lexicon=None,
+        mappings=None,
+        contextual_memory=None,
+        semantic_context_resolver=None,
+        reference_resolver=None,
+    ):
         self.lexicon = lexicon
         self.mappings = mappings or SemanticMappings()
         self.entity_counter = 0
         self.contextual_memory = contextual_memory
         self.semantic_context_resolver = semantic_context_resolver
+        self.reference_resolver = reference_resolver
 
     def _concept(self, word):
         return self.lexicon.concept(word) if self.lexicon else None
@@ -63,6 +71,11 @@ class SemanticParser:
         return f"{base}_{self.entity_counter:03d}"
 
     def _entity(self, word, context=None):
+        if self.reference_resolver is not None:
+            reference = self.reference_resolver.resolve(word)
+            if reference.status == "RESOLVED":
+                return Entity(reference.reference, self._concept(word) or "UNKNOWN")
+
         senses = self.lexicon.senses(word) if self.lexicon is not None else []
         concept = self._concept(word) or "UNKNOWN"
         selected_sense = None
