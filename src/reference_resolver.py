@@ -9,6 +9,7 @@ class ReferenceResolution:
     reference: str | None = None
     reason: str | None = None
     candidates: tuple[str, ...] = ()
+    evidence: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
 
 class ReferenceResolver:
@@ -49,18 +50,21 @@ class ReferenceResolver:
             candidates = self.contextual_memory.candidates(
                 allowed_roles=policy.get("allowed_roles", []),
                 concepts=policy.get("concepts", []),
+                required_evidence=policy.get("required_evidence", []),
             )
             if len(candidates) == 1:
                 return ReferenceResolution(
                     "RESOLVED",
                     reference=candidates[0].entity_id,
                     reason="The contextual reference has exactly one evidence-supported antecedent.",
+                    evidence=((candidates[0].entity_id, tuple(item.kind for item in candidates[0].evidence)),),
                 )
             if len(candidates) > 1:
                 return ReferenceResolution(
                     "AMBIGUOUS",
                     reason="Multiple evidence-supported antecedents remain.",
                     candidates=tuple(candidate.entity_id for candidate in candidates),
+                    evidence=tuple((candidate.entity_id, tuple(item.kind for item in candidate.evidence)) for candidate in candidates),
                 )
             return ReferenceResolution("UNKNOWN", reason="No evidence-supported antecedent exists.")
 
