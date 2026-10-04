@@ -22,7 +22,7 @@ def test_coordinated_subject_creates_multiple_operations():
     rat_id = slr.user_memory.find_named_entity("rat")
     cat_id = slr.user_memory.find_named_entity("cat")
     dog_id = slr.user_memory.find_named_entity("dog")
-    assert slr.user_memory.query(subject=cat_id, predicate="EATS", object=rat_id)
+    assert slr.user_memory.query(subject=cat_id, predicate="EATS", object_=rat_id)
     assert slr.user_memory.query(subject=dog_id, predicate="EATS", object_=rat_id)
 
 def test_nested_coordination_is_explicitly_ambiguous():
