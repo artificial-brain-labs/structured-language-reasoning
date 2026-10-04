@@ -45,6 +45,15 @@ class ReferencePolicyValidator:
         enforcement = agreement.get("enforcement", "DECLARATIVE_ONLY")
         if enforcement != "DECLARATIVE_ONLY":
             errors.append(f"{word}: unsupported agreement enforcement {enforcement!r}")
+        compatibility = agreement.get("compatibility", {})
+        if not isinstance(compatibility, dict):
+            errors.append(f"{word}: agreement compatibility must be an object")
+        else:
+            for dimension, rule in compatibility.items():
+                if dimension not in self.agreement_dimensions:
+                    errors.append(f"{word}: unsupported agreement compatibility dimension {dimension!r}")
+                elif rule not in {"EXACT"}:
+                    errors.append(f"{word}: unsupported agreement compatibility rule {rule!r}")
 
     def validate_lexicon(self, words):
         errors = []
