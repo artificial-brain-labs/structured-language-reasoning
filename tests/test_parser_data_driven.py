@@ -39,3 +39,9 @@ def test_question_slots_are_read_from_grammar():
     subject_question = parser.parse("Who eats the mouse?")
     assert subject_question.question_type == "SUBJECT"
     assert (subject_question.verb_word, subject_question.object_word) == ("eats", "mouse")
+
+
+def test_parser_uses_v1_grammar_foundation_as_authority():
+    parser = Parser(Lexicon())
+    assert parser.grammar_path == "knowledge/grammar_foundation.json"
+    assert parser.compositional.grammar["version"] == "1.3"
