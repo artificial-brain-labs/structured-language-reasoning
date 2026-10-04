@@ -8,26 +8,29 @@ from ._utils import transition
 class CausalInfer(CognitiveOperator):
     name = "CAUSAL_INFER"
 
-    def _candidate(self, state: ReasoningState):
+    def _candidate(self, state):
         for claim in state.claims.values():
-            if claim.status not in {
+            if claim.status not in (
                 ValidationStatus.OBSERVED,
                 ValidationStatus.SUPPORTED,
                 ValidationStatus.DERIVED,
-            }:
+            ):
                 continue
             for source, predicate, effect in state.relations:
-                if predicate == "CAUSES" and claim.subject == source:
-                    return claim, effect
+                if predicate != "CAUSES" or claim.subject != source:
+                    continue
+                claim_id = f"cause_{claim.id}_{effect}"
+                if claim_id not in state.claims:
+                    return claim, effect, claim_id
         return None
 
-    def applicable(self, state: ReasoningState) -> bool:
+    def applicable(self, state):
         return state.goal.status == GoalStatus.OPEN and self._candidate(state) is not None
 
-    def necessary(self, state: ReasoningState) -> bool:
+    def necessary(self, state):
         return self.applicable(state)
 
-    def execute(self, state: ReasoningState):
+    def execute(self, state):
         candidate = self._candidate(state)
         if candidate is None:
             return state, transition(
@@ -35,24 +38,22 @@ class CausalInfer(CognitiveOperator):
                 self.name,
                 "no causal relation is available",
                 success=False,
-                failure_reason="no applicable causal edge",
+                failure_reason="no new causal edge",
             )
 
-        claim, effect = candidate
-        claim_id = f"cause_{claim.id}_{effect}"
-        if claim_id not in state.claims:
-            state.add_claim(
-                Claim(
-                    id=claim_id,
-                    subject=effect,
-                    predicate="OCCURS",
-                    object=None,
-                    source=claim.id,
-                    status=ValidationStatus.DERIVED,
-                    confidence=claim.confidence,
-                    dependencies=[claim.id],
-                )
+        claim, effect, claim_id = candidate
+        state.add_claim(
+            Claim(
+                id=claim_id,
+                subject=effect,
+                predicate="OCCURS",
+                object=None,
+                source=claim.id,
+                status=ValidationStatus.DERIVED,
+                confidence=claim.confidence,
+                dependencies=[claim.id],
             )
+        )
 
         return state, transition(
             state,
