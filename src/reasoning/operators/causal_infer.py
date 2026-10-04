@@ -59,6 +59,15 @@ class CausalInfer(CognitiveOperator):
             )
 
         claim, effect, claim_id = candidate
+        state.evidence[f"evidence_{claim_id}"] = Evidence(
+            id=f"evidence_{claim_id}",
+            source="DYNAMIC_MEMORY",
+            content=f"{claim.subject} CAUSES {effect}",
+            evidence_type="memory",
+            reliability=claim.confidence,
+            supports=[claim_id],
+        )
+
         state.add_claim(
             Claim(
                 id=claim_id,
