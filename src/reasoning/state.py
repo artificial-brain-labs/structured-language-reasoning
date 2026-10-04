@@ -32,6 +32,7 @@ class Goal:
     constraints: list[str] = field(default_factory=list)
     status: GoalStatus = GoalStatus.OPEN
     priority: float = 1.0
+    parent_id: str | None = None
 
 
 @dataclass
@@ -77,6 +78,8 @@ class ReasoningState:
     conflicts: dict[str, Conflict] = field(default_factory=dict)
     validation: dict[str, ValidationStatus] = field(default_factory=dict)
     history: list[str] = field(default_factory=list)
+    subgoals: list[Goal] = field(default_factory=list)
+    representation: str = "default"
     step: int = 0
 
     def __post_init__(self) -> None:
