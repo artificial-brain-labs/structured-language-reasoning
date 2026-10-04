@@ -146,9 +146,9 @@ class ResponseGenerator:
             "subject_name": self.memory.entities[entity]["name"],
             "concept": self.memory.entities[entity]["concept"].lower(),
             "result_name": self.entity_name(entity),
-            "subject_word": parsed.subject_word or "",
-            "verb_word": parsed.verb_word or "",
-            "object_word": parsed.object_word or "",
+            "subject_word": parsed.subject_surface_word or parsed.subject_word or "",
+            "verb_word": parsed.verb_surface_word or parsed.verb_word or "",
+            "object_word": parsed.object_surface_word or parsed.object_word or "",
         }
         try:
             return template.get("success", "").format(**context)
