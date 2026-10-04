@@ -119,6 +119,16 @@ class CompositionalGrammarParser:
         children = tuple(self.derivation_signature(child) for child in node.children)
         return (node.production_name, children)
 
+    def coordination_token_indices(self, node):
+        production = self.production_for(node)
+        definition = production.get("coordination", {}) if production else {}
+        members = definition.get("members", [])
+        return tuple(
+            self._head_token_index(node.children[int(index)])
+            for index in members
+            if 0 <= int(index) < len(node.children)
+        )
+
     def role_token_index(self, node, role):
         production = self.production_for(node)
         role_path = production.get("roles", {}).get(role) if production else None
