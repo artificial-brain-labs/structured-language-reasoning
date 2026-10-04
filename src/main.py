@@ -140,9 +140,18 @@ class SLR:
     def _record_contextual_references(self, parsed, execution):
         if execution.result is None:
             return
+        operation = execution.operation
         for role, entity_id, surface in (
-            ("subject", execution.result.subject, parsed.subject_word),
-            ("object", execution.result.object, parsed.object_word),
+            (
+                "subject",
+                execution.result.subject,
+                (operation.attributes.get("subject_word") if operation else None) or parsed.subject_word,
+            ),
+            (
+                "object",
+                execution.result.object,
+                (operation.attributes.get("object_word") if operation else None) or parsed.object_word,
+            ),
         ):
             if not entity_id or not surface:
                 continue
