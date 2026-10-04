@@ -30,3 +30,29 @@ def test_resolution_exposes_evidence_trace():
         slr.user_memory.find_named_entity("cat"),
         ("PRIOR_MENTION", "ROLE"),
     ),)
+
+
+def test_agreement_mismatch_does_not_resolve_candidate():
+    from src.main import SLR
+
+    slr = SLR()
+    slr.contextual_reference_memory.add(
+        "person_001", "person", "subject",
+        agreement={"number": "PLURAL"},
+    )
+    resolution = slr.reference_resolver.resolve("it")
+
+    assert resolution.status == "UNKNOWN"
+    assert "incompatible" in resolution.reason.lower()
+    assert "AGREEMENT_INCOMPATIBLE" in resolution.evidence[0][1]
+
+
+def test_unknown_candidate_agreement_does_not_count_as_mismatch():
+    from src.main import SLR
+
+    slr = SLR()
+    slr.contextual_reference_memory.add("cat_001", "cat", "subject")
+    resolution = slr.reference_resolver.resolve("it")
+
+    assert resolution.status == "RESOLVED"
+    assert "AGREEMENT_COMPATIBLE" in resolution.evidence[0][1]
