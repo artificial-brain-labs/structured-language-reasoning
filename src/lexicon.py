@@ -67,6 +67,13 @@ class Lexicon:
         entry = self.get(word)
         return entry.get(name) if entry else None
 
+    def agreement(self, word):
+        """Return only explicitly declared lexical agreement attributes."""
+        entry = self.get(word)
+        if not entry:
+            return {}
+        return dict(entry.get("agreement", {}))
+
     def contains(self, word):
         return isinstance(word, str) and word.lower() in self.words
 
