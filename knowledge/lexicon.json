@@ -168,7 +168,11 @@
   "i": {
     "concept": "SELF",
     "pos": "PRONOUN",
-    "referent": "USER"
+    "referent": "USER",
+    "agreement": {
+      "number": "SINGULAR",
+      "person": "FIRST"
+    }
   },
   "friend": {
     "concept": "FRIEND",
@@ -258,6 +262,10 @@
           "PRIOR_MENTION"
         ]
       }
+    },
+    "agreement": {
+      "number": "SINGULAR",
+      "person": "THIRD"
     }
   }
 }
