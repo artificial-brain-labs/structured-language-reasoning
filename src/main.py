@@ -6,6 +6,7 @@ from .reasoner import Reasoner
 from .query import QueryEngine
 from .response import ResponseGenerator
 from .reasoning.integration import SRSTObservationValidator
+from .reasoning.query_integration import SRSTQueryReasoner
 
 class SLR:
     def __init__(self):
@@ -17,12 +18,13 @@ class SLR:
         self.query = QueryEngine(self.memory, self.lexicon)
         self.response = ResponseGenerator(self.memory)
         self.srst_validator = SRSTObservationValidator()
+        self.srst_query = SRSTQueryReasoner(self.memory, self.lexicon)
 
     def process(self, text):
         parsed = self.parser.parse(text)
 
         if parsed.question_type:
-            results = self.query.answer(parsed)
+            results, _ = self.srst_query.answer(parsed)
             return self.response.generate(parsed, results)
 
         if not parsed.subject_word or not parsed.verb_word or not parsed.object_word:
