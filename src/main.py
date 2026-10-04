@@ -209,6 +209,14 @@ class SLR:
 
     def _execute_statement(self, parsed, context=None):
         meaning = self.semantic_parser.parse(parsed, context=context)
+        if meaning.reference_status == "AMBIGUOUS":
+            return StatementResult(
+                clarification=self.response.system("reference_ambiguous")
+            )
+        if meaning.reference_status == "UNKNOWN":
+            return StatementResult(
+                clarification=self.response.system("reference_unknown")
+            )
         operation = meaning.operation
         if operation is None:
             return StatementResult()
