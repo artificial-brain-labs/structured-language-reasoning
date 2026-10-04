@@ -301,6 +301,27 @@
       }
     },
     {
+      "name": "question_object_question_np_verb",
+      "lhs": "QUESTION",
+      "rhs": [
+        "QUESTION",
+        "NP",
+        "VERB"
+      ],
+      "meaning": "QUERY_OBJECT",
+      "question_type": "OBJECT",
+      "roles": {
+        "subject": [
+          1,
+          "head"
+        ],
+        "verb": [
+          2,
+          "head"
+        ]
+      }
+    },
+    {
       "name": "question_subject_question_verb_np",
       "lhs": "QUESTION",
       "rhs": [
