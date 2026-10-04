@@ -321,9 +321,6 @@ class QueryEngine:
         predicate = self._relation(parsed.verb_word)
         if not subject or not predicate:
             return []
-        # Relation queries follow explicit SAME_AS identity by resolving the
-        # queried entity to its canonical representative before graph traversal.
-        subject = self._canonical_id(subject)
         if self.graph_query is not None:
             return self.graph_query.objects(subject, predicate)
         return [
@@ -337,7 +334,6 @@ class QueryEngine:
         predicate = self._relation(parsed.verb_word)
         if not object_id or not predicate:
             return []
-        object_id = self._canonical_id(object_id)
         if self.graph_query is not None:
             return self.graph_query.subjects(object_id, predicate)
         return [
