@@ -1,5 +1,5 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "reference_modes": {
     "CONTEXTUAL": {
       "required_policy_fields": [
@@ -20,7 +20,12 @@
           "person",
           "gender"
         ],
-        "enforcement": "DECLARATIVE_ONLY"
+        "enforcement": "DECLARATIVE_ONLY",
+        "compatibility": {
+          "number": "EXACT",
+          "person": "EXACT",
+          "gender": "EXACT"
+        }
       }
     },
     "ANCHOR": {
