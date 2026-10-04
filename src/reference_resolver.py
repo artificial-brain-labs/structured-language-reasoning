@@ -5,40 +5,27 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class ReferenceResolution:
-    """Evidence-backed binding of a lexical reference to an entity."""
-
     status: str
     reference: str | None = None
     reason: str | None = None
 
 
 class ReferenceResolver:
-    """Resolve lexical references using declarative anchor metadata.
-
-    Lexical entries name a reference anchor. The anchor policy declares which
-    runtime context supplies the referent. No individual pronoun spelling or
-    anchor meaning is encoded here.
-    """
+    """Declarative lexical-reference resolver."""
 
     def __init__(
         self,
         lexicon=None,
         user_memory=None,
-        user_profile=None,
+        runtime_sources=None,
         anchor_path="knowledge/reference_anchors.json",
     ):
         self.lexicon = lexicon
         self.user_memory = user_memory
-        self.user_profile = user_profile
+        self.runtime_sources = runtime_sources or {}
         with open(Path(anchor_path), "r", encoding="utf-8") as file:
             data = json.load(file)
         self.anchors = data.get("anchors", {})
-
-    def _source(self, source):
-        sources = {
-            "USER_PROFILE": self.user_profile,
-        }
-        return sources.get(source)
 
     def resolve(self, word):
         if not word or self.lexicon is None:
@@ -65,7 +52,7 @@ class ReferenceResolver:
                 reason="The declared reference anchor has no policy.",
             )
 
-        source = self._source(anchor.get("source"))
+        source = self.runtime_sources.get(anchor.get("source"))
         field = anchor.get("field")
         if source is None or not field:
             return ReferenceResolution(
