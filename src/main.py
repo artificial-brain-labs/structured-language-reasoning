@@ -374,7 +374,7 @@ class SLR:
                     return request.question
         if parsed.question_type:
             return self.response.generate(parsed, self.query.answer(parsed, semantic_context=semantic_context))
-        if not parsed.meaning:
+        if parsed.parse_status != "DETERMINED" or not parsed.meaning:
             return self.response.system("parse_failure")
         execution = self._execute_statement(parsed, context=semantic_context)
         if execution.clarification:
@@ -390,7 +390,6 @@ class SLR:
         if operation and operation.name == "ASSERT_USER_RELATIONSHIP":
             return self._relationship_response(execution)
         self._refresh_graph()
-        self._record_contextual_references(parsed, execution)
         success_context = {}
         if parsed.subject_word:
             entity = self.user_memory.canonical_entity(execution.result.subject)
