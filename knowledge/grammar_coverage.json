@@ -150,7 +150,7 @@
       ],
       "production_map": {
         "pronoun_subject_transitive": [
-          "statement_transitive_pronoun_verb_np"
+          "statement_transitive_np_verb_np"
         ],
         "pronoun_subject_state": [
           "statement_state_np_aux_state"
