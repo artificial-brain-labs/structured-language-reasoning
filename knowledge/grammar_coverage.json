@@ -64,10 +64,10 @@
     },
     {
       "id": "pronoun",
-      "status": "FOUNDATION",
+      "status": "PARTIAL",
       "constructions": [
         "pronoun_subject_transitive",
-        "pronoun_reference"
+        "pronoun_subject_state"
       ]
     },
     {
@@ -124,7 +124,8 @@
       "semantic mapping where applicable",
       "lexical-category support where applicable",
       "parser regression test",
-      "semantic regression test where applicable"
+      "semantic regression test where applicable",
+      "coverage status must match implemented grammar; unsupported constructions remain PLANNED or PARTIAL"
     ],
     "out_of_scope_until_gate_passes": [
       "new reasoning operators",
