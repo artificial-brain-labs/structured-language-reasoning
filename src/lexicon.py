@@ -11,7 +11,7 @@ class Lexicon:
     ):
         with open(path, "r", encoding="utf-8") as f:
             self.words = json.load(f)
-        ReferencePolicyValidator(reference_policy_path).validate_lexicon(self.words)
+        ReferencePolicyValidator(reference_policy_path).validate(self.words)
 
     def get(self, word):
         return self.words.get(word.lower()) if isinstance(word, str) else None
