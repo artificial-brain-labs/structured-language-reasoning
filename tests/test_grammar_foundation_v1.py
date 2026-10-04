@@ -53,7 +53,7 @@ def test_v1_noun_phrase_adjective_composition():
 
 def test_v1_determiner_entity_composition():
     slr = SLR()
-    parsed = slr.parser.parse("The Tom eats the mouse")
+    parsed = slr.parser.parse("The dom eats the mouse")
     assert parsed.parse_status == "DETERMINED"
     assert parsed.meaning == "SUBJECT_VERB_OBJECT"
 
@@ -108,3 +108,22 @@ def test_v1_meaning_question_supports_adjective():
     assert parsed.parse_status == "DETERMINED"
     assert parsed.question_type == "MEANING"
     assert parsed.subject_word == "blue"
+
+
+def test_v1_declarative_foundation_semantics():
+    slr = SLR()
+
+    transitive = slr.semantic_parser.parse(slr.parser.parse("cat eats mouse"))
+    assert transitive.facts[0].predicate == "EATS"
+
+    state = slr.semantic_parser.parse(slr.parser.parse("cat is tired"))
+    assert state.facts[0].predicate == "TIRED"
+
+    classification = slr.semantic_parser.parse(slr.parser.parse("cat is an animal"))
+    assert classification.facts[0].predicate == "IS_A"
+
+    identity = slr.semantic_parser.parse(slr.parser.parse("tom is dom"))
+    assert identity.facts[0].predicate == "SAME_AS"
+
+    property_assignment = slr.semantic_parser.parse(slr.parser.parse("cat is blue"))
+    assert property_assignment.facts[0].predicate == "HAS_PROPERTY"
