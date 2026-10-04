@@ -47,6 +47,10 @@ class ReferenceResolver:
         with open(Path(anchor_path), "r", encoding="utf-8") as file:
             data = json.load(file)
         self.anchors = data.get("anchors", {})
+        policy_file = Path("knowledge/reference_policy.json")
+        with open(policy_file, "r", encoding="utf-8") as file:
+            policy_data = json.load(file)
+        self.reference_modes = policy_data.get("reference_modes", {})
 
     def resolve(self, word):
         if not word or self.lexicon is None:
@@ -70,10 +74,14 @@ class ReferenceResolver:
                 required_evidence=policy.get("required_evidence", []),
             )
             reference_agreement = entry.get("agreement", {})
+            mode_policy = self.reference_modes.get(reference.get("mode"), {})
             agreement_policy = reference.get("agreement", {})
             compatibility = agreement_policy.get(
                 "compatibility",
-                self._default_agreement_compatibility(reference),
+                mode_policy.get("agreement", {}).get(
+                    "compatibility",
+                    self._default_agreement_compatibility(reference),
+                ),
             )
             compatible = []
             evidence = []
