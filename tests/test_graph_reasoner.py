@@ -100,11 +100,19 @@ def test_reasoner_ignores_conflicted_taxonomic_evidence(tmp_path):
     result = SemanticGraphReasoner(ontology(tmp_path)).reason(graph)
 
     tom_derived = [edge for edge in result.edges if edge.subject == "entity:tom"]
-    alice_derived = [edge for edge in result.edges if edge.subject == "entity:alice"]
+    alice_evidence = [edge for edge in graph.edges.values() if edge.subject == "entity:alice"]
 
     assert tom_derived == []
-    assert alice_derived
-    assert all(edge.status == "DERIVED" for edge in alice_derived)
+    assert alice_evidence
+    alice_cat = next(edge for edge in alice_evidence if edge.predicate == "IS_A")
+    assert alice_cat.status == "ASSERTED"
+    assert ("concept:cat", "concept:feline") in [
+        (edge.subject, edge.object) for edge in result.edges
+    ]
+    assert all(
+        edge.subject != "entity:tom"
+        for edge in result.edges
+    )
 
 
 def test_conflicted_evidence_does_not_block_unrelated_valid_reasoning(tmp_path):
@@ -130,6 +138,12 @@ def test_conflicted_evidence_does_not_block_unrelated_valid_reasoning(tmp_path):
     before = graph.to_dict()
     result = SemanticGraphReasoner(ontology(tmp_path)).reason(graph)
 
-    assert any(edge.subject == "entity:alice" for edge in result.edges)
-    assert not any(edge.subject == "entity:tom" for edge in result.edges)
+    assert any(
+        edge.subject == "concept:cat" and edge.object == "concept:feline"
+        for edge in result.edges
+    )
+    assert not any(
+        edge.subject == "entity:tom"
+        for edge in result.edges
+    )
     assert graph.to_dict() == before
