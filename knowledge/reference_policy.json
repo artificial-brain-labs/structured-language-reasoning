@@ -1,0 +1,22 @@
+{
+  "version": "1.0",
+  "reference_modes": {
+    "CONTEXTUAL": {
+      "required_policy_fields": [
+        "allowed_roles",
+        "required_evidence"
+      ],
+      "allowed_role_values": [
+        "subject",
+        "object"
+      ],
+      "evidence_values": [
+        "PRIOR_MENTION",
+        "ROLE"
+      ]
+    },
+    "ANCHOR": {
+      "required_policy_fields": []
+    }
+  }
+}
