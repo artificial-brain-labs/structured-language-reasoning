@@ -3,9 +3,9 @@ import pytest
 from src.reference_policy import ReferencePolicyError, ReferencePolicyValidator
 
 
-def test_reference_policy_accepts_current_lexicon():
+def test_reference_policy_accepts_current_lexicon_and_grammar():
     validator = ReferencePolicyValidator()
-    assert validator.validate_lexicon({
+    assert validator.validate({
         "it": {
             "concept": "REFERENCE",
             "pos": "PRONOUN",
@@ -25,62 +25,34 @@ def test_reference_policy_accepts_current_lexicon():
     })
 
 
-def test_contextual_reference_requires_declared_policy_fields():
+def test_grammar_reference_role_must_be_a_declared_role():
     validator = ReferencePolicyValidator()
-    with pytest.raises(ReferencePolicyError, match="allowed_roles"):
-        validator.validate_lexicon({
-            "it": {
-                "pos": "PRONOUN",
-                "reference": {
-                    "mode": "CONTEXTUAL",
-                    "policy": {
-                        "required_evidence": ["PRIOR_MENTION"],
-                    },
-                },
-            }
-        })
+    validator.grammar_productions = [{
+        "name": "bad",
+        "roles": {"subject": [0, "head"]},
+        "reference_roles": {"object": ["CONTEXTUAL"]},
+    }]
+    with pytest.raises(ReferencePolicyError, match="not a declared grammatical role"):
+        validator.validate_grammar({})
 
 
-def test_reference_policy_rejects_unsupported_evidence():
+def test_grammar_reference_mode_must_be_declared():
     validator = ReferencePolicyValidator()
-    with pytest.raises(ReferencePolicyError, match="UNSUPPORTED"):
-        validator.validate_lexicon({
-            "it": {
-                "pos": "PRONOUN",
-                "reference": {
-                    "mode": "CONTEXTUAL",
-                    "policy": {
-                        "allowed_roles": ["subject"],
-                        "required_evidence": ["UNSUPPORTED"],
-                    },
-                },
-            }
-        })
+    validator.grammar_productions = [{
+        "name": "bad",
+        "roles": {"subject": [0, "head"]},
+        "reference_roles": {"subject": ["UNSUPPORTED"]},
+    }]
+    with pytest.raises(ReferencePolicyError, match="unsupported reference mode"):
+        validator.validate_grammar({})
 
 
-def test_reference_policy_rejects_mixed_reference_declarations():
+def test_grammar_reference_role_requires_non_empty_modes():
     validator = ReferencePolicyValidator()
-    with pytest.raises(ReferencePolicyError, match="both"):
-        validator.validate_lexicon({
-            "it": {
-                "pos": "PRONOUN",
-                "referent": "USER",
-                "reference": {
-                    "mode": "CONTEXTUAL",
-                    "policy": {
-                        "allowed_roles": ["subject"],
-                        "required_evidence": ["PRIOR_MENTION"],
-                    },
-                },
-            }
-        })
-
-
-def test_pronoun_without_reference_metadata_is_rejected():
-    validator = ReferencePolicyValidator()
-    with pytest.raises(ReferencePolicyError, match="reference or referent"):
-        validator.validate_lexicon({
-            "it": {
-                "pos": "PRONOUN"
-            }
-        })
+    validator.grammar_productions = [{
+        "name": "bad",
+        "roles": {"subject": [0, "head"]},
+        "reference_roles": {"subject": []},
+    }]
+    with pytest.raises(ReferencePolicyError, match="non-empty list"):
+        validator.validate_grammar({})
