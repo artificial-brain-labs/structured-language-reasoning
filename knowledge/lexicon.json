@@ -271,5 +271,10 @@
   "and": {
     "concept": "AND",
     "pos": "CONJUNCTION"
+  },
+  "sleeps": {
+    "concept": "SLEEP",
+    "pos": "STATE",
+    "base": "sleep"
   }
 }
