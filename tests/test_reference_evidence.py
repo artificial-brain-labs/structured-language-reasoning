@@ -1,3 +1,4 @@
+import pytest
 from src.contextual_reference_memory import ContextualReferenceMemory
 
 
