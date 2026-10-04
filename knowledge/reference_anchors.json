@@ -1,0 +1,10 @@
+{
+  "version": "1.0",
+  "anchors": {
+    "USER": {
+      "source": "USER_PROFILE",
+      "field": "display_name",
+      "entity_policy": "ENSURE_NAMED_ENTITY"
+    }
+  }
+}
