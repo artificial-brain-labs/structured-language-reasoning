@@ -33,3 +33,13 @@ __all__ = [
     "CognitiveOperator",
     "OperatorController",
 ]
+
+from .operators import (
+    Backtrack,
+    CausalInfer,
+    DecompPlan,
+    Monitor,
+    RelationalTraverse,
+    ReprReframe,
+    default_operators,
+)
