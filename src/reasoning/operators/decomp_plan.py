@@ -9,21 +9,20 @@ class DecompPlan(CognitiveOperator):
     name = "DECOMP_PLAN"
 
     @staticmethod
-    def _parts(target: str) -> list[str]:
+    def _parts(target):
         normalized = target.replace(";", " AND ")
-        parts = [part.strip() for part in normalized.split(" AND ")]
-        return [part for part in parts if part]
+        return [part.strip() for part in normalized.split(" AND ") if part.strip()]
 
-    def applicable(self, state: ReasoningState) -> bool:
+    def applicable(self, state):
         return (
             state.goal.status == GoalStatus.OPEN
             and len(self._parts(state.goal.target)) > 1
         )
 
-    def necessary(self, state: ReasoningState) -> bool:
+    def necessary(self, state):
         return self.applicable(state) and not state.subgoals
 
-    def execute(self, state: ReasoningState):
+    def execute(self, state):
         parts = self._parts(state.goal.target)
         state.subgoals = [
             Goal(
@@ -34,7 +33,6 @@ class DecompPlan(CognitiveOperator):
             )
             for index, part in enumerate(parts, start=1)
         ]
-        state.history.append(f"decomposed:{state.goal.id}")
 
         return state, transition(
             state,
