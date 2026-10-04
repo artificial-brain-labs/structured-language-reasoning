@@ -44,7 +44,7 @@ def test_parser_does_not_fallback_when_compositional_parse_is_ambiguous(tmp_path
     grammar_path = tmp_path / "ambiguous_grammar.json"
     grammar_path.write_text(json.dumps(grammar), encoding="utf-8")
 
-    parser = Parser(Lexicon(), grammar_path="knowledge/grammar.json")
+    parser = Parser(Lexicon(), grammar_path=str(grammar_path))
     parser.compositional = CompositionalGrammarParser(
         Lexicon(), grammar_path=str(grammar_path)
     )
