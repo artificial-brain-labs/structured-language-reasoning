@@ -27,6 +27,7 @@ from .tcm import TransientCommunicationMemory
 from .contextual_meaning_memory import ContextualMeaningMemory
 from .semantic_context import SemanticContextExtractor
 from .semantic_context_resolver import SemanticContextResolver
+from .reference_resolver import ReferenceResolver
 
 
 class SLR:
@@ -47,10 +48,16 @@ class SLR:
         self.semantic_context_resolver = SemanticContextResolver(
             self.contextual_meaning, self.lexicon, self.ontology
         )
+        self.reference_resolver = ReferenceResolver(
+            self.lexicon,
+            self.user_memory,
+            runtime_sources={"USER_PROFILE": self.user_profile},
+        )
         self.semantic_parser = SemanticParser(
             self.lexicon,
             contextual_memory=self.contextual_meaning,
             semantic_context_resolver=self.semantic_context_resolver,
+            reference_resolver=self.reference_resolver,
         )
 
         self.relationships = UserRelationshipMemory(
@@ -126,6 +133,7 @@ class SLR:
         if hasattr(self, "query"):
             self.query.graph = self.graph
             self.query.graph_query.graph = self.graph
+
     def _lexical_ambiguity(self, parsed, original_text, semantic_context=None):
         """Return the first unresolved lexical ambiguity in this sentence."""
         checked = set()
