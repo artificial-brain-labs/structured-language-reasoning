@@ -22,11 +22,11 @@ Examples:
 
 The parser exposes coordinated members through `subject_words`, `object_words`, and corresponding surface-word tuples.
 
-### 2. Recursive coordination flattening
+### 2. Recursive coordination structure
 
 `src/compositional_parser.py` now recursively expands nested coordination metadata.
 
-This allows recursively composed structures such as `cat eats rat and mouse and dog` to expose all coordinated members without naming the conjunction or individual lexical items in Python.
+Nested coordination remains structurally representable through recursive grammar composition. When multiple derivations are possible, the parser returns `AMBIGUOUS` rather than selecting an association implicitly. This preserves the no-guessing rule.
 
 ### 3. Semantic Cartesian expansion
 
@@ -59,7 +59,7 @@ Added regression coverage for:
 
 1. coordinated object parsing;
 2. coordinated subject parsing;
-3. nested coordination flattening;
+3. recursive coordination ambiguity detection;
 4. subject/object Cartesian expansion.
 
 The repository runtime test suite should be run from the `v1.0-development` checkout after pulling these commits.
