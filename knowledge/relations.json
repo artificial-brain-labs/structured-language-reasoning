@@ -42,5 +42,21 @@
     "transitive": false,
     "traversable": true,
     "allow_unknown_subject": true
+  },
+  "NOT_IS_A": {
+    "type": "NEGATED_TAXONOMIC",
+    "role": "relation",
+    "symmetric": false,
+    "transitive": false,
+    "traversable": false,
+    "opposite": "IS_A"
+  },
+  "NOT_HAS_PROPERTY": {
+    "type": "NEGATED_DESCRIPTIVE",
+    "role": "relation",
+    "symmetric": false,
+    "transitive": false,
+    "traversable": false,
+    "opposite": "HAS_PROPERTY"
   }
 }
