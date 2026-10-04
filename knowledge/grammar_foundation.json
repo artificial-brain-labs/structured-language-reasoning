@@ -16,7 +16,8 @@
     "PRONOUN",
     "DETERMINER",
     "ENTITY",
-    "NEGATION"
+    "NEGATION",
+    "CONJUNCTION"
   ],
   "phrase_categories": [
     "NP",
@@ -740,6 +741,22 @@
         "object": [
           "CONTEXTUAL",
           "ANCHOR"
+        ]
+      }
+    },
+    {
+      "name": "np_coordination",
+      "lhs": "NP",
+      "rhs": [
+        "NP",
+        "CONJUNCTION",
+        "NP"
+      ],
+      "head": 0,
+      "coordination": {
+        "members": [
+          0,
+          2
         ]
       }
     }
