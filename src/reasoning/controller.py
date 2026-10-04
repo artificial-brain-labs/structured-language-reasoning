@@ -59,6 +59,9 @@ class OperatorController:
             if not transition.success:
                 return state, check_termination(state)
 
+            if not transition.state_changes:
+                return state, check_termination(state)
+
             if not transition.is_valid_step():
                 raise ValueError(
                     "SRST transition must advance exactly one reasoning step."
