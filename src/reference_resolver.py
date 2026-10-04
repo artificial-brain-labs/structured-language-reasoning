@@ -15,6 +15,23 @@ class ReferenceResolution:
 class ReferenceResolver:
     """Declarative lexical-reference resolver."""
 
+    @staticmethod
+    def _default_agreement_compatibility(reference):
+        agreement = reference.get("agreement", {})
+        dimensions = agreement.get("dimensions", [])
+        return {dimension: "EXACT" for dimension in dimensions}
+
+    @staticmethod
+    def _agreement_compatibility(reference_agreement, candidate_agreement, compatibility):
+        for dimension, rule in compatibility.items():
+            reference_value = reference_agreement.get(dimension)
+            candidate_value = candidate_agreement.get(dimension)
+            if reference_value is None or candidate_value is None:
+                continue
+            if rule == "EXACT" and reference_value != candidate_value:
+                return "INCOMPATIBLE", dimension
+        return "COMPATIBLE", None
+
     def __init__(
         self,
         lexicon=None,
@@ -52,19 +69,47 @@ class ReferenceResolver:
                 concepts=policy.get("concepts", []),
                 required_evidence=policy.get("required_evidence", []),
             )
-            if len(candidates) == 1:
+            reference_agreement = entry.get("agreement", {})
+            agreement_policy = reference.get("agreement", {})
+            compatibility = agreement_policy.get(
+                "compatibility",
+                self._default_agreement_compatibility(reference),
+            )
+            compatible = []
+            evidence = []
+            rejected = []
+            for candidate in candidates:
+                status, dimension = self._agreement_compatibility(
+                    reference_agreement,
+                    dict(candidate.agreement),
+                    compatibility,
+                )
+                candidate_evidence = tuple(item.kind for item in candidate.evidence)
+                if status == "COMPATIBLE":
+                    compatible.append(candidate)
+                    evidence.append((candidate.entity_id, candidate_evidence + ("AGREEMENT_COMPATIBLE",)))
+                else:
+                    rejected.append((candidate.entity_id, dimension))
+                    evidence.append((candidate.entity_id, candidate_evidence + ("AGREEMENT_INCOMPATIBLE",)))
+            if len(compatible) == 1:
                 return ReferenceResolution(
                     "RESOLVED",
-                    reference=candidates[0].entity_id,
-                    reason="The contextual reference has exactly one evidence-supported antecedent.",
-                    evidence=((candidates[0].entity_id, tuple(item.kind for item in candidates[0].evidence)),),
+                    reference=compatible[0].entity_id,
+                    reason="Exactly one evidence-supported antecedent remains after declarative agreement compatibility.",
+                    evidence=tuple(evidence),
                 )
-            if len(candidates) > 1:
+            if len(compatible) > 1:
                 return ReferenceResolution(
                     "AMBIGUOUS",
-                    reason="Multiple evidence-supported antecedents remain.",
-                    candidates=tuple(candidate.entity_id for candidate in candidates),
-                    evidence=tuple((candidate.entity_id, tuple(item.kind for item in candidate.evidence)) for candidate in candidates),
+                    reason="Multiple evidence-supported antecedents remain after declarative agreement compatibility.",
+                    candidates=tuple(candidate.entity_id for candidate in compatible),
+                    evidence=tuple(evidence),
+                )
+            if candidates and rejected:
+                return ReferenceResolution(
+                    "UNKNOWN",
+                    reason="Evidence-supported antecedents were incompatible with explicit agreement.",
+                    evidence=tuple(evidence),
                 )
             return ReferenceResolution("UNKNOWN", reason="No evidence-supported antecedent exists.")
 
