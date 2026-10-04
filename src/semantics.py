@@ -82,7 +82,9 @@ class SemanticParser:
             if entry and entry.get("pos") == "PRONOUN":
                 self._reference_statuses.append(reference)
             if reference.status == "RESOLVED":
-                return Entity(reference.reference, self._concept(word) or "UNKNOWN")
+                entity = Entity(reference.reference, self._concept(word) or "UNKNOWN")
+                entity.agreement = self.lexicon.agreement(word) if self.lexicon is not None else {}
+                return entity
 
         senses = self.lexicon.senses(word) if self.lexicon is not None else []
         concept = self._concept(word) or "UNKNOWN"
@@ -151,6 +153,12 @@ class SemanticParser:
         attributes = self._operation_attributes(subject_word or tree.subject_word, object_word or tree.object_word, tree)
         if subject is not None:
             attributes["subject_concept"] = subject.concept
+        if subject_word and self.reference_resolver is not None:
+            entry = self.lexicon.get(subject_word) if self.lexicon is not None else None
+            if entry and entry.get("pos") == "PRONOUN":
+                resolution = self.reference_resolver.resolve(subject_word)
+                if resolution.status == "RESOLVED":
+                    attributes["reference_resolved"] = True
         if object_value is not None:
             attributes["object_concept"] = object_entity.concept if object_entity is not None else "UNKNOWN"
         return SemanticOperation(
