@@ -61,3 +61,62 @@ def test_unknown_concept_is_not_guessed(tmp_path):
     result = SemanticGraphReasoner(ontology(tmp_path)).reason(graph)
 
     assert result.edges == ()
+
+
+
+def test_reasoner_ignores_conflicted_taxonomic_evidence(tmp_path):
+    graph = build_cat_graph()
+    graph.nodes["entity:alice"] = GraphNode("entity:alice", "ENTITY", "Alice", "UNKNOWN")
+    graph.add_edge(
+        GraphEdge(
+            "edge:alice-cat",
+            "entity:alice",
+            "IS_A",
+            "concept:cat",
+            status="ASSERTED",
+        )
+    )
+    graph.edges["edge:tom-cat"] = GraphEdge(
+        "edge:tom-cat",
+        "entity:tom",
+        "IS_A",
+        "concept:cat",
+        status="CONFLICTED",
+    )
+
+    result = SemanticGraphReasoner(ontology(tmp_path)).reason(graph)
+
+    tom_derived = [edge for edge in result.edges if edge.subject == "entity:tom"]
+    alice_derived = [edge for edge in result.edges if edge.subject == "entity:alice"]
+
+    assert tom_derived == []
+    assert alice_derived
+    assert all(edge.status == "DERIVED" for edge in alice_derived)
+
+
+def test_conflicted_evidence_does_not_block_unrelated_valid_reasoning(tmp_path):
+    graph = build_cat_graph()
+    graph.nodes["entity:alice"] = GraphNode("entity:alice", "ENTITY", "Alice", "UNKNOWN")
+    graph.add_edge(
+        GraphEdge(
+            "edge:alice-cat",
+            "entity:alice",
+            "IS_A",
+            "concept:cat",
+            status="ASSERTED",
+        )
+    )
+    graph.edges["edge:tom-cat"] = GraphEdge(
+        "edge:tom-cat",
+        "entity:tom",
+        "IS_A",
+        "concept:cat",
+        status="CONFLICTED",
+    )
+
+    before = graph.to_dict()
+    result = SemanticGraphReasoner(ontology(tmp_path)).reason(graph)
+
+    assert any(edge.subject == "entity:alice" for edge in result.edges)
+    assert not any(edge.subject == "entity:tom" for edge in result.edges)
+    assert graph.to_dict() == before
