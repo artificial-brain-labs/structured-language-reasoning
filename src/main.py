@@ -396,12 +396,13 @@ class SLR:
             success_context["subject_name"] = self.user_memory.entities[entity]["name"]
         if parsed.object_word:
             success_context["object_word"] = parsed.object_word
+        if execution.result.status == "CONFLICTED":
+            conflict_response = self.response_policy.render(operation, "conflict")
+            if conflict_response:
+                return conflict_response
         success = self.response_policy.render(operation, "success", success_context)
         if success:
             return success
-        conflict_response = self.response_policy.render(operation, "conflict")
-        if execution.result.status == "CONFLICTED" and conflict_response:
-            return conflict_response
         return self.response.system("memory_conflict" if execution.result.status == "CONFLICTED" else "execution_failure")
 
 
