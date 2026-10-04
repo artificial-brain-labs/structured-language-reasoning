@@ -126,14 +126,57 @@ class SemanticGraphQuery:
     def _proof(self, subject_id, target_concept, path):
         return {"subject": self._node_label(subject_id), "target": target_concept, "status": "PROVEN", "path": path}
 
-    def objects(self, subject_id, predicate):
-        """Return relation objects reachable through explicit identity."""
+    def _relation_subject_paths(self, subject_id):
+        """Traverse explicit identity and taxonomic classification to a relation source."""
         if subject_id not in self.graph.nodes:
             return []
+        queue = [subject_id]
+        visited = {subject_id}
+        while queue:
+            current = queue.pop(0)
+            yield current
+            for edge, neighbor in self._neighbors(current, classification_only=True):
+                if neighbor in visited:
+                    continue
+                visited.add(neighbor)
+                queue.append(neighbor)
+
+    def _relation_object_paths(self, object_id):
+        """Traverse explicit identity and reverse taxonomic classification to relation sources."""
+        if object_id not in self.graph.nodes:
+            return []
+        queue = [object_id]
+        visited = {object_id}
+        while queue:
+            current = queue.pop(0)
+            yield current
+            for edge in self.graph.edges_to(current):
+                if edge.status == "CONFLICTED" or not self._traversable(edge.predicate):
+                    continue
+                if not (self._is_identity(edge.predicate) or self._is_taxonomic(edge.predicate)):
+                    continue
+                neighbor = edge.subject
+                if neighbor in visited:
+                    continue
+                visited.add(neighbor)
+                queue.append(neighbor)
+            for edge in self.graph.edges_from(current):
+                if edge.status == "CONFLICTED" or not self._traversable(edge.predicate):
+                    continue
+                if not self._is_identity(edge.predicate):
+                    continue
+                neighbor = edge.object
+                if neighbor in visited:
+                    continue
+                visited.add(neighbor)
+                queue.append(neighbor)
+
+    def objects(self, subject_id, predicate):
+        """Return relation objects reachable through identity and classification."""
         results = []
         seen = set()
-        for entity_id, _identity_path in self._identity_paths(subject_id):
-            for edge in self.graph.edges_from(entity_id, predicate):
+        for source_id in self._relation_subject_paths(subject_id):
+            for edge in self.graph.edges_from(source_id, predicate):
                 if edge.status == "CONFLICTED" or edge.object in seen:
                     continue
                 seen.add(edge.object)
@@ -141,13 +184,11 @@ class SemanticGraphQuery:
         return results
 
     def subjects(self, object_id, predicate):
-        """Return relation subjects reachable through explicit identity."""
-        if object_id not in self.graph.nodes:
-            return []
+        """Return relation subjects reachable through identity and classification."""
         results = []
         seen = set()
-        for entity_id, _identity_path in self._identity_paths(object_id):
-            for edge in self.graph.edges_to(entity_id, predicate):
+        for source_id in self._relation_object_paths(object_id):
+            for edge in self.graph.edges_to(source_id, predicate):
                 if edge.status == "CONFLICTED" or edge.subject in seen:
                     continue
                 seen.add(edge.subject)
