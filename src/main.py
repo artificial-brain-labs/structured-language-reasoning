@@ -224,6 +224,8 @@ class SLR:
         for operation in operations:
             self._record_interpretation(parsed, operation)
             last = self.router.dispatch(operation, parsed)
+            if last.result is not None:
+                self._record_contextual_references(parsed, last)
             if last.clarification:
                 return last
         return last
