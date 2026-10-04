@@ -39,6 +39,7 @@ class ReferenceResolver:
         runtime_sources=None,
         contextual_memory=None,
         anchor_path="knowledge/reference_anchors.json",
+        reference_policy_path="knowledge/reference_policy.json",
     ):
         self.lexicon = lexicon
         self.user_memory = user_memory
@@ -47,7 +48,7 @@ class ReferenceResolver:
         with open(Path(anchor_path), "r", encoding="utf-8") as file:
             data = json.load(file)
         self.anchors = data.get("anchors", {})
-        policy_file = Path("knowledge/reference_policy.json")
+        policy_file = Path(reference_policy_path)
         with open(policy_file, "r", encoding="utf-8") as file:
             policy_data = json.load(file)
         self.reference_modes = policy_data.get("reference_modes", {})
