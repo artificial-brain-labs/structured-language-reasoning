@@ -139,10 +139,10 @@ class SemanticParser:
             return mapping["object"]
         return object_.entity_id if object_ else None
 
-    def _build_operation(self, tree, subject, predicate, object_value, object_entity=None, object_word=None):
+    def _build_operation(self, tree, subject, predicate, object_value, object_entity=None, object_word=None, subject_word=None):
         if not tree.operation:
             return None
-        attributes = self._operation_attributes(tree.subject_word, object_word or tree.object_word, tree)
+        attributes = self._operation_attributes(subject_word or tree.subject_word, object_word or tree.object_word, tree)
         if subject is not None:
             attributes["subject_concept"] = subject.concept
         if object_value is not None:
@@ -209,6 +209,7 @@ class SemanticParser:
                     member_object,
                     object_entity=member,
                     object_word=object_word,
+                    subject_word=subject_word,
                 )
                 if operation is not None:
                     if member is not None:
