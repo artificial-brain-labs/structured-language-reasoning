@@ -1,5 +1,5 @@
 {
-  "version": "1.2",
+  "version": "1.3",
   "principles": {
     "data_before_logic": true,
     "no_guessing": true,
@@ -29,6 +29,99 @@
     "AUX": "QUESTION"
   },
   "productions": [
+    {
+      "name": "np_pronoun",
+      "lhs": "NP",
+      "rhs": [
+        "PRONOUN"
+      ],
+      "head": 0
+    },
+    {
+      "name": "statement_state_np_aux_negation_state",
+      "lhs": "STATEMENT",
+      "rhs": [
+        "NP",
+        "AUX",
+        "NEGATION",
+        "STATE"
+      ],
+      "meaning": "SUBJECT_STATE",
+      "operation": "ASSERT_STATE",
+      "negated": true,
+      "semantic_features": {
+        "tense": "PRESENT"
+      },
+      "roles": {
+        "subject": [
+          0,
+          "head"
+        ],
+        "verb": [
+          3,
+          "head"
+        ]
+      }
+    },
+    {
+      "name": "statement_property_np_aux_negation_adjective",
+      "lhs": "STATEMENT",
+      "rhs": [
+        "NP",
+        "AUX",
+        "NEGATION",
+        "ADJECTIVE"
+      ],
+      "meaning": "PROPERTY_ASSIGNMENT",
+      "operation": "ASSERT_RELATION",
+      "relation": "HAS_PROPERTY",
+      "negated": true,
+      "roles": {
+        "subject": [
+          0,
+          "head"
+        ],
+        "verb": [
+          3,
+          "head"
+        ],
+        "object": [
+          3,
+          "head"
+        ]
+      }
+    },
+    {
+      "name": "statement_classification_np_aux_negation_np",
+      "lhs": "STATEMENT",
+      "rhs": [
+        "NP",
+        "AUX",
+        "NEGATION",
+        "NP"
+      ],
+      "meaning": "TYPE_ASSIGNMENT",
+      "operation": "ASSERT_CLASSIFICATION",
+      "relation": "IS_A",
+      "negated": true,
+      "roles": {
+        "subject": [
+          0,
+          "head"
+        ],
+        "object": [
+          3,
+          "head"
+        ]
+      },
+      "constraints": {
+        "head_categories": {
+          "3": [
+            "NOUN"
+          ]
+        }
+      }
+    },
     {
       "name": "np_determiner_noun",
       "lhs": "NP",
