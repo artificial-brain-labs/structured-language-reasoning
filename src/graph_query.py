@@ -127,7 +127,29 @@ class SemanticGraphQuery:
         return {"subject": self._node_label(subject_id), "target": target_concept, "status": "PROVEN", "path": path}
 
     def objects(self, subject_id, predicate):
-        return [edge.object for edge in self.graph.edges_from(subject_id, predicate) if edge.status != "CONFLICTED"]
+        """Return relation objects reachable through explicit identity."""
+        if subject_id not in self.graph.nodes:
+            return []
+        results = []
+        seen = set()
+        for entity_id, _identity_path in self._identity_paths(subject_id):
+            for edge in self.graph.edges_from(entity_id, predicate):
+                if edge.status == "CONFLICTED" or edge.object in seen:
+                    continue
+                seen.add(edge.object)
+                results.append(edge.object)
+        return results
 
     def subjects(self, object_id, predicate):
-        return [edge.subject for edge in self.graph.edges_to(object_id, predicate) if edge.status != "CONFLICTED"]
+        """Return relation subjects reachable through explicit identity."""
+        if object_id not in self.graph.nodes:
+            return []
+        results = []
+        seen = set()
+        for entity_id, _identity_path in self._identity_paths(object_id):
+            for edge in self.graph.edges_to(entity_id, predicate):
+                if edge.status == "CONFLICTED" or edge.subject in seen:
+                    continue
+                seen.add(edge.subject)
+                results.append(edge.subject)
+        return results
