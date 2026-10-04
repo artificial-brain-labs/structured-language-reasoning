@@ -8,6 +8,7 @@ class ReferenceResolution:
     status: str
     reference: str | None = None
     reason: str | None = None
+    candidates: tuple[str, ...] = ()
 
 
 class ReferenceResolver:
@@ -18,11 +19,13 @@ class ReferenceResolver:
         lexicon=None,
         user_memory=None,
         runtime_sources=None,
+        contextual_memory=None,
         anchor_path="knowledge/reference_anchors.json",
     ):
         self.lexicon = lexicon
         self.user_memory = user_memory
         self.runtime_sources = runtime_sources or {}
+        self.contextual_memory = contextual_memory
         with open(Path(anchor_path), "r", encoding="utf-8") as file:
             data = json.load(file)
         self.anchors = data.get("anchors", {})
@@ -37,6 +40,29 @@ class ReferenceResolver:
                 "UNKNOWN",
                 reason="The lexical entry is not classified as a pronoun.",
             )
+
+        reference = entry.get("reference", {})
+        if reference.get("mode") == "CONTEXTUAL":
+            if self.contextual_memory is None:
+                return ReferenceResolution("UNKNOWN", reason="No contextual reference memory is available.")
+            policy = reference.get("policy", {})
+            candidates = self.contextual_memory.candidates(
+                allowed_roles=policy.get("allowed_roles", []),
+                concepts=policy.get("concepts", []),
+            )
+            if len(candidates) == 1:
+                return ReferenceResolution(
+                    "RESOLVED",
+                    reference=candidates[0].entity_id,
+                    reason="The contextual reference has exactly one evidence-supported antecedent.",
+                )
+            if len(candidates) > 1:
+                return ReferenceResolution(
+                    "AMBIGUOUS",
+                    reason="Multiple evidence-supported antecedents remain.",
+                    candidates=tuple(candidate.entity_id for candidate in candidates),
+                )
+            return ReferenceResolution("UNKNOWN", reason="No evidence-supported antecedent exists.")
 
         anchor_name = entry.get("referent")
         if not anchor_name:
