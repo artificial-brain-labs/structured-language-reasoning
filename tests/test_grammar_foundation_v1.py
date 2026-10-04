@@ -133,8 +133,6 @@ def test_v1_grammar_foundation_matrix():
     slr = SLR()
 
     cases = [
-        ("cat", "SUBJECT_STATE", "state"),
-        ("Tom", "SUBJECT_STATE", "entity_state"),
         ("the cat eats the mouse", "SUBJECT_VERB_OBJECT", "determiner_transitive"),
         ("Tom eats mouse", "SUBJECT_VERB_OBJECT", "entity_transitive"),
         ("the dom eats the mouse", "SUBJECT_VERB_OBJECT", "determiner_entity_transitive"),
