@@ -204,3 +204,65 @@ class SRSTQueryReasoner:
             ),
             query_path=path,
         )
+
+
+    def answer_causal_path(self, path):
+        """Answer an explicit causal path using CAUSAL_INFER only."""
+        path.validate()
+
+        from .controller import OperatorController
+        from .operators import CausalInfer
+
+        state = ReasoningState(
+            goal=Goal(
+                id="causal_query",
+                target=f"CAUSE:{path.cause}->{ '->'.join(path.effects) }",
+            )
+        )
+        # Keep the causal query context transient. It deliberately does not
+        # become durable memory.
+        state.causal_path = path
+        state.causal_path_index = 0
+
+        anchor_id = "causal_query_anchor"
+        state.add_claim(
+            Claim(
+                id=anchor_id,
+                subject=path.cause,
+                predicate="OCCURS",
+                object=None,
+                source="QUERY",
+                status=ValidationStatus.OBSERVED,
+                confidence=1.0,
+            )
+        )
+        state.proof.add_node(
+            ProofNode(anchor_id, "query_anchor", anchor_id)
+        )
+
+        for memory in self.memory.memories:
+            if memory.status == "CONFLICTED":
+                continue
+            state.relations.append(
+                (memory.subject, memory.predicate, memory.object)
+            )
+
+        state, result = OperatorController(
+            [CausalInfer()]
+        ).reason(state, max_steps=len(path.steps))
+
+        if not result.terminated:
+            return None, state
+
+        final_claims = [
+            claim
+            for claim in state.claims.values()
+            if claim.status == ValidationStatus.DERIVED
+            and claim.subject == path.target
+            and claim.predicate == "OCCURS"
+        ]
+
+        if not final_claims:
+            return None, state
+
+        return path.target, state
