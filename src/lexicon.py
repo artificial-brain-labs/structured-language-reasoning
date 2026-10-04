@@ -1,11 +1,17 @@
 import json
 from .ambiguity import AmbiguityResolver, MeaningCandidate
+from .reference_policy import ReferencePolicyValidator
 
 
 class Lexicon:
-    def __init__(self, path="knowledge/lexicon.json"):
+    def __init__(
+        self,
+        path="knowledge/lexicon.json",
+        reference_policy_path="knowledge/reference_policy.json",
+    ):
         with open(path, "r", encoding="utf-8") as f:
             self.words = json.load(f)
+        ReferencePolicyValidator(reference_policy_path).validate_lexicon(self.words)
 
     def get(self, word):
         return self.words.get(word.lower()) if isinstance(word, str) else None
@@ -68,10 +74,10 @@ class Lexicon:
         entry = self.get(word)
         if not entry:
             return []
-        explicit = entry.get('senses')
+        explicit = entry.get("senses")
         if explicit:
-            return [MeaningCandidate(s.get('id', f"{word.lower()}.{i}"), s.get('concept'), s.get('pos'), s.get('definition')) for i, s in enumerate(explicit, 1)]
-        return [MeaningCandidate(f"{word.lower()}.default", entry.get('concept'), entry.get('pos'), entry.get('definition'))]
+            return [MeaningCandidate(s.get("id", f"{word.lower()}.{i}"), s.get("concept"), s.get("pos"), s.get("definition")) for i, s in enumerate(explicit, 1)]
+        return [MeaningCandidate(f"{word.lower()}.default", entry.get("concept"), entry.get("pos"), entry.get("definition"))]
 
     def meanings(self, word):
         return self.senses(word)
