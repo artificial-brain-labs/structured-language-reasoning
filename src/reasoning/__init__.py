@@ -32,6 +32,8 @@ __all__ = [
     "check_termination",
     "CognitiveOperator",
     "OperatorController",
+    "QueryPath",
+    "QueryPathStep",
 ]
 
 from .operators import (
@@ -45,3 +47,5 @@ from .operators import (
 )
 
 from .integration import SRSTObservationValidator
+
+from .query_path import QueryPath, QueryPathStep
