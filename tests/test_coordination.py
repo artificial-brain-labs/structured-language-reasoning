@@ -25,11 +25,10 @@ def test_coordinated_subject_creates_multiple_operations():
     assert slr.user_memory.query(subject=cat_id, predicate="EATS", object=rat_id)
     assert slr.user_memory.query(subject=dog_id, predicate="EATS", object=rat_id)
 
-def test_nested_coordination_flattens_all_members():
+def test_nested_coordination_is_explicitly_ambiguous():
     slr = SLR()
     parsed = slr.parser.parse("cat eats rat and mouse and dog")
-    assert parsed.parse_status == "DETERMINED"
-    assert parsed.object_words == ("rat", "mouse", "dog")
+    assert parsed.parse_status == "AMBIGUOUS"
 
 
 def test_coordination_expands_both_roles_as_cartesian_product():
