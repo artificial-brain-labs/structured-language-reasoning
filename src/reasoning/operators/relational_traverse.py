@@ -67,6 +67,15 @@ class RelationalTraverse(CognitiveOperator):
 
         claim, (_, predicate, object_), claim_id = candidate
 
+        state.evidence[f"evidence_{claim_id}"] = Evidence(
+            id=f"evidence_{claim_id}",
+            source="DYNAMIC_MEMORY",
+            content=f"{claim.object} {predicate} {object_}",
+            evidence_type="memory",
+            reliability=claim.confidence,
+            supports=[claim_id],
+        )
+
         state.add_claim(
             Claim(
                 id=claim_id,
