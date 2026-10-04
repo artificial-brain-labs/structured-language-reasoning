@@ -15,6 +15,7 @@ class ReferenceMention:
     surface: str
     role: str
     concepts: tuple[str, ...] = ()
+    agreement: tuple[tuple[str, str], ...] = ()
     evidence: tuple[ReferenceEvidence, ...] = ()
 
 
@@ -31,14 +32,22 @@ class ContextualReferenceMemory:
         self.capacity = capacity
         self.mentions = []
 
-    def add(self, entity_id, surface, role, concepts=()):
+    def add(self, entity_id, surface, role, concepts=(), agreement=None):
         if not entity_id or not surface or not role:
             return None
         evidence = (
             ReferenceEvidence("PRIOR_MENTION", "Entity was established by a prior successful operation."),
             ReferenceEvidence("ROLE", f"Prior mention role: {role}."),
         )
-        mention = ReferenceMention(entity_id, surface, role, tuple(concepts), evidence)
+        explicit_agreement = tuple(sorted((agreement or {}).items()))
+        mention = ReferenceMention(
+            entity_id,
+            surface,
+            role,
+            tuple(concepts),
+            explicit_agreement,
+            evidence,
+        )
         self.mentions.append(mention)
         if len(self.mentions) > self.capacity:
             self.mentions.pop(0)
