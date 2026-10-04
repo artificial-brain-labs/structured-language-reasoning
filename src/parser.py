@@ -12,6 +12,10 @@ class ParsedSentence:
     subject_surface_word: str | None = None
     verb_surface_word: str | None = None
     object_surface_word: str | None = None
+    subject_words: tuple[str, ...] = ()
+    object_words: tuple[str, ...] = ()
+    subject_surface_words: tuple[str, ...] = ()
+    object_surface_words: tuple[str, ...] = ()
     negated: bool = False
     question_type: str | None = None
     rule: str | None = None
@@ -89,6 +93,27 @@ class Parser:
             return surface_tokens[index] if index is not None else None
 
         semantic_structure = self.semantic_composer.compose(node, tokens) if self.semantic_composer else None
+        coordination = self.compositional.production_for(node).get("coordination", {})
+        subject_indices = self.compositional.coordination_token_indices(node) if coordination else ()
+        subject_words = ()
+        object_words = ()
+        subject_surface_words = ()
+        object_surface_words = ()
+        if coordination:
+            roles = production.get("roles", {})
+            for role, path in roles.items():
+                if path[1] != "head":
+                    continue
+                child = node.children[int(path[0])]
+                child_production = self.compositional.production_for(child)
+                if child_production and child_production.get("coordination"):
+                    indices = self.compositional.coordination_token_indices(child)
+                    words = tuple(tokens[i] for i in indices)
+                    surfaces = tuple(surface_tokens[i] for i in indices)
+                    if role == "subject":
+                        subject_words, subject_surface_words = words, surfaces
+                    if role == "object":
+                        object_words, object_surface_words = words, surfaces
 
         return ParsedSentence(
             subject_word=token_for("subject"),
@@ -97,6 +122,10 @@ class Parser:
             subject_surface_word=surface_for("subject"),
             verb_surface_word=surface_for("verb"),
             object_surface_word=surface_for("object"),
+            subject_words=subject_words,
+            object_words=object_words,
+            subject_surface_words=subject_surface_words,
+            object_surface_words=object_surface_words,
             question_type=production.get("question_type"),
             rule=production.get("legacy_rule") or production.get("name"),
             meaning=production.get("meaning"),
