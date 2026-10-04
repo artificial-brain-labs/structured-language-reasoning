@@ -1,5 +1,5 @@
 {
-  "version": "1.4",
+  "version": "1.5",
   "principles": {
     "data_before_logic": true,
     "no_guessing": true,
@@ -61,6 +61,16 @@
           3,
           "head"
         ]
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "verb": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ]
       }
     },
     {
@@ -88,6 +98,20 @@
         "object": [
           3,
           "head"
+        ]
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "verb": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "object": [
+          "CONTEXTUAL",
+          "ANCHOR"
         ]
       }
     },
@@ -120,6 +144,16 @@
             "NOUN"
           ]
         }
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "object": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ]
       }
     },
     {
@@ -214,6 +248,16 @@
           2,
           "head"
         ]
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "verb": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ]
       }
     },
     {
@@ -238,6 +282,20 @@
         "object": [
           2,
           "head"
+        ]
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "verb": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "object": [
+          "CONTEXTUAL",
+          "ANCHOR"
         ]
       }
     },
@@ -266,6 +324,20 @@
         "object": [
           4,
           "head"
+        ]
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "verb": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "object": [
+          "CONTEXTUAL",
+          "ANCHOR"
         ]
       }
     },
@@ -296,6 +368,16 @@
             "NOUN"
           ]
         }
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "object": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ]
       }
     },
     {
@@ -328,6 +410,16 @@
             "NOUN"
           ]
         }
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "object": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ]
       }
     },
     {
@@ -357,6 +449,16 @@
             "ENTITY"
           ]
         }
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "object": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ]
       }
     },
     {
@@ -373,6 +475,12 @@
         "subject": [
           2,
           "head"
+        ]
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
         ]
       }
     },
@@ -396,6 +504,16 @@
           2,
           "head"
         ]
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "object": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ]
       }
     },
     {
@@ -418,6 +536,16 @@
           3,
           "head"
         ]
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "verb": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ]
       }
     },
     {
@@ -439,6 +567,16 @@
           2,
           "head"
         ]
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "verb": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ]
       }
     },
     {
@@ -459,6 +597,16 @@
         "object": [
           2,
           "head"
+        ]
+      },
+      "reference_roles": {
+        "verb": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "object": [
+          "CONTEXTUAL",
+          "ANCHOR"
         ]
       }
     },
@@ -486,6 +634,20 @@
           2,
           "head"
         ]
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "verb": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "object": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ]
       }
     },
     {
@@ -507,6 +669,16 @@
           2,
           "head"
         ]
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "object": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ]
       }
     },
     {
@@ -523,6 +695,12 @@
         "subject": [
           2,
           "head"
+        ]
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
         ]
       }
     },
@@ -548,6 +726,20 @@
         "object": [
           2,
           "head"
+        ]
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "verb": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "object": [
+          "CONTEXTUAL",
+          "ANCHOR"
         ]
       }
     }
