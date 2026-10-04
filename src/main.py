@@ -217,11 +217,16 @@ class SLR:
             return StatementResult(
                 clarification=self.response.system("reference_unknown")
             )
-        operation = meaning.operation
-        if operation is None:
+        operations = meaning.operations or ([meaning.operation] if meaning.operation is not None else [])
+        if not operations:
             return StatementResult()
-        self._record_interpretation(parsed, operation)
-        return self.router.dispatch(operation, parsed)
+        last = StatementResult()
+        for operation in operations:
+            self._record_interpretation(parsed, operation)
+            last = self.router.dispatch(operation, parsed)
+            if last.clarification:
+                return last
+        return last
 
     def _handle_pending_clarification(self, text):
         request = self.clarification.current()
