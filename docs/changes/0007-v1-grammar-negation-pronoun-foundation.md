@@ -43,3 +43,11 @@ The grammar coverage contract is updated to distinguish implemented construction
 ## Next step
 
 Continue auditing the required V1 grammar families systematically rather than adding isolated sentence-specific rules. The next audit should cover the remaining interrogative and noun-phrase combinations, followed by a complete grammar-to-semantic regression matrix.
+
+## Follow-up grammar audit
+
+The same V1 pass expanded regression coverage across noun-phrase composition and interrogatives. Tests now cover adjective stacking, determiner-headed noun phrases, object and subject questions, classification questions, type questions, property questions, and meaning questions.
+
+Negated classification and property predicates also received explicit relation schemas in `knowledge/relations.json`, so their semantic forms are represented declaratively rather than existing only as string transformations.
+
+The implementation remains data-driven: no new sentence-specific branching was added to the parser or semantic engine.
