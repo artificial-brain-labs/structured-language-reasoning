@@ -2,6 +2,7 @@ from src.reasoning.proof import ProofNode
 from src.reasoning.query_validation import validate_query_result
 from src.reasoning.state import (
     Claim,
+    Evidence,
     Goal,
     GoalStatus,
     ReasoningState,
@@ -75,6 +76,14 @@ def test_derived_query_result_with_observed_dependency_is_valid():
     )
     state.proof.add_node(ProofNode("observed", "claim", "observed"))
     state.proof.add_node(ProofNode("derived", "claim", "derived"))
+    state.evidence["e1"] = Evidence(
+        id="e1",
+        source="DYNAMIC_MEMORY",
+        content="cat SEES mouse",
+        evidence_type="memory",
+        reliability=1.0,
+        supports=["derived"],
+    )
     state.proof.add_node(ProofNode("goal", "goal", "goal"))
     state.goal.status = GoalStatus.SATISFIED
 
