@@ -146,7 +146,11 @@ class DynamicMemory:
             self.add_memory(object_, identity_predicate, subject, source, confidence)
         return memory
 
-    def query(self, subject=None, predicate=None, object_=None):
+    def query(self, subject=None, predicate=None, object_=None, object=None):
+        """Query memory using the canonical object_ parameter or its object alias."""
+        if object_ is not None and object is not None and object_ != object:
+            raise ValueError("object and object_ must identify the same value")
+        object_ = object_ if object_ is not None else object
         subject = self.canonical_entity(subject) if subject else None
         if object_ in self.entities:
             object_ = self.canonical_entity(object_)
