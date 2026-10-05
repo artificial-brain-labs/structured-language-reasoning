@@ -100,6 +100,14 @@ class ReferenceResolver:
                 else:
                     rejected.append((candidate.entity_id, dimension))
                     evidence.append((candidate.entity_id, candidate_evidence + ("AGREEMENT_INCOMPATIBLE",)))
+            # Candidate selection prioritizes recent mentions, while the
+            # evidence trace remains chronological for auditability.
+            mention_order = {
+                mention.entity_id: index
+                for index, mention in enumerate(self.contextual_memory.mentions)
+            }
+            evidence.sort(key=lambda item: mention_order.get(item[0], len(mention_order)))
+
             if len(compatible) == 1:
                 return ReferenceResolution(
                     "RESOLVED",
