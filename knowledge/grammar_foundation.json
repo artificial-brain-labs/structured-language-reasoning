@@ -262,6 +262,39 @@
       }
     },
     {
+      "name": "statement_state_np_state",
+      "lhs": "STATEMENT",
+      "rhs": [
+        "NP",
+        "STATE"
+      ],
+      "meaning": "SUBJECT_STATE",
+      "operation": "ASSERT_STATE",
+      "semantic_features": {
+        "tense": "PRESENT"
+      },
+      "roles": {
+        "subject": [
+          0,
+          "head"
+        ],
+        "verb": [
+          1,
+          "head"
+        ]
+      },
+      "reference_roles": {
+        "subject": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ],
+        "verb": [
+          "CONTEXTUAL",
+          "ANCHOR"
+        ]
+      }
+    },
+    {
       "name": "statement_transitive_np_verb_np",
       "lhs": "STATEMENT",
       "rhs": [
