@@ -141,6 +141,9 @@ class SLR:
         if execution.result is None:
             return
         operation = execution.operation
+        # Explicit identity assertions can change the canonical representative.
+        # Rebind transient mentions so context follows persistent identity.
+        self.contextual_reference_memory.canonicalize(self.user_memory.canonical_entity)
         for role, entity_id, surface in (
             (
                 "subject",
