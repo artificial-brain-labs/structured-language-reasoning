@@ -72,6 +72,20 @@ class ContextualReferenceMemory:
             result.append(mention)
         return result
 
+    def canonicalize(self, canonicalizer):
+        """Rebind stored mentions after explicit identity consolidation."""
+        self.mentions = [
+            ReferenceMention(
+                canonicalizer(mention.entity_id),
+                mention.surface,
+                mention.role,
+                mention.concepts,
+                mention.agreement,
+                mention.evidence,
+            )
+            for mention in self.mentions
+        ]
+
     def clear(self):
         self.mentions.clear()
 
