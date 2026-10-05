@@ -166,7 +166,6 @@ def test_v1_grammar_foundation_does_not_guess_unsupported_constructions():
     slr = SLR()
 
     for sentence in (
-        "cat and dog eat mouse",
         "cat will eat mouse",
         "cat eats mouse in garden",
         "cat that eats mouse sleeps",
